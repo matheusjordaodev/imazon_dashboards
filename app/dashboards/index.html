@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>ImazonGeo – Dashboards</title>
+
+  <!-- ─── METADADOS ──────────────────────────────────────────────── -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="cache-control"    content="no-cache" />
+  <meta http-equiv="expires"          content="0" />
+  <meta http-equiv="pragma"           content="no-cache" />
+  <meta http-equiv="Content-Language" content="pt-BR" />
+  <meta http-equiv="X-UA-Compatible"  content="IE=edge" />
+  <meta name="viewport"               content="width=device-width, initial-scale=1.0" />
+  <meta name="description"            content="Avisos de desmatamento" />
+  <meta name="keywords"               content="Imazon, avisos, alertas, desmatamento, Amazônia" />
+  <meta name="author"                 content="Matheus Jordão – devmatheusjordao@gmail.com" />
+
+  <!-- favicon -->
+  <link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon" />
+
+  <!-- ─── CSS ────────────────────────────────────────────────────── -->
+  
+  <link rel="stylesheet" href="./libs/jquery/plugin/jquery.mCustomScrollbar.min.css" />
+  <link rel="stylesheet" href="./libs/fontawesome/v5.3.1/all.min.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  <link rel="stylesheet" href="./libs/datepicker/5.39.0/tempusdominus-bootstrap-4.min.css" />
+  <link rel="stylesheet" href="./libs/dc-2.2/dc.min.css" />
+  <link rel="stylesheet" href="./css/imazongeo.min.css" />
+  <link rel="stylesheet" href="./css/dashboard-override.css" />
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  /* ---------- DASHBOARD NO IFRAME ---------- */
+  const iframe = document.getElementById('dashboard-iframe');
+  const links  = document.querySelectorAll('a.iframe-link');
+
+  if (links.length) {
+    iframe.src = links[0].dataset.src;      // carrega o 1º dashboard
+    links[0].classList.add('active');
+  }
+
+  links.forEach(link => link.addEventListener('click', ev => {
+    ev.preventDefault();
+    const url = link.dataset.src;
+    if (!url) return;
+
+    iframe.src = url;                       // troca de dashboard
+
+    links.forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+
+    /* em telas ≤768 px fecha a sidebar depois do clique */
+    if (window.innerWidth <= 768) document.body.classList.add('sidebar-collapsed');
+  }));
+
+  /* ---------- SIDEBAR TOGGLE ---------- */
+  const btnToggle  = document.getElementById('sidebarCollapse');
+  const contentBox = document.getElementById('content');
+
+  btnToggle.addEventListener('click', () => {
+    document.body.classList.toggle('sidebar-collapsed');
+  });
+
+  /* quando a transição de 'left' do #content terminar → avisa o iframe */
+  contentBox.addEventListener('transitionend', ev => {
+    if (ev.propertyName === 'left') {
+      iframe.contentWindow?.dispatchEvent(new Event('resize'));
+    }
+  });
+
+  /* ---------- MOBILE: começa já colapsado ---------- */
+  if (window.innerWidth <= 768) document.body.classList.add('sidebar-collapsed');
+
+  /* ---------- remove resquícios da lógica antiga (.active em #content) ---------- */
+  contentBox.classList.remove('active');
+  document.body.classList.remove('active');
+});
+</script>
+
+
+
+</head>
+
+<body>
+  <!-- WRAPPER GERAL ------------------------------------------------ -->
+  <div class="wrapper">
+
+    <!-- ─── SIDEBAR ──────────────────────────────────────────────── -->
+    <div class="wrapper">
+    <!-- ─── SIDEBAR ─────────────────────────────────────────────────── -->
+    <nav id="sidebar" class="bg-light border-right">
+      <div class="sidebar-header p-3 text-center">
+        <img src="./img/imazon-logo.jpeg" alt="Logo ImazonGeo" class="img-fluid sidebar-logo" />
+      </div>
+      <ul class="list-unstyled components px-2">
+      <li class="nv-chart-day">Áreas de Proteção</li>
+
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/AP/ameaca_geral_area_de_protecao.html">
+          <i class="material-icons mr-2">insert_chart</i>Ameaça – Áreas de Proteção
+        </a>
+      </li>
+
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/AP/ameaca_geral_terra_indigena.html">
+          <i class="material-icons mr-2">insert_chart</i>Ameaça – Terras Indígenas
+        </a>
+      </li>
+
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/AP/ameaca_geral_ucs.html">
+          <i class="material-icons mr-2">insert_chart</i>Ameaça – Unidades de Conservação
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/AP/pressao_geral_area_de_protecao.html">
+          <i class="material-icons mr-2">insert_chart</i>Pressão – Áreas de Proteção
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/AP/pressao_geral_terra_indigena.html">
+          <i class="material-icons mr-2">insert_chart</i>Pressão – Terras Indígenas
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/AP/pressao_geral_ucs.html">
+          <i class="material-icons mr-2">insert_chart</i>Pressão – Unidades de Conservação
+        </a>
+      </li>
+
+      <li class="mt-3 mb-2 text-muted">SIMEX</li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SIMEX/assentamentos.html">
+          <i class="material-icons mr-2">insert_chart</i>Assentamentos
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SIMEX/imoveis_rurais.html">
+          <i class="material-icons mr-2">insert_chart</i>Imóveis Rurais
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SIMEX/municipios.html">
+          <i class="material-icons mr-2">insert_chart</i>Municípios
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SIMEX/terras_sem_destinacao.html">
+          <i class="material-icons mr-2">insert_chart</i>Terra Sem Destinação
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SIMEX/terras_indigenas.html">
+          <i class="material-icons mr-2">insert_chart</i>Terras Indígenas
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SIMEX/ucs.html">
+          <i class="material-icons mr-2">insert_chart</i>Unidades de Conservação
+        </a>
+      </li>
+
+      <li class="mt-3 mb-2 text-muted">Sistema SAD</li>
+      
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SAD/degradacao_assentamentos.html">
+          <i class="material-icons mr-2">insert_chart</i>Degradação Assentamentos
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SAD/degradacao_estados.html">
+          <i class="material-icons mr-2">insert_chart</i>Degradação - Estados
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SAD/degradacao_municipios.html">
+          <i class="material-icons mr-2">insert_chart</i>Degradação - Municípios
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SAD/degradacao_terras_indigenas.html">
+          <i class="material-icons mr-2">insert_chart</i>Degradação - Terras Indígenas
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SAD/degradacao_unidades_de_conservacao.html">
+          <i class="material-icons mr-2">insert_chart</i>Degradação - Unidades de Conservação
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SAD/desmatamento_assentamentos.html">
+          <i class="material-icons mr-2">insert_chart</i>Desmatamentos - Assentamentos
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SAD/desmatamento_estados.html">
+          <i class="material-icons mr-2">insert_chart</i>Desmatamentos - Estados
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SAD/desmatamento_municipios.html">
+          <i class="material-icons mr-2">insert_chart</i>Desmatamentos - Municípios
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SAD/desmatamento_terras_indigenas.html">
+          <i class="material-icons mr-2">insert_chart</i>Desmatamentos - Terras Indígenas
+        </a>
+      </li>
+      <li>
+        <a href="#" class="iframe-link d-flex align-items-center p-2 rounded"
+           data-src="/SAD/desmatamento_unidades_de_conservacao.html">
+          <i class="material-icons mr-2">insert_chart</i>Desmatamentos - Unidades de Conservação
+        </a>
+      </li>
+
+    </ul>
+  </nav>
+    <!-- ──────────────────────────────────────────────────────────── -->
+  </div><!-- /.wrapper -->
+
+
+  <div id="content">
+      <!-- topbar -->
+      <nav class="navbar navbar-expand-lg materialnav navbar-header">
+        <button class="btn btn-material navbar-btn" id="sidebarCollapse">
+          <i class="material-icons menuicon">menu</i>
+        </button>
+        <a class="navbar-brand" href="/">
+          <span class="amarelo">Imazon</span><span class="verde">Geo</span>
+        </a>
+      </nav>
+
+  <!-- IFRAME -------------------------------------------------------- -->
+  <!-- IMPORTANTE: apenas UM id="dashboard-iframe" e sem src fixo     -->
+<div id="content">
+    <div id="iframe-dashboard-container">
+      <iframe id="dashboard-iframe" loading="lazy"></iframe>
+    </div>
+  </div>
+
+  <!-- FOOTER -------------------------------------------------------- -->
+  <footer class="footer text-center mt-4">
+    <p>
+      <a href="/">Imazon</a>&nbsp;
+      <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">
+        <img src="https://i.creativecommons.org/l/by-sa/4.0/80x15.png"
+             alt="Licença CC-BY-SA" />
+      </a>
+    </p>
+    <div class="version_style" id="version"></div>
+  </footer>
+
+  <!-- ─── JS ──────────────────────────────────────────────────────── -->
+  <script src="./libs/jquery/jquery-3.5.1.min.js"></script>
+  <script src="./libs/popper/1.14.3/popper.min.js"></script>
+  <script src="./libs/bootstrap/bootstrap-4.1.3.min.js"></script>
+
+  <!-- demais libs já presentes no seu projeto -->
+  <script src="./libs/d3/v3/d3.min.js"></script>
+  <script src="./libs/d3/d3js.pt-br.min.js"></script>
+  <script src="./libs/crossfilter/crossfilter-1.3.12.min.js"></script>
+  <script src="./libs/dc-2.2/dc.min.js"></script>
+  <script src="./libs/mousetrap/mousetrap.min.js"></script>
+  <script src="./libs/filesaver/FileSaver.min.js"></script>
+  <script src="./libs/moment/moment-2.29.0-with-locales.min.js"></script>
+  <script src="./libs/datepicker/5.39.0/tempusdominus-bootstrap-4.min.js"></script>
+  <script src="./libs/jquery/plugin/jquery.mCustomScrollbar.concat.min.js"></script>
+
+  <!-- seus JS minificados (mantidos) -->
+  <script src="./js/svg-to-image.min.js"></script>
+  <script src="./js/terrabrasilis-start.min.js"></script>
+  <script src="./js/easy-cookie.min.js"></script>
+  
+  
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-77404603-3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'UA-77404603-3');
+  </script>
+
+  <!-- ─── TROCA DE DASHBOARD NO IFRAME ────────────────────────────── -->
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+
+    const iframe = document.getElementById('dashboard-iframe');
+    const links  = document.querySelectorAll('a.iframe-link');
+
+    /* carrega o 1º item como padrão */
+    if (links.length) {
+      iframe.src = links[0].dataset.src;
+      links[0].classList.add('active');
+    }
+
+    /* clique nos itens do menu */
+    links.forEach(link => {
+      link.addEventListener('click', ev => {
+        ev.preventDefault();
+
+        const url = link.dataset.src;
+        if (!url) return;                 // nada a trocar
+
+        iframe.src = url;                 // troca o dashboard
+
+        /* feedback visual */
+        links.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      });
+    });
+
+  });
+  </script>
+  <script>
+window.addEventListener('scroll', () => {
+  const footer   = document.querySelector('footer.footer');
+  const scrolled = window.scrollY + window.innerHeight;
+  const limit    = document.body.offsetHeight - 150;   // distância-gatilho
+  footer.style.transform = scrolled >= limit ? 'translateY(0)' : 'translateY(100%)';
+});
+</script>
+<style>
+footer.footer{ transition:transform .3s ease; transform:translateY(100%); }
+</style>
+
+</body>
+</html>
+
+
+  <script>
+window.addEventListener('scroll', () => {
+  const footer   = document.querySelector('footer.footer');
+  const scrolled = window.scrollY + window.innerHeight;
+  const limit    = document.body.offsetHeight - 150;   // distância-gatilho
+  footer.style.transform = scrolled >= limit ? 'translateY(0)' : 'translateY(100%)';
+});
+</script>
+<style>
+footer.footer{ transition:transform .3s ease; transform:translateY(100%); }
+</style>
+
