@@ -4,8 +4,9 @@ const fs   = require('fs');
 const path = require('path');
 const { URL } = require('url');
 
+// AQUI: publico é a pasta que contém o index.html
+const PUBLIC = path.join(__dirname, 'app', 'dashboards');
 const PORT   = process.env.PORT || 8053;
-const PUBLIC = path.resolve(__dirname);
 
 const MIME = {
   '.html'   : 'text/html',
@@ -21,41 +22,42 @@ const MIME = {
 
 http
   .createServer((req, res) => {
-    // 1) Extrai só o caminho, sem query string
-    const parsed = new URL(req.url, `http://${req.headers.host}`);
-    let pathname = decodeURIComponent(parsed.pathname);
-
-    // 2) Mapeia "/" para index.html
+    const parsed  = new URL(req.url, `http://${req.headers.host}`);
+    let pathname  = decodeURIComponent(parsed.pathname);
+    // se vier "/" pega index.html
     let filePath = path.join(
       PUBLIC,
       pathname === '/' ? 'index.html' : pathname
     );
+    let ext = path.extname(filePath).toLowerCase();
 
-    const ext = path.extname(filePath).toLowerCase();
+    // se a rota veio sem extensão, tenta .html
+    if (!ext) {
+      const tryHtml = filePath + '.html';
+      if (fs.existsSync(tryHtml)) {
+        filePath = tryHtml;
+        ext      = '.html';
+      }
+    }
+
+    console.log('→ Pedido:', parsed.pathname, '→ Lendo:', filePath);
+
     const contentType = MIME[ext] || 'application/octet-stream';
-
     fs.readFile(filePath, (err, data) => {
       if (err) {
         if (ext) {
-          // 3a) Se tinha extensão e não encontrou → 404 normal
-          res.writeHead(404, { 'Content-Type': 'text/plain' });
-          res.end('404 – Arquivo não encontrado');
+          res.writeHead(404).end('404 – Arquivo não encontrado');
         } else {
-          // 3b) Se não tinha extensão, então tratamos como rota de SPA (fallback)
+          // SPA fallback, se for rota sem ext
           fs.readFile(
             path.join(PUBLIC, 'index.html'),
             (e, d) => {
-              if (e) {
-                res.writeHead(500).end('Erro interno');
-              } else {
-                res.writeHead(200, { 'Content-Type': 'text/html' });
-                res.end(d);
-              }
+              if (e) res.writeHead(500).end('Erro interno');
+              else   res.writeHead(200, { 'Content-Type':'text/html' }).end(d);
             }
           );
         }
       } else {
-        // 4) Arquivo encontrado: devolve normalmente
         res.writeHead(200, { 'Content-Type': contentType });
         res.end(data);
       }
@@ -64,3 +66,4 @@ http
   .listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
   });
+
