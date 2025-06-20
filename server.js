@@ -5,7 +5,10 @@ const path = require('path');
 const { URL } = require('url');
 
 const PORT   = process.env.PORT || 8053;
-const PUBLIC = path.resolve(__dirname);
+// onde está seu index.html
+const DASHBOARD_DIR = path.join(__dirname, 'app', 'dashboards');
+// onde estão geojsons e csvs
+const DATASET_DIR   = path.join(__dirname, 'dataset');
 
 const MIME = {
   '.html'   : 'text/html',
@@ -20,31 +23,54 @@ const MIME = {
 };
 
 http.createServer((req, res) => {
-  const { pathname } = new URL(req.url, `http://${req.headers.host}`);
-  let filePath = path.join(PUBLIC, pathname);
-  let ext      = path.extname(filePath).toLowerCase();
+  const parsed   = new URL(req.url, `http://${req.headers.host}`);
+  let pathname   = decodeURIComponent(parsed.pathname);
+  let filePath;
+  let ext;
 
-  // 1) "/" ou "" → index.html na raiz
-  if (pathname === '/' || pathname === '') {
-    filePath = path.join(PUBLIC, 'index.html');
-    ext      = '.html';
-  }
-  // 2) rota sem extensão e existe .html correspondente? usa-o
-  else if (!ext) {
-    if (fs.existsSync(filePath + '.html')) {
-      filePath = filePath + '.html';
-      ext      = '.html';
+  if (pathname.startsWith('/dataset/')) {
+    // serve direto da pasta dataset
+    filePath = path.join(DATASET_DIR, pathname.substring('/dataset/'.length));
+    ext      = path.extname(filePath).toLowerCase();
+  } else {
+    // serve dashboards + SPA fallback
+    // roteia "/" para index.html
+    filePath = path.join(
+      DASHBOARD_DIR,
+      pathname === '/' ? 'index.html' : pathname
+    );
+    ext = path.extname(filePath).toLowerCase();
+
+    // rota sem extensão? tenta .html dentro de dashboards
+    if (!ext) {
+      const tryHtml = filePath + '.html';
+      if (fs.existsSync(tryHtml)) {
+        filePath = tryHtml;
+        ext      = '.html';
+      }
     }
   }
 
-  console.log('→ Pedido:', pathname, '→ Lendo:', filePath);
+  console.log('→ Pedido:', pathname, '→ Arquivo:', filePath);
+  const contentType = MIME[ext] || 'application/octet-stream';
 
   fs.readFile(filePath, (err, data) => {
     if (err) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end(`404 – ${pathname} não encontrado`);
+      // 404 para arquivos com extensão
+      if (ext) {
+        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('404 – Arquivo não encontrado');
+      } else {
+        // SPA fallback se for rota sem ext
+        fs.readFile(
+          path.join(DASHBOARD_DIR, 'index.html'),
+          (e, d) => {
+            if (e) res.writeHead(500).end('Erro interno');
+            else   res.writeHead(200, { 'Content-Type':'text/html; charset=utf-8' }).end(d);
+          }
+        );
+      }
     } else {
-      const contentType = MIME[ext] || 'application/octet-stream';
       res.writeHead(200, { 'Content-Type': contentType });
       res.end(data);
     }
@@ -53,3 +79,4 @@ http.createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+
