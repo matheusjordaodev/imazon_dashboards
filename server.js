@@ -22,51 +22,61 @@ const MIME = {
   '.svg'    : 'image/svg+xml',
 };
 
-
 http.createServer((req, res) => {
-  const parsed = new URL(req.url, `http://${req.headers.host}`);
-  let pathname = decodeURIComponent(parsed.pathname);
+  const parsed   = new URL(req.url, `http://${req.headers.host}`);
+  let   pathname = decodeURIComponent(parsed.pathname);
 
-  // opcional: se seu HTML referenciar "/app/dashboards/XXX.html", 
-  // aqui removemos esse prefixo
+  // Se suas dashboards referenciam "/app/dashboards/...", removemos esse prefixo
   if (pathname.startsWith('/app/dashboards')) {
     pathname = pathname.replace(/^\/app\/dashboards/, '') || '/';
   }
 
   let filePath;
 
-  // 1) rota /dataset/...
+  // 1) /dataset/... → busca em DATASET_DIR
   if (pathname.startsWith('/dataset/')) {
-    filePath = path.join(DATASET_DIR, pathname.slice('/dataset/'.length));
+    const relPath = pathname.slice('/dataset/'.length);
+    filePath = path.join(DATASET_DIR, relPath);
+    console.log('[DATASET]', pathname, '→', filePath);
 
-  // 2) arquivos estáticos (css, js, img, assets)
+  // 2) estáticos (css, js, img, assets) → busca em ROOT_DIR
   } else if (STATIC_DIRS.has(pathname.split('/')[1])) {
     filePath = path.join(ROOT_DIR, pathname);
+    console.log('[STATIC]', pathname, '→', filePath);
 
-  // 3) dashboards
+  // 3) Dashboards/HTML → busca em DASHBOARD_DIR
   } else {
-    // raiz → index.html
     if (pathname === '/' || pathname === '/index.html') {
       filePath = path.join(DASHBOARD_DIR, 'index.html');
     } else {
       filePath = path.join(DASHBOARD_DIR, pathname);
-      // se não vier com extensão, tenta .html
+      // se não tiver extensão, tenta .html
       if (!path.extname(filePath)) {
-        const htmlTry = filePath + '.html';
-        filePath = fs.existsSync(htmlTry)
-          ? htmlTry
-          : path.join(DASHBOARD_DIR, 'index.html');
+        const tryHtml = filePath + '.html';
+        if (fs.existsSync(tryHtml)) {
+          filePath = tryHtml;
+        } else {
+          // fallback para index.html
+          filePath = path.join(DASHBOARD_DIR, 'index.html');
+        }
       }
     }
+    console.log('[DASH]', pathname, '→', filePath);
   }
 
   const ext = path.extname(filePath).toLowerCase();
-  console.log(`→ ${pathname} → ${filePath}`);
 
+  // Verifica existência antes de ler
+  if (!fs.existsSync(filePath)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    return res.end(`404 – ${pathname} não encontrado em ${filePath}`);
+  }
+
+  // Lê e devolve
   fs.readFile(filePath, (err, data) => {
     if (err) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      return res.end(`404 – ${pathname} não encontrado`);
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      return res.end(`500 – Erro ao ler ${filePath}`);
     }
     const contentType = MIME[ext] || 'application/octet-stream';
     res.writeHead(200, { 'Content-Type': contentType });
