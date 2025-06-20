@@ -1,0 +1,264 @@
+/* =============== VARIÁVEIS ================= */
+:root{
+  --sb-w: 290px;      /* largura da sidebar         */
+  --ft-h: 45px;       /* altura do footer           */
+  --tb-h: 56px;       /* altura da topbar (mobile)  */
+}
+
+/* =============== DESKTOP =================== */
+#sidebar{
+  width: var(--sb-w);
+  position: fixed; top: 0; left: 0;
+  height: 100vh; overflow-y: auto;
+  transition: transform .3s;
+  z-index: 1030;
+}
+
+#content{
+  position: fixed;
+  top: 0;                               /* sem topbar no desktop  */
+  left: var(--sb-w); right: 0;
+  bottom: var(--ft-h);
+  display: flex; flex-direction: column;
+  min-height: 0;
+}
+
+#iframe-dashboard-container{
+  flex: 1 1 auto;
+  display: flex; margin: 0; padding: 0;
+  min-height: 0;
+}
+#dashboard-iframe{
+  flex: 1 1 100%;
+  border: 0;
+  width: 100%; height: 100%;
+  min-height: 0;
+}
+
+
+
+/* topbar some no desktop */
+#topbar{ display:none; }
+
+/* =============== MOBILE ≤768 px ============ */
+@media (max-width:768px){
+
+  /* esconde sidebar fora da tela; botão a traz de volta */
+  #sidebar{ transform:translateX(-100%); }
+  #sidebar.active{ transform:translateX(0); }
+
+  /* topbar visível */
+  #topbar{
+    display:flex; align-items:center;
+    height: var(--tb-h);
+    padding: 0 .75rem;
+  }
+
+  /* conteúdo abaixa para não ficar atrás da topbar */
+  #content{ top: var(--tb-h); left: 0; }
+
+  /* donuts etc. se você tiver IDs específicos */
+  #pie1, #pie2{ height: 280px !important; }
+}
+
+/* remove barras do próprio iframe */
+#dashboard-iframe::-webkit-scrollbar{ width:0; height:0; }
+#dashboard-iframe{ scrollbar-width:none; -ms-overflow-style:none; }
+
+/* link ativo */
+.iframe-link.active{ background:#28a74518; font-weight:700; }
+
+/* pequenas bordas visuais (opcional) */
+.iframe-link{ transition: background .15s; }
+.iframe-link:hover{ background:#0001; }
+
+.filter-topbar{
+  background:#00755F;
+  color:#fff;
+  padding:.35rem .75rem;
+  font-weight:600;
+  border-radius:4px 4px 0 0;
+  display:flex; align-items:center;
+  margin-bottom:.5rem;   /* distância até os filtros */
+}
+
+/* ─────────── VARIÁVEIS ─────────── */
+:root{
+  --sb-w: 290px;     /* largura da sidebar            */
+  --ft-h: 45px;      /* altura do footer              */
+  --tb-h: 56px;      /* altura da topbar verde        */
+}
+
+/* ─────────── TOPBAR (sempre visível) ─────────── */
+#topbar{
+  position: fixed; top:0; left:0; right:0;
+  height: var(--tb-h);
+  background:#00755F;           /* verde */
+  color:#fff;
+  display:flex; align-items:center;
+  padding:0 .75rem;
+  z-index:1025;
+}
+
+/* ─────────── SIDEBAR ─────────── */
+#sidebar{
+  width: var(--sb-w);
+  position: fixed;
+  top: var(--tb-h);             /* abaixo da topbar         */
+  left:0;
+  height: calc(100vh - var(--tb-h));
+  overflow-y:auto;
+  transition: transform .3s;
+  z-index:1030;
+}
+/* recolhida (ícone/hambúrguer) */
+body.sidebar-collapsed #sidebar{ transform:translateX(-100%); }
+
+/* ─────────── CONTEÚDO (iframe) ─────────── */
+#content{
+  position: fixed;
+  top: var(--tb-h);
+  left: var(--sb-w);            /* espaço da sidebar         */
+  right:0; bottom: var(--ft-h); /* reserva p/ footer         */
+  display:flex; flex-direction:column;
+  min-height:0;
+  transition:left .3s;
+}
+/* quando a sidebar some → conteúdo ocupa 100 % */
+body.sidebar-collapsed #content{ left:0; }
+
+/* contêiner + iframe ocupam o espaço livre */
+#iframe-dashboard-container{ flex:1 1 auto; display:flex; min-height:0; }
+#dashboard-iframe{ flex:1 1 100%; width:100%; height:100%; border:0; }
+
+/* ─────────── FOOTER (fica escondido) ─────────── */
+footer.footer{
+  position: fixed; left:0; right:0; bottom:0;
+  height: var(--ft-h);
+  background:#00755F; color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  transform: translateY(100%);       /* fora da tela */
+  transition: transform .3s ease;
+}
+
+/* ─────────── PEQUENOS EXTRAS ─────────── */
+.iframe-link.active{ background:#28a74518; font-weight:700; }
+#dashboard-iframe::-webkit-scrollbar{ width:0; height:0; }
+#dashboard-iframe{ scrollbar-width:none; -ms-overflow-style:none; }
+
+
+/* aumenta a marca ImazonGeo em todos os pontos onde foi usada */
+.sidebar-header h5,
+.boxtop h5,
+.navbar .navbar-brand {
+  font-size: 1.6rem;     /* antes devia estar ~1rem */
+  line-height: 1.2;      /* deixa a linha mais “justa” */
+}
+
+/* se quiser só na barra superior: */
+.boxtop h5 { font-size: 2rem; }
+
+/* se quiser só na sidebar: */
+.sidebar-header h5 { font-size: 1.8rem; }
+
+/* exemplo de aumentar apenas a palavra “Geo” para dar destaque */
+.verd e { font-weight: 700; }    /* já existe cor; aqui turbina com bold */
+
+/* ─── OVERRIDE LAYOUT SIDEBAR + IFRAME ─────────────────────────── */
+:root {
+  --sb-w: 290px;
+  --tb-h: 56px;
+  --ft-h: 45px;
+}
+
+/* wrapper engloba sidebar + content */
+.wrapper {
+  display: flex;
+  height: calc(100vh - var(--ft-h));
+}
+
+/* sidebar sempre fixa abaixo da topbar */
+#sidebar {
+  width: var(--sb-w);
+  position: fixed;
+  top: var(--tb-h);
+  left: 0;
+  height: calc(100vh - var(--tb-h));
+  transition: transform .3s ease;
+  z-index: 1030;
+}
+
+/* quando colapsada, sidebar some */
+body.sidebar-collapsed #sidebar {
+  transform: translateX(-100%) !important;
+}
+
+/* content (navbar + iframe) ao lado da sidebar */
+#content {
+  position: fixed;
+  top: var(--tb-h);
+  left: var(--sb-w);
+  right: 0;
+  bottom: var(--ft-h);
+  display: flex;
+  flex-direction: column;
+  transition: left .3s ease;
+}
+
+/* quando sidebar some, content ocupa 100% */
+body.sidebar-collapsed #content {
+  left: 0 !important;
+}
+
+/* iframe e container ocupam todo o espaço interno */
+#iframe-dashboard-container,
+#dashboard-iframe {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* ─── FIXA A NAVBAR NO TOPO ───────────────────────────────────── */
+.navbar-header {
+  position: fixed;
+  top: 0;
+  left: var(--sb-w);
+  right: 0;
+  height: var(--tb-h);
+  z-index: 1040;           /* acima da sidebar (1030) */
+  background: #00755F;     /* mesma cor da sua topbar */
+  display: flex;
+  align-items: center;
+  padding: 0 .75rem;
+}
+
+/* quando a sidebar colapsa, a navbar também empurra para esquerda */
+body.sidebar-collapsed .navbar-header {
+  left: 0 !important;
+}
+
+/* ==== OVERRIDE FINAL – elimina width fixo herdado ==== */
+#content,
+#content.active {        /* mata as regras antigas */
+  width: auto !important;  /* libera cálculo por left/right */
+}
+
+body.sidebar-collapsed #content.active {
+  width: auto !important;  /* idem quando a antiga classe .active aparecer */
+}
+
+
+/* mantém o iframe ocupando todo o resto, sem sobrepor a navbar */
+#iframe-dashboard-container {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+  /* não precisa de margin-top se usar padding no content */
+}
+#dashboard-iframe {
+  flex: 1 1 100%;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
