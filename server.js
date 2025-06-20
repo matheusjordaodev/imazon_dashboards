@@ -1,15 +1,17 @@
-const http = require('http');
-const fs   = require('fs');
-const path = require('path');
+const http   = require('http');
+const fs     = require('fs');
+const path   = require('path');
 const { URL } = require('url');
 
 const PORT          = process.env.PORT || 8053;
-const PUBLIC        = path.resolve(__dirname);
-const DASHBOARD_DIR = path.join(__dirname, 'app', 'dashboards');
-const DATASET_DIR   = path.join(__dirname, 'dataset');
+const ROOT_DIR      = __dirname;
+const DASHBOARD_DIR = path.join(ROOT_DIR, 'app', 'dashboards');
+const DATASET_DIR   = path.join(ROOT_DIR, 'dataset');
+
+const STATIC_DIRS = new Set([ 'css', 'js', 'assets', 'img' ]);
 
 const MIME = {
-  '.html'   : 'text/html',
+  '.html'   : 'text/html; charset=utf-8',
   '.js'     : 'application/javascript',
   '.css'    : 'text/css',
   '.json'   : 'application/json',
@@ -21,43 +23,55 @@ const MIME = {
 };
 
 http.createServer((req, res) => {
-  const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
-  let pathname = decodeURIComponent(parsedUrl.pathname);
+  const parsed = new URL(req.url, `http://${req.headers.host}`);
+  let pathname = decodeURIComponent(parsed.pathname);
+
+  // opcional: se seu HTML referenciar "/app/dashboards/XXX.html", 
+  // aqui removemos esse prefixo
+  if (pathname.startsWith('/app/dashboards')) {
+    pathname = pathname.replace(/^\/app\/dashboards/, '') || '/';
+  }
+
   let filePath;
-  let ext;
 
+  // 1) rota /dataset/...
   if (pathname.startsWith('/dataset/')) {
-    filePath = path.join(DATASET_DIR, pathname.substring('/dataset/'.length));
-    ext = path.extname(filePath).toLowerCase();
-  } else {
-    filePath = path.join(DASHBOARD_DIR, pathname === '/' ? 'index.html' : pathname);
-    ext = path.extname(filePath).toLowerCase();
+    filePath = path.join(DATASET_DIR, pathname.slice('/dataset/'.length));
 
-    if (!ext) {
-      const tryHtml = filePath + '.html';
-      if (fs.existsSync(tryHtml)) {
-        filePath = tryHtml;
-        ext = '.html';
-      } else {
-        // SPA fallback para index.html
-        filePath = path.join(DASHBOARD_DIR, 'index.html');
-        ext = '.html';
+  // 2) arquivos estáticos (css, js, img, assets)
+  } else if (STATIC_DIRS.has(pathname.split('/')[1])) {
+    filePath = path.join(ROOT_DIR, pathname);
+
+  // 3) dashboards
+  } else {
+    // raiz → index.html
+    if (pathname === '/' || pathname === '/index.html') {
+      filePath = path.join(DASHBOARD_DIR, 'index.html');
+    } else {
+      filePath = path.join(DASHBOARD_DIR, pathname);
+      // se não vier com extensão, tenta .html
+      if (!path.extname(filePath)) {
+        const htmlTry = filePath + '.html';
+        filePath = fs.existsSync(htmlTry)
+          ? htmlTry
+          : path.join(DASHBOARD_DIR, 'index.html');
       }
     }
   }
 
-  console.log(`Pedido: ${pathname} → Arquivo: ${filePath}`);
+  const ext = path.extname(filePath).toLowerCase();
+  console.log(`→ ${pathname} → ${filePath}`);
 
   fs.readFile(filePath, (err, data) => {
     if (err) {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end(`404 – ${pathname} não encontrado`);
-    } else {
-      const contentType = MIME[ext] || 'application/octet-stream';
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(data);
+      return res.end(`404 – ${pathname} não encontrado`);
     }
+    const contentType = MIME[ext] || 'application/octet-stream';
+    res.writeHead(200, { 'Content-Type': contentType });
+    res.end(data);
   });
+
 }).listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
