@@ -4,9 +4,8 @@ const fs   = require('fs');
 const path = require('path');
 const { URL } = require('url');
 
-// AQUI: publico é a pasta que contém o index.html
-const PUBLIC = path.join(__dirname, 'app', 'dashboards');
 const PORT   = process.env.PORT || 8053;
+const PUBLIC = path.resolve(__dirname);
 
 const MIME = {
   '.html'   : 'text/html',
@@ -20,50 +19,37 @@ const MIME = {
   '.svg'    : 'image/svg+xml',
 };
 
-http
-  .createServer((req, res) => {
-    const parsed  = new URL(req.url, `http://${req.headers.host}`);
-    let pathname  = decodeURIComponent(parsed.pathname);
-    // se vier "/" pega index.html
-    let filePath = path.join(
-      PUBLIC,
-      pathname === '/' ? 'index.html' : pathname
-    );
-    let ext = path.extname(filePath).toLowerCase();
+http.createServer((req, res) => {
+  const { pathname } = new URL(req.url, `http://${req.headers.host}`);
+  let filePath = path.join(PUBLIC, pathname);
+  let ext      = path.extname(filePath).toLowerCase();
 
-    // se a rota veio sem extensão, tenta .html
-    if (!ext) {
-      const tryHtml = filePath + '.html';
-      if (fs.existsSync(tryHtml)) {
-        filePath = tryHtml;
-        ext      = '.html';
-      }
+  // 1) "/" ou "" → index.html na raiz
+  if (pathname === '/' || pathname === '') {
+    filePath = path.join(PUBLIC, 'index.html');
+    ext      = '.html';
+  }
+  // 2) rota sem extensão e existe .html correspondente? usa-o
+  else if (!ext) {
+    if (fs.existsSync(filePath + '.html')) {
+      filePath = filePath + '.html';
+      ext      = '.html';
     }
+  }
 
-    console.log('→ Pedido:', parsed.pathname, '→ Lendo:', filePath);
+  console.log('→ Pedido:', pathname, '→ Lendo:', filePath);
 
-    const contentType = MIME[ext] || 'application/octet-stream';
-    fs.readFile(filePath, (err, data) => {
-      if (err) {
-        if (ext) {
-          res.writeHead(404).end('404 – Arquivo não encontrado');
-        } else {
-          // SPA fallback, se for rota sem ext
-          fs.readFile(
-            path.join(PUBLIC, 'index.html'),
-            (e, d) => {
-              if (e) res.writeHead(500).end('Erro interno');
-              else   res.writeHead(200, { 'Content-Type':'text/html' }).end(d);
-            }
-          );
-        }
-      } else {
-        res.writeHead(200, { 'Content-Type': contentType });
-        res.end(data);
-      }
-    });
-  })
-  .listen(PORT, () => {
-    console.log(`Servidor rodando em http://localhost:${PORT}`);
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end(`404 – ${pathname} não encontrado`);
+    } else {
+      const contentType = MIME[ext] || 'application/octet-stream';
+      res.writeHead(200, { 'Content-Type': contentType });
+      res.end(data);
+    }
   });
 
+}).listen(PORT, () => {
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
+});
