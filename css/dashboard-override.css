@@ -262,3 +262,11 @@ body.sidebar-collapsed #content.active {
   height: 100%;
   border: none;
 }
+.sidebar-logo {
+  width: 235px;
+  height: 235px;
+  /* object-fit: contain;  manterá toda a imagem centralizada sem cortar  */
+  /* object-fit: cover;    preencherá todo o espaço, cortando bordas se necessário */
+  object-fit: contain;
+  display: block; /* opcional, para evitar espaços em branco inline */
+}
