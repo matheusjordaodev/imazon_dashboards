@@ -399,7 +399,7 @@
 (async () => {
   /* ----------------- CONSTANTES ----------------- */
   const GEOJSON_URL = "https://cdn.jsdelivr.net/gh/imazon-cgi/simex@main/datasets/geojson/limite_municipios_amz_legal.geojson";
-  const CSV_URL = new URL("dataset/simex/csv/simex_amazonia_PAMT2007_2023_municipios.csv", window.location.origin).href;
+  const CSV_URL = new URL("/dataset/simex/csv/simex_amazonia_PAMT2007_2023_municipios.csv", window.location.origin).href;
 
   /* --------------- ELEMENTOS DOM --------------- */
   const stateSelect     = document.getElementById('state-select');

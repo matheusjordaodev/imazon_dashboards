@@ -11,7 +11,7 @@ const DATASET_DIR   = path.join(ROOT_DIR, 'dataset');
 const STATIC_DIRS = new Set([ 'css', 'js', 'assets', 'img' ]);
 
 const MIME = {
-  '.html'   : 'text/html; charset=utf-8',
+  '.html'   : 'text/html',
   '.js'     : 'application/javascript',
   '.css'    : 'text/css',
   '.json'   : 'application/json',
@@ -21,6 +21,7 @@ const MIME = {
   '.jpg'    : 'image/jpeg',
   '.svg'    : 'image/svg+xml',
 };
+
 
 http.createServer((req, res) => {
   const parsed = new URL(req.url, `http://${req.headers.host}`);
