@@ -1,0 +1,13 @@
+/* responsive-styles.css */
+@media (max-width: 768px) {
+  .card {
+    margin-bottom: 20px;
+  }
+  .map-container {
+    height: 400px;
+  }
+}
+
+#line-graph {
+  width: 100% !important;
+}

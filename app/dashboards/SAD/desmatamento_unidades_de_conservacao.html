@@ -5,91 +5,60 @@
 <title>SAD – Assentamentos</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- ─── ESTILOS ────────────────────────────────────────────────── -->
-<style>
-  /* scrollbar & fontes */
-  html,body{overflow-y:auto;-ms-overflow-style:none;scrollbar-width:none;height:100%;margin:0;padding:0;font-family:system-ui,Helvetica,Arial,sans-serif}
-  html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0}
+<head>
+  <meta charset="utf-8" />
+  <title>SAD – Assentamentos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  body{background:#f8f9fa;padding:20px 0}
-  img,canvas,svg{max-width:100%;height:auto}
-  .custom-button{font-size:.8rem}
+  <!-- 1) libs CSS primeiro -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-  /* botão carregar mapa */
-  #map-load-btn-container{position:absolute;inset:0;display:flex;justify-content:center;align-items:center;background:rgba(255,255,255,.8);z-index:1000}
-  #load-map-btn{padding:12px 24px;font-size:1.2rem;box-shadow:0 4px 8px rgba(0,0,0,.2);background:linear-gradient(to bottom,#28a745,#1e7e34);border:none;color:#fff;border-radius:4px;transition:.3s}
-  #load-map-btn:hover{transform:translateY(-2px);box-shadow:0 6px 12px rgba(0,0,0,.2)}
+  <!-- 2) seus styles em ordem lógica: 
+       base → map → button → legend → cards → controls → responsive → modal -->
+  <link rel="stylesheet" href="../../../css/base-styles.css">
+  <link rel="stylesheet" href="../../../css/map-styles.css">
+  <link rel="stylesheet" href="../../../css/button-styles.css">
+  <link rel="stylesheet" href="../../../css/legend-styles.css">
+  <link rel="stylesheet" href="../../../css/card-styles.css">
+  <link rel="stylesheet" href="../../../css/controls-styles.css">
+  <link rel="stylesheet" href="../../../css/select-styles.css">
+  <link rel="stylesheet" href="../../../css/responsive-styles.css">
+  <link rel="stylesheet" href="../../../css/modal-styles.css">
+</head>
 
-  /* mapa */
-  .map-container{position:relative;height:450px;border-radius:8px;overflow:hidden;box-shadow:0 4px 8px rgba(0,0,0,.1)}
-
-  /* legenda gradiente */
-  .heat-legend{position:absolute;right:10px;bottom:30px;z-index:1000;background:rgba(255,255,255,.85);padding:10px;border-radius:5px;box-shadow:0 2px 6px rgba(0,0,0,.2);width:120px;text-align:center}
-  .heat-legend h4{margin:0 0 5px;font-size:.9rem;font-weight:bold;color:#333}
-  .legend-gradient{height:150px;width:25px;margin:0 auto;border:1px solid #ddd;border-radius:3px}
-  .legend-labels{display:flex;flex-direction:column;justify-content:space-between;height:150px;position:absolute;left:40px;top:40px;font-size:.8rem;color:#333}
-  .legend-labels span{background:rgba(255,255,255,.7);padding:0 4px;border-radius:2px}
-
-  /* cards */
-  .card{border:none;border-radius:8px;overflow:hidden;box-shadow:0 4px 8px rgba(0,0,0,.1)}
-  .card-header{background:linear-gradient(to right,#2c7744,#28a745);color:#fff;font-weight:bold;padding:12px 15px}
-  .card-body{padding:0}
-
-  /* controles */
-  .btn-success{background:linear-gradient(to bottom,#28a745,#1e7e34);border:none}
-  .btn-success:hover{background:linear-gradient(to bottom,#218838,#1c7430)}
-  .btn-info{background:linear-gradient(to bottom,#17a2b8,#138496);border:none}
-  .btn-info:hover{background:linear-gradient(to bottom,#138496,#117a8b)}
-  .form-select{border-radius:4px;border:1px solid #ced4da;box-shadow:inset 0 1px 2px rgba(0,0,0,.05)}
-
-  /* responsivo */
-  @media(max-width:768px){.card{margin-bottom:20px}.map-container{height:400px}}
-
-  /* modal lista de assentamentos */
-  .settlement-item{padding:8px 12px;border-bottom:1px solid #eee;transition:.2s}
-  .settlement-item:hover{background:#f8f9fa;cursor:pointer}
-  .settlement-item.selected{background:#e6f7ff;border-left:3px solid #1890ff}
-  .selected-count{background:#28a745;color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;margin-left:8px}
-  .search-box{position:sticky;top:0;background:#fff;z-index:10;padding:10px 0}
-  .settlement-list{max-height:300px;overflow-y:auto;margin-top:10px}
-  .selection-info{margin-top:10px;font-size:.9rem;color:#6c757d}
-
-  /* ————— ajuste da transparência da heat-legend ————— */
-  .heat-legend{
-    background: transparent !important;   /* remove o fundo branco */
-    box-shadow: none !important;          /* remove a sombra */
-  }
-  /* opcional: mantém as etiquetas com leve fundo p/ leitura */
-  .heat-legend .legend-labels span{
-    background: rgba(255,255,255,.6);     /* meia-transparência */
-  }
-
-
-</style>
-
-<!-- libs CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 </head>
 
 <body class="py-3">
-<div class="container-fluid" id="app-root">
+<div class="container-fluid px-3 px-md-5" id="app-root">
 
-  <!-- botões principais -->
-  <div class="row mb-3 gy-2">
-    <div class="col-auto"><button id="reset-btn" class="btn btn-success btn-sm custom-button"><i class="fa fa-filter me-1"></i>Remover Filtros</button></div>
-    <div class="col-auto"><button id="state-btn" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#state-modal"><i class="fa fa-map me-1"></i>Selecione o Estado</button></div>
-    <div class="col-auto"><button id="download-btn-open" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#download-modal"><i class="fa fa-download me-1"></i>Baixar CSV</button></div>
-    <div class="col-auto"><button id="interest-btn" class="btn btn-info btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#interest-modal"><i class="fa fa-star me-1"></i>Selecionar Área de Interesse</button></div>
+  <!-- toolbar principal -->
+  <div class="row mb-5 gy-2 align-items-center">
+    <div class="col-auto">
+      <button id="reset-btn" class="btn btn-success btn-sm custom-button">
+        <i class="fa fa-filter me-1"></i>Remover Filtros
+      </button>
+    </div>
+    <div class="col-auto">
+      <button id="state-btn" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#state-modal">
+        <i class="fa fa-map me-1"></i>Selecione o Estado
+      </button>
+    </div>
+    <div class="col-auto">
+      <button id="download-btn-open" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#download-modal">
+        <i class="fa fa-download me-1"></i>Baixar CSV
+      </button>
+    </div>
+    <div class="col-auto d-flex align-items-center">
+      <button id="interest-btn" class="btn btn-info btn-sm custom-button me-3" data-bs-toggle="modal" data-bs-target="#interest-modal">
+        <i class="fa fa-star me-1"></i>Selecionar Área de Interesse
+      </button>
+      <label for="year-select" class="me-2 mb-0 fw-bold">Ano:</label>
+      <select id="year-select" class="form-select form-select-sm year-select"></select>
+    </div>
   </div>
 
-  <!-- filtros -->
-  <div class="row g-2 align-items-end mb-4">
-    <div class="col-auto fw-bold">Ano:</div>
-    <div class="col-6 col-md-3"><select id="year-select" class="form-select form-select-sm"></select></div>
-    
-  </div>
 
   <!-- barra + mapa -->
   <div class="row gx-2 mb-4">
@@ -464,13 +433,42 @@ function heatLegend(min, max, scale) {
         marker:{size:8,color:pal[i%pal.length]}
       };
     }).filter(Boolean);
-    Plotly.newPlot('line-graph',series,{
-      title:{text:`Série Histórica – ${selCat||'Todas'}`,x:.5,font:{size:16}},
-      xaxis:{title:'Ano'},yaxis:{title:'Área (km²)'},
-      legend:{orientation:'h',x:0.5,xanchor:'center',y:-.2,bgcolor:'rgba(255,255,255,.7)'},
-      height:450,margin:{l:50,t:50,b:50,r:20},
-      plot_bgcolor:'rgba(0,0,0,0)',paper_bgcolor:'rgba(0,0,0,0)'
-    },{displayModeBar:false,responsive:true});
+    Plotly.newPlot('line-graph', series, {
+  title: {
+    text: `Série Histórica – ${selCat||'Todas'}`,
+    x: .5,
+    font: { size: 16 }
+  },
+  xaxis: { title: 'Ano' },
+  yaxis: { title: 'Área (km²)' },
+
+  legend: {
+    orientation: 'h',      // horizontal
+    x: 0.5,                // centro horizontal
+    xanchor: 'center',
+    y: -0.25,              // tira a legenda pra baixo do eixo
+    yanchor: 'top',
+    font: { size: 12 },
+    traceorder: 'normal',
+    itemclick: 'toggle'
+  },
+
+  margin: {
+    l: 50,
+    r: 20,
+    t: 50,
+    b: 100   // espaço extra embaixo pra caber a legenda
+  },
+
+  plot_bgcolor: 'rgba(0,0,0,0)',
+  paper_bgcolor: 'rgba(0,0,0,0)'
+}, {
+  displayModeBar: false,
+  responsive: true
+});
+
+
+
   }
 
   /* ─── gráfico anual ─── */

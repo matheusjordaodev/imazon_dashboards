@@ -1,0 +1,32 @@
+/* card-styles.css */
+/* cartões gerais */
+.card {
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0,0,0,.1);
+}
+.card-header {
+  background: linear-gradient(to right, #2c7744, #28a745);
+  color: #fff;
+  font-weight: bold;
+  padding: 12px 15px;
+}
+.card-body {
+  padding: 0;
+}
+
+.card-header {
+  /* usa o brand como background sólido, ou gradient se preferir */
+  background: var(--brand);
+  /* se quiser um degradê suave:
+  background: linear-gradient(
+    to right,
+    var(--brand-light),
+    var(--brand)
+  );
+  */
+  color: #fff;
+  font-weight: bold;
+  padding: 12px 15px;
+}
