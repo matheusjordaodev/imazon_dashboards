@@ -219,7 +219,7 @@
     <div class="row gx-2 mb-4">
       <div class="col-12 col-md-6 mb-4 mb-md-0">
         <div class="card h-100 shadow-sm">
-          <div class="card-header">Ameaça por Estado</div>
+          <div class="card-header">Ameaça de Desmatamento por Estado e Modalidade</div>
           <div class="card-body p-0">
             <div class="loading-overlay">
               <div id="pie1" style="width:100%; height:100%"></div>
@@ -477,10 +477,7 @@
           // Ajusta altura conforme mobile ou desktop
           height: isMobile() ? 300 : 450,
           margin: { l: 100, r: 20, t: 60, b: 20 },
-          title: {
-            text: 'TOP 10 Áreas <br> Proteção Ambiental por Desmatamento',
-            font: { size: isMobile() ? 16 : 19, color: 'rgba(46,139,87,.6)' }
-          },
+          
           xaxis: {
             title: 'km²',
             showgrid: true,
@@ -539,9 +536,9 @@
 
         Promise.all([
           makePie(pie1Div, Object.keys(aggUF), Object.values(aggUF),
-                  'Ameaça de Desmatamento por Estado e Modalidade'),
+          ),
           makePie(pie2Div, top10.map(t => t[0]), top10.map(t => t[1]),
-                  'Ameaça Desmatamento <br> Área de Proteção')
+                  )
         ]).then(() => { hideLoading('pie1'); hideLoading('pie2'); });
       };
 

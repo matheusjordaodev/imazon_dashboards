@@ -170,7 +170,7 @@
     <!-- BARRA -->
     <div class="col-12 col-md-6">
       <div class="card h-100">
-        <div class="card-header">TOP 10 Desmatamento</div>
+        <div class="card-header">TOP 10 Áreas de Desmatamento por Áreas de Proteção </div>
         <div class="card-body p-0 d-flex flex-column">
           <div id="bar-chart" class="chart-container"></div>
         </div>
@@ -182,7 +182,7 @@
   <div class="row gx-2 mb-4">
     <div class="col-12 col-md-6 mb-4 mb-md-0">
       <div class="card h-100">
-        <div class="card-header">Ameaça por Estado</div>
+        <div class="card-header">Ameaça de Desmatamento por Estado e Modalidade</div>
         <div class="card-body p-0 d-flex flex-column">
           <div id="pie1" class="chart-container"></div>
         </div>
@@ -191,7 +191,7 @@
 
     <div class="col-12 col-md-6">
       <div class="card h-100">
-        <div class="card-header">Ameaça por Área de Proteção</div>
+        <div class="card-header">Ameaça de Desmatamento por Área de Proteção</div>
         <div class="card-body p-0 d-flex flex-column">
           <div id="pie2" class="chart-container"></div>
         </div>
@@ -423,10 +423,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         textfont: { color: textcolors, size: mobile ? 10 : 12 }
       }], {
         template: 'plotly_white',
-        title: {
-          text: 'TOP 10 Áreas<br>UCs por Desmatamento',
-          font: { size: mobile ? 16 : 20, color: 'rgba(46,139,87,.8)' }
-        },
+        
         margin: margin,
         autosize: true,
         plot_bgcolor: 'rgba(0,0,0,0)',
@@ -502,7 +499,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         aggUF[k] = (aggUF[k]||0) + (+f.properties.DESMATAM_1 || 0);
       });
       makePie(pie1Div, Object.keys(aggUF), Object.values(aggUF),
-              'Ameaça de Desmatamento por Estado e Modalidade');
+              );
 
       // pie2 ▸ TOP-10 área de proteção
       const aggAP = {};
@@ -514,7 +511,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       makePie(pie2Div,
               top10.map(t => t[0]),
               top10.map(t => t[1]),
-              'Ameaça Desmatamento<br>Área de Proteção');
+              );
     };
 
     /* ------------ TABELA DATATABLES ----------------------------- */

@@ -100,7 +100,7 @@
 
     <div class="col-12 col-md-6">
       <div class="card h-100">
-        <div class="card-header">TOP 10 Desmatamento</div>
+        <div class="card-header">TOP 10 Áreas de Unidade de Conservação por Desmatamento</div>
         <div class="card-body"><div id="bar-chart" style="height:450px"></div></div>
       </div>
     </div>
@@ -110,14 +110,14 @@
   <div class="row gx-2 mb-4">
     <div class="col-12 col-md-6 mb-4 mb-md-0">
       <div class="card h-100">
-        <div class="card-header">Ameaça por Estado</div>
+        <div class="card-header">Ameaça de Desmatamento por Estado e Modalidade</div>
         <div class="card-body"><div id="pie1" style="height:400px"></div></div>
       </div>
     </div>
 
     <div class="col-12 col-md-6">
       <div class="card h-100">
-        <div class="card-header">Ameaça por Área de Proteção</div>
+        <div class="card-header">Ameaça de Desmatamento por Área de Proteção</div>
         <div class="card-body"><div id="pie2" style="height:400px"></div></div>
       </div>
     </div>
@@ -291,8 +291,6 @@ if(typeof window!=='undefined'&&typeof document!=='undefined'){
       template:'plotly_white',
       height:450,
       margin:{l:0,r:10,t:60,b:0},
-      title:{text:'TOP 10 Áreas <br> UCs por Desmatamento',
-             font:{size:19,color:'rgba(46,139,87,.6)'}},
       xaxis:{title:'km²',showgrid:true,gridcolor:'rgba(0,0,0,.08)'},
       yaxis:{automargin:true}
     },{responsive:true});
@@ -339,7 +337,7 @@ if(typeof window!=='undefined'&&typeof document!=='undefined'){
       const k=f.properties.UF||'—';
       aggUF[k]=(aggUF[k]||0)+(+f.properties.DESMATAM_1||0);
     });
-    makePie(pie1Div,Object.keys(aggUF),Object.values(aggUF),'Ameaça de Desmatamento por Estado e Modalidade');
+    makePie(pie1Div,Object.keys(aggUF),Object.values(aggUF),);
 
     /* pie2 ▸ TOP-10 área de proteção */
     const aggAP={};
@@ -349,7 +347,7 @@ if(typeof window!=='undefined'&&typeof document!=='undefined'){
     });
     const top10=Object.entries(aggAP).sort((a,b)=>b[1]-a[1]).slice(0,10);
     makePie(pie2Div,top10.map(t=>t[0]),top10.map(t=>t[1]),
-            'Ameaça Desmatamento <br> Área de Proteção');
+             );
   };
 
   /* ------------ TABELA DATATABLES ----------------------------- */
