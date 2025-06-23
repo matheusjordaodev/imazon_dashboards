@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="../../../css/select-styles.css">
   <link rel="stylesheet" href="../../../css/responsive-styles.css">
   <link rel="stylesheet" href="../../../css/modal-styles.css">
+  <link rel="stylesheet" href="../../../css/chart-styles.css">
 </head>
 <body>
 
@@ -288,32 +289,61 @@ if(typeof window!=='undefined'&&typeof document!=='undefined'){
   const pie1Div=document.getElementById('pie1');
   const pie2Div=document.getElementById('pie2');
 
-  const renderBar=(m,u,uf)=>{
-    showLoading('bar-chart');
-    const rows=filter(m,u,uf).map(f=>({
-      area:stripPrefix(f.properties.NOME),
-      km:+f.properties.DESMATAM_1||0
-    })).sort((a,b)=>b.km-a.km).slice(0,10);
+const renderBar = (m,u,uf) => {
+  showLoading('bar-chart');
+  const rows = filter(m,u,uf).map(f=>({
+    area: stripPrefix(f.properties.NOME),
+    km: +f.properties.DESMATAM_1 || 0
+  })).sort((a,b)=>b.km - a.km).slice(0,10);
 
-    if(!rows.length){
-      Plotly.newPlot(barDiv,[],{}, {responsive:true}).then(()=>hideLoading('bar-chart'));
-      return;
+  if (!rows.length) {
+    Plotly.newPlot(barDiv, [], {}, {responsive:true})
+      .then(()=>hideLoading('bar-chart'));
+    return;
+  }
+
+  const xValues = rows.map(r=>r.km);
+  const yValues = rows.map(r=>r.area);
+  // Formatar texto: se quiser sem casas decimais: toFixed(0). Ou com 2 decimais: toFixed(2).
+  const textValues = xValues.map(v => {
+    // você pode ajustar o formato, exibir com milhar: 
+    // return v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0});
+    return v.toFixed(2);
+  });
+
+  Plotly.newPlot(barDiv, [{
+    type:'bar',
+    orientation:'h',
+    x: xValues,
+    y: yValues,
+    text: textValues,
+    textposition: 'auto', // Plotly decide dentro ou fora conforme espaço
+    textfont: {
+      // cor padrão branca para barras escuras; Plotly pode ajustar se for fora
+      color: '#fff'
+    },
+    marker: {
+      color: '#2E8B57',
+      line: { width: 0 }
+    },
+    hovertemplate: '<b>%{y}</b><br>%{x:.2f} km²<extra></extra>'
+  }], {
+    template: 'plotly_white',
+    // mantenha height apenas se necessário; plotly respeita responsividade em width
+    height: isMobile() ? 280 : 450,
+    margin: {l: 100, r: 10, t: 60, b: 30},
+    xaxis: {
+      title: 'km²',
+      showgrid: true,
+      gridcolor: 'rgba(0,0,0,.08)'
+    },
+    yaxis: {
+      automargin: true
     }
+  }, {responsive: true}).then(() => hideLoading('bar-chart'));
+};
 
-    Plotly.newPlot(barDiv,[{
-      type:'bar',orientation:'h',
-      x:rows.map(r=>r.km),
-      y:rows.map(r=>r.area),
-      marker:{color:'#2E8B57',line:{width:0}}
-    }],{
-      template:'plotly_white',
-      height:450,
-      margin:{l:0,r:10,t:60,b:0},
-      
-      xaxis:{title:'km²',showgrid:true,gridcolor:'rgba(0,0,0,.08)'},
-      yaxis:{automargin:true}
-    },{responsive:true}).then(()=>hideLoading('bar-chart'));
-  };
+
 
   /* ------------ DONUTS RESPONSIVOS --------------------------- */
   const renderPies=(m,u,uf)=>{
