@@ -7,467 +7,618 @@
   <!-- viewport para responsividade -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ─── TRUQUE: esconde o trilho da scrollbar secundária ────── -->
-  <style>
-    html,body{overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none;}
-    html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;}
-  </style>
-
-  <!-- ─── CSS & LIBS ───────────────────────────────────────────── -->
+  <!-- CSS & LIBS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-
-  <!-- ─── CSS CUSTOM ───────────────────────────────────────────── -->
+  <link rel="stylesheet" href="../../../css/base-styles.css">
+  <link rel="stylesheet" href="../../../css/map-styles.css">
+  <link rel="stylesheet" href="../../../css/button-styles.css">
+  <link rel="stylesheet" href="../../../css/legend-styles.css">
+  <link rel="stylesheet" href="../../../css/card-styles.css">
+  <link rel="stylesheet" href="../../../css/controls-styles.css">
+  <link rel="stylesheet" href="../../../css/select-styles.css">
+  <link rel="stylesheet" href="../../../css/responsive-styles.css">
+  <link rel="stylesheet" href="../../../css/modal-styles.css">
+  <!-- CSS CUSTOM -->
   <style>
-    body{font-family:system-ui,Helvetica,Arial,sans-serif;}
-    img,canvas,svg{max-width:100%;height:auto;}
+    html, body {
+      overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    html::-webkit-scrollbar, body::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+
+    body {
+      font-family: system-ui, Helvetica, Arial, sans-serif;
+      background-color: #e9ecef; /* fundo cinza claro para destacar múltiplos dashboards */
+    }
+
+    img, canvas, svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* Botões mais "suaves" */
+    button.btn {
+      border-radius: .5rem;
+      transition: background-color .3s ease, transform .2s ease, box-shadow .2s ease;
+    }
+    button.btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      /* Para botões success, tornamos um pouco mais escuro no hover */
+    }
+    /* Se quiser um hover específico para .btn-success */
+    button.btn-success:hover {
+      background-color: #218838 !important;
+    }
 
     /* mapa */
-    .map-container{position:relative;width:100%;height:60vh;}
-    #overlay{position:absolute;inset:0;background:rgba(255,255,255,.7);pointer-events:none;z-index:500;}
-    #load-btn{
-      position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-      background:#28a745;color:#fff;padding:10px 20px;border:0;border-radius:4px;
-      font-size:1rem;cursor:pointer;z-index:1000;
+    .map-container {
+      position: relative;
+      width: 100%;
+      height: 60vh;
     }
-    #legend-container{position:absolute;bottom:10px;right:10px;z-index:1000;}
+    #overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.7);
+      pointer-events: none;
+      z-index: 500;
+    }
+    #load-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #28a745;
+      color: #fff;
+      padding: 10px 20px;
+      border: 0;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      z-index: 1000;
+      transition: background-color .3s ease, transform .2s ease;
+    }
+    #load-btn:hover {
+      background-color: #218838;
+      transform: translate(-50%, -52%);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    #legend-container {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      z-index: 1000;
+    }
 
     /* overlay de carregamento */
-    .loading-overlay{position:relative}
-    .loading-overlay .loading-spinner{
-      position:absolute;inset:0;
-      background:rgba(255,255,255,.75);
-      display:flex;align-items:center;justify-content:center;
-      z-index:60;
+    .loading-overlay {
+      position: relative;
+    }
+    .loading-overlay .loading-spinner {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
     }
 
     /* tabela */
-    .dash-table-container{overflow-x:auto;}
+    .dash-table-container {
+      overflow-x: auto;
+    }
 
     /* ajustes mobile */
-    @media (max-width:768px){
-      .map-container{height:50vh;}
-      #bar-chart,#pie1,#pie2{height:300px!important;}
-      #pie1,#pie2{height:280px!important;}
-      #reset-btn,#download-btn{width:100%;margin-top:.25rem;}
+    @media (max-width:768px) {
+      .map-container {
+        height: 50vh;
+      }
+      #bar-chart, #pie1, #pie2 {
+        height: 300px !important;
+      }
+      #pie1, #pie2 {
+        height: 280px !important;
+      }
+      #reset-btn, #download-btn {
+        width: 100%;
+        margin-top: .25rem;
+      }
     }
   </style>
 </head>
 <body>
+  <!-- Container principal com fundo cinza -->
+  <div class="container-fluid py-3">
+    <!-- FILTROS dentro de um card -->
+    <div class="card mb-4 shadow-sm">
+      
+      <div class="card-body">
+        <div class="row g-2 align-items-end mb-0">
+          <div class="col-12 col-md-auto"><label class="fw-bold">MODALIDADE</label></div>
+          <div class="col-12 col-md-3">
+            <select id="modalidade-filter" class="form-select w-100">
+              <option value="">Todas</option>
+            </select>
+          </div>
 
-<div class="container-fluid py-3">
+          <div class="col-12 col-md-auto"><label class="fw-bold">USO</label></div>
+          <div class="col-12 col-md-3">
+            <select id="uso-filter" class="form-select w-100">
+              <option value="">Todos</option>
+            </select>
+          </div>
 
-  <!-- FILTROS -->
-  <div class="row g-2 align-items-end mb-4">
-    <div class="col-12 col-md-auto"><label class="fw-bold">MODALIDADE</label></div>
-    <div class="col-12 col-md-3"><select id="modalidade-filter" class="form-select w-100"><option value="">Todas</option></select></div>
+          <div class="col-12 col-md-auto"><label class="fw-bold">UF</label></div>
+          <div class="col-12 col-md-2">
+            <select id="uf-filter" class="form-select w-100">
+              <option value="">Todas</option>
+            </select>
+          </div>
 
-    <div class="col-12 col-md-auto"><label class="fw-bold">USO</label></div>
-    <div class="col-12 col-md-3"><select id="uso-filter" class="form-select w-100"><option value="">Todos</option></select></div>
+          <div class="col-6 col-md-auto">
+            <button id="reset-btn" class="btn btn-success btn-sm w-100 w-md-auto">
+              <i class="fa fa-filter me-1"></i>Remover Filtros
+            </button>
+          </div>
 
-    <div class="col-12 col-md-auto"><label class="fw-bold">UF</label></div>
-    <div class="col-12 col-md-2"><select id="uf-filter" class="form-select w-100"><option value="">Todas</option></select></div>
-
-    <div class="col-6 col-md-auto">
-      <button id="reset-btn" class="btn btn-success btn-sm w-100 w-md-auto">
-        <i class="fa fa-filter me-1"></i>Remover Filtros
-      </button>
-    </div>
-
-    <div class="col-6 col-md-auto">
-      <button id="download-btn" class="btn btn-success btn-sm w-100 w-md-auto">
-        <i class="fa fa-download me-1"></i>Baixar CSV
-      </button>
-    </div>
-  </div><!-- /filtros -->
-
-  <!-- MAPA + BARRA -->
-  <div class="row gx-2 mb-4">
-    <div class="col-12 col-md-6 mb-4 mb-md-0">
-      <div class="card h-100">
-        <div class="card-header">Mapa de Áreas Protegidas</div>
-        <div class="card-body p-0">
-          <div class="map-container">
-            <div id="map" class="w-100 h-100"></div>
-            <div id="overlay"></div>
-            <button id="load-btn">Carregar Mapa</button>
-            <div id="legend-container"></div>
+          <div class="col-6 col-md-auto">
+            <button id="download-btn" class="btn btn-success btn-sm w-100 w-md-auto">
+              <i class="fa fa-download me-1"></i>Baixar CSV
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="col-12 col-md-6">
-      <div class="card h-100">
-        <div class="card-header">TOP 10 Desmatamento</div>
-        <div class="card-body">
-          <div class="loading-overlay">
-            <div id="bar-chart" style="height:450px"></div>
-            <div class="loading-spinner">
-              <div class="spinner-border text-success" role="status">
-                <span class="visually-hidden">Carregando…</span>
-              </div>
+    <!-- MAPA + BARRA -->
+    <div class="row gx-2 mb-4">
+      <div class="col-12 col-md-6 mb-4 mb-md-0">
+        <div class="card h-100 shadow-sm">
+          <div class="card-header">Mapa de Áreas Protegidas</div>
+          <div class="card-body p-0">
+            <div class="map-container">
+              <div id="map" class="w-100 h-100"></div>
+              <div id="overlay"></div>
+              <button id="load-btn">Carregar Mapa</button>
+              <div id="legend-container"></div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- DONUTS -->
-  <div class="row gx-2 mb-4">
-    <div class="col-12 col-md-6 mb-4 mb-md-0">
-      <div class="card h-100">
-        <div class="card-header">Ameaça por Estado</div>
-        <div class="card-body">
-          <div class="loading-overlay">
-            <div id="pie1" style="height:400px"></div>
-            <div class="loading-spinner">
-              <div class="spinner-border text-success" role="status">
-                <span class="visually-hidden">Carregando…</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-md-6">
-      <div class="card h-100">
-        <div class="card-header">Ameaça por Área de Proteção</div>
-        <div class="card-body">
-          <div class="loading-overlay">
-            <div id="pie2" style="height:400px"></div>
-            <div class="loading-spinner">
-              <div class="spinner-border text-success" role="status">
-                <span class="visually-hidden">Carregando…</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TABELA -->
-  <div class="row gx-2 mb-5">
-    <div class="col">
-      <div class="card h-100">
-        <div class="card-header">Top 10 Áreas Protegidas Mais Afetadas</div>
-        <div class="card-body">
-          <div class="dash-table-container">
+      <div class="col-12 col-md-6">
+        <div class="card h-100 shadow-sm">
+          <div class="card-header">TOP 10 Desmatamento</div>
+          <div class="card-body p-0">
             <div class="loading-overlay">
-              <table id="top-table" class="display compact w-100">
-                <thead>
-                  <tr>
-                    <th>Nome</th><th>Focos de Calor</th><th>Número de CAR</th>
-                    <th>Área de CAR</th><th>Estradas Não Oficiais</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
+              <!-- Alterado: style height via CSS/media query; aqui definimos um wrapper que expande -->
+              <div id="bar-chart" style="width:100%; height:100%"></div>
               <div class="loading-spinner">
                 <div class="spinner-border text-success" role="status">
                   <span class="visually-hidden">Carregando…</span>
                 </div>
               </div>
-            </div><!-- /.loading-overlay -->
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-</div><!-- /.container-fluid -->
-
-<!-- ─── JS LIBS ──────────────────────────────────────────────── -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-<!-- ─── JS PRINCIPAL ─────────────────────────────────────────── -->
-<script>
-if(typeof window!=='undefined'&&typeof document!=='undefined'){
-(async()=>{
-
-  /* helpers para mostrar/ocultar spinner ----------------------- */
-  const showLoading=id=>{
-    const s=document.querySelector(`#${id}`).closest('.loading-overlay')
-              ?.querySelector('.loading-spinner');
-    if(s)s.style.display='flex';
-  };
-  const hideLoading=id=>{
-    const s=document.querySelector(`#${id}`).closest('.loading-overlay')
-              ?.querySelector('.loading-spinner');
-    if(s)s.style.display='none';
-  };
-
-  /* CONSTANTES / HELPERS GERAIS -------------------------------- */
-  const BRAZIL_BOUNDS=[[-33.75,-73.99],[5.27,-34.79]];
-  const PALETTE=["#ffffcc","#ffeda0","#fed976","#feb24c","#fd8d3c","#f03b20","#bd0026","#800026"];
-  const N_CLASSES=PALETTE.length;
-  const isMobile=()=>window.matchMedia('(max-width:768px)').matches;
-  const abbreviate=(txt,len=18)=>isMobile()&&txt.length>len?txt.slice(0,len-1)+'…':txt;
-  const stripPrefix=txt=>{
-    const PREFIX=["APA ","ARIE ","PARNA ","RESEX ","RDS "];
-    const ARTICLES=["DA ","DAS ","DE ","DES ","DO ","DOS "];
-    let t=(txt||"").trim();
-    for(const p of PREFIX)if(t.toUpperCase().startsWith(p)){t=t.slice(p.length);break;}
-    for(const a of ARTICLES)if(t.toUpperCase().startsWith(a)){t=t.slice(a.length);break;}
-    return t.trim();
-  };
-
-  /* -------------- CARREGA GEOJSON ----------------------------- */
-  const GEO_URL="https://raw.githubusercontent.com/imazon-cgi/ap/main/dataset/geojson/AMEACA_GERAL_Area_de_Protecao.geojson";
-  const geojson=await fetch(GEO_URL).then(r=>r.json());
-  const FEATURES=geojson.features;
-  const PROPS=FEATURES.map(f=>f.properties);
-
-  /* filtros */
-  const unique=arr=>[...new Set(arr.filter(Boolean))].sort();
-  const MODALIDADES=unique(PROPS.map(p=>p.MODALIDADE));
-  const USOS       =unique(PROPS.map(p=>p.USO));
-  const UFS        =unique(PROPS.map(p=>p.UF));
-  const appendOpts=(id,opts)=>{
-    const sel=document.getElementById(id);
-    opts.forEach(o=>sel.insertAdjacentHTML('beforeend',`<option value="${o}">${o}</option>`));
-  };
-  appendOpts('modalidade-filter',MODALIDADES);
-  appendOpts('uso-filter',USOS);
-  appendOpts('uf-filter',UFS);
-
-  /* escala de cores */
-  const values=PROPS.map(p=>+p.DESMATAM_1||0);
-  const minVal=Math.min(...values);
-  const maxVal=Math.max(...values);
-  const step=(maxVal-minVal)/N_CLASSES;
-  const BINS=Array.from({length:N_CLASSES+1},(_,i)=>minVal+i*step);
-  const classify=v=>{
-    if(v==null)return'#ccc';
-    for(let i=0;i<N_CLASSES;i++)if(v<=BINS[i+1])return PALETTE[i];
-    return PALETTE[N_CLASSES-1];
-  };
-
-  /* legenda */
-  const legendDiv=document.getElementById('legend-container');
-  legendDiv.innerHTML='<div style="width:20px;height:150px;background:linear-gradient(to top,#800026,#ffffcc)"></div>';
-  const buildClassLegend=()=>`
-    <div style="display:flex;align-items:center;font-size:.75rem">
-      <div style="width:20px;height:150px;
-                  background:linear-gradient(to top,${PALETTE.at(-1)},${PALETTE[0]});
-                  border:1px solid #ccc"></div>
-      <div style="display:flex;flex-direction:column;justify-content:space-between;
-                  height:150px;margin-left:4px">
-        <span>${Math.round(minVal)}</span><span>${Math.round(maxVal)}</span>
+    <!-- DONUTS -->
+    <div class="row gx-2 mb-4">
+      <div class="col-12 col-md-6 mb-4 mb-md-0">
+        <div class="card h-100 shadow-sm">
+          <div class="card-header">Ameaça por Estado</div>
+          <div class="card-body p-0">
+            <div class="loading-overlay">
+              <div id="pie1" style="width:100%; height:100%"></div>
+              <div class="loading-spinner">
+                <div class="spinner-border text-success" role="status">
+                  <span class="visually-hidden">Carregando…</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>`;
 
-  /* filtro em memória */
-  const filter=(m,u,uf)=>FEATURES.filter(f=>(
-    (!m || f.properties.MODALIDADE===m)&&
-    (!u || f.properties.USO        ===u)&&
-    (!uf|| f.properties.UF         ===uf)
-  ));
+      <div class="col-12 col-md-6">
+        <div class="card h-100 shadow-sm">
+          <div class="card-header">Ameaça por Área de Proteção</div>
+          <div class="card-body p-0">
+            <div class="loading-overlay">
+              <div id="pie2" style="width:100%; height:100%"></div>
+              <div class="loading-spinner">
+                <div class="spinner-border text-success" role="status">
+                  <span class="visually-hidden">Carregando…</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  /* ------------------- MAPA LEAFLET --------------------------- */
-  const map=L.map('map',{
-    center:[-14.2,-51.9],zoom:4,minZoom:4,
-    maxBounds:BRAZIL_BOUNDS,maxBoundsViscosity:.9,
-    zoomControl:false
-  }).setView([-4,-52],4);            // ajuste inicial
-  window.addEventListener('resize',()=>map.invalidateSize());
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-              {attribution:'© OpenStreetMap'}).addTo(map);
-  const layerGroup=L.layerGroup().addTo(map);
+    <!-- TABELA -->
+    <div class="row gx-2 mb-5">
+      <div class="col">
+        <div class="card h-100 shadow-sm">
+          <div class="card-header">Top 10 Áreas Protegidas Mais Afetadas</div>
+          <div class="card-body">
+            <div class="dash-table-container">
+              <div class="loading-overlay">
+                <table id="top-table" class="display compact w-100">
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>Focos de Calor</th>
+                      <th>Número de CAR</th>
+                      <th>Área de CAR</th>
+                      <th>Estradas Não Oficiais</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+                <div class="loading-spinner">
+                  <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Carregando…</span>
+                  </div>
+                </div>
+              </div><!-- /.loading-overlay -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /.container-fluid -->
 
-  const makePolygons=feats=>{
-    layerGroup.clearLayers();
-    feats.forEach(feat=>{
-      const g=feat.geometry;
-      const crd=g.type==='Polygon'?[g.coordinates]:g.coordinates;
-      const rings=crd.map(r=>r[0].map(([lon,lat])=>[lat,lon]));
-      const color=classify(+feat.properties.DESMATAM_1||0);
-      const pl=L.polygon(rings,{color:'#000',weight:1,fillColor:color,fillOpacity:.7})
-                 .addTo(layerGroup);
-      const nome=feat.properties.NOME||'—';
-      const nivel=(+feat.properties.DESMATAM_1||0).toFixed(2);
-      pl.bindTooltip(`<div><strong>${nome}</strong><br>Nível: ${nivel}</div>`);
-      pl.bindPopup(`<strong>${nome}</strong><br>Nível: ${nivel}`);
-      pl.on('click',()=>map.setView(pl.getBounds().getCenter(),map.getZoom()+1));
-    });
-  };
+  <!-- JS LIBS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-  /* botão carregar mapa */
-  let mapLoaded=false;
-  document.getElementById('load-btn').addEventListener('click',()=>{
-    mapLoaded=true;
-    makePolygons(filter(...currentFilters()));
-    document.getElementById('overlay').style.display='none';
-    document.getElementById('load-btn').style.display='none';
-    legendDiv.innerHTML=buildClassLegend();
-  });
+  <!-- JS PRINCIPAL -->
+  <script>
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    (async () => {
 
-  /* --------------- GRÁFICOS PLOTLY ---------------------------- */
-  const barDiv=document.getElementById('bar-chart');
-  const pie1Div=document.getElementById('pie1');
-  const pie2Div=document.getElementById('pie2');
+      /* helpers para mostrar/ocultar spinner ----------------------- */
+      const showLoading = id => {
+        const s = document.querySelector(`#${id}`).closest('.loading-overlay')
+                  ?.querySelector('.loading-spinner');
+        if (s) s.style.display = 'flex';
+      };
+      const hideLoading = id => {
+        const s = document.querySelector(`#${id}`).closest('.loading-overlay')
+                  ?.querySelector('.loading-spinner');
+        if (s) s.style.display = 'none';
+      };
 
-  const renderBar=(m,u,uf)=>{
-    showLoading('bar-chart');
-    const rows=filter(m,u,uf).map(f=>({
-      area:stripPrefix(f.properties.NOME),
-      km:+f.properties.DESMATAM_1||0
-    })).sort((a,b)=>b.km-a.km).slice(0,10);
+      /* CONSTANTES / HELPERS GERAIS -------------------------------- */
+      const BRAZIL_BOUNDS = [[-33.75, -73.99], [5.27, -34.79]];
+      const PALETTE = ["#ffffcc","#ffeda0","#fed976","#feb24c","#fd8d3c","#f03b20","#bd0026","#800026"];
+      const N_CLASSES = PALETTE.length;
+      const isMobile = () => window.matchMedia('(max-width:768px)').matches;
+      const abbreviate = (txt, len = 18) => isMobile() && txt.length > len ? txt.slice(0, len-1) + '…' : txt;
+      const stripPrefix = txt => {
+        const PREFIX = ["APA ","ARIE ","PARNA ","RESEX ","RDS "];
+        const ARTICLES = ["DA ","DAS ","DE ","DES ","DO ","DOS "];
+        let t = (txt || "").trim();
+        for (const p of PREFIX) if (t.toUpperCase().startsWith(p)) { t = t.slice(p.length); break; }
+        for (const a of ARTICLES) if (t.toUpperCase().startsWith(a)) { t = t.slice(a.length); break; }
+        return t.trim();
+      };
 
-    if(!rows.length){
-      Plotly.newPlot(barDiv,[],{}, {responsive:true}).then(()=>hideLoading('bar-chart'));
-      return;
-    }
+      /* -------------- CARREGA GEOJSON ----------------------------- */
+      const GEO_URL = "https://raw.githubusercontent.com/imazon-cgi/ap/main/dataset/geojson/AMEACA_GERAL_Area_de_Protecao.geojson";
+      let geojson;
+      try {
+        const resp = await fetch(GEO_URL);
+        geojson = await resp.json();
+      } catch (err) {
+        console.error('Erro ao carregar GeoJSON:', err);
+        geojson = { features: [] };
+      }
+      const FEATURES = geojson.features || [];
+      const PROPS = FEATURES.map(f => f.properties);
 
-    Plotly.newPlot(barDiv,[{
-      type:'bar',orientation:'h',
-      x:rows.map(r=>r.km),
-      y:rows.map(r=>r.area),
-      marker:{color:'#2E8B57',line:{width:0}}
-    }],{
-      template:'plotly_white',
-      height:450,
-      margin:{l:0,r:10,t:60,b:0},
-      title:{text:'TOP 10 Áreas <br> Proteção Ambiental por Desmatamento',
-             font:{size:19,color:'rgba(46,139,87,.6)'}},
-      xaxis:{title:'km²',showgrid:true,gridcolor:'rgba(0,0,0,.08)'},
-      yaxis:{automargin:true}
-    },{responsive:true}).then(()=>hideLoading('bar-chart'));
-  };
+      /* filtros */
+      const unique = arr => [...new Set(arr.filter(Boolean))].sort();
+      const MODALIDADES = unique(PROPS.map(p => p.MODALIDADE));
+      const USOS       = unique(PROPS.map(p => p.USO));
+      const UFS        = unique(PROPS.map(p => p.UF));
+      const appendOpts = (id, opts) => {
+        const sel = document.getElementById(id);
+        opts.forEach(o => sel.insertAdjacentHTML('beforeend', `<option value="${o}">${o}</option>`));
+      };
+      appendOpts('modalidade-filter', MODALIDADES);
+      appendOpts('uso-filter', USOS);
+      appendOpts('uf-filter', UFS);
 
-  /* ------------ DONUTS --------------------------------------- */
-  const renderPies=(m,u,uf)=>{
-    showLoading('pie1');showLoading('pie2');
-    const feats=filter(m,u,uf);
-    if(!feats.length){
-      Plotly.newPlot(pie1Div,[],{}, {responsive:true}).then(()=>hideLoading('pie1'));
-      Plotly.newPlot(pie2Div,[],{}, {responsive:true}).then(()=>hideLoading('pie2'));
-      return;
-    }
+      /* escala de cores */
+      const values = PROPS.map(p => +p.DESMATAM_1 || 0);
+      const minVal = values.length ? Math.min(...values) : 0;
+      const maxVal = values.length ? Math.max(...values) : 0;
+      const step = (maxVal - minVal) / N_CLASSES;
+      const BINS = Array.from({length: N_CLASSES+1}, (_, i) => minVal + i * step);
+      const classify = v => {
+        if (v == null) return '#ccc';
+        for (let i = 0; i < N_CLASSES; i++) if (v <= BINS[i+1]) return PALETTE[i];
+        return PALETTE[N_CLASSES-1];
+      };
 
-    const makePie=(div,labels,values,title)=>{
-      const mob=isMobile();
-      return Plotly.newPlot(div,[{
-          type:'pie',
-          labels:labels.map(abbreviate),
-          values,
-          hole:.35,
-          textinfo:'none',
-          hovertemplate:'<b>%{label}</b><br>%{value:.2f} km²<br>%{percent}<extra></extra>'
-        }],{
-          template:'plotly_white',
-          title:{text:title,font:{size:mob?16:19}},
-          height:mob?280:400,
-          legend:mob?{
-                   orientation:'h',x:.5,y:-.25,xanchor:'center',font:{size:9}
-                 }:{
-                   orientation:'v',x:1.05,y:.5,xanchor:'left',yanchor:'middle',font:{size:11}
-                 },
-          margin:mob?{l:10,r:10,t:42,b:70}:{l:10,r:140,t:50,b:30}
-        },{responsive:true});
-    };
+      /* legenda */
+      const legendDiv = document.getElementById('legend-container');
+      const buildClassLegend = () => `
+        <div style="display:flex;align-items:center;font-size:.75rem">
+          <div style="width:20px;height:150px;
+                      background:linear-gradient(to top,${PALETTE.at(-1)},${PALETTE[0]});
+                      border:1px solid #ccc"></div>
+          <div style="display:flex;flex-direction:column;justify-content:space-between;
+                      height:150px;margin-left:4px">
+            <span>${Math.round(minVal)}</span><span>${Math.round(maxVal)}</span>
+          </div>
+        </div>`;
 
-    /* pie1 ▸ UF */
-    const aggUF={};
-    feats.forEach(f=>{
-      const k=f.properties.UF||'—';
-      aggUF[k]=(aggUF[k]||0)+(+f.properties.DESMATAM_1||0);
-    });
+      /* filtro em memória */
+      const filter = (m, u, uf) => FEATURES.filter(f => (
+        (!m || f.properties.MODALIDADE === m) &&
+        (!u || f.properties.USO        === u) &&
+        (!uf|| f.properties.UF         === uf)
+      ));
 
-    /* pie2 ▸ TOP-10 área de proteção */
-    const aggAP={};
-    feats.forEach(f=>{
-      const k=stripPrefix(f.properties.NOME||'—');
-      aggAP[k]=(aggAP[k]||0)+(+f.properties.DESMATAM_1||0);
-    });
-    const top10=Object.entries(aggAP).sort((a,b)=>b[1]-a[1]).slice(0,10);
+      /* ------------------- MAPA LEAFLET --------------------------- */
+      const map = L.map('map', {
+        center: [-14.2, -51.9], zoom: 4, minZoom: 4,
+        maxBounds: BRAZIL_BOUNDS, maxBoundsViscosity: .9,
+        zoomControl: false
+      }).setView([-4, -52], 4);
+      window.addEventListener('resize', () => map.invalidateSize());
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  { attribution: '© OpenStreetMap' }).addTo(map);
+      const layerGroup = L.layerGroup().addTo(map);
 
-    Promise.all([
-      makePie(pie1Div,Object.keys(aggUF),Object.values(aggUF),
-              'Ameaça de Desmatamento por Estado e Modalidade'),
-      makePie(pie2Div,top10.map(t=>t[0]),top10.map(t=>t[1]),
-              'Ameaça Desmatamento <br> Área de Proteção')
-    ]).then(()=>{hideLoading('pie1');hideLoading('pie2');});
-  };
+      const makePolygons = feats => {
+        layerGroup.clearLayers();
+        feats.forEach(feat => {
+          const g = feat.geometry;
+          let crd;
+          if (!g) return;
+          if (g.type === 'Polygon') {
+            crd = [g.coordinates];
+          } else if (g.type === 'MultiPolygon') {
+            crd = g.coordinates;
+          } else {
+            return;
+          }
+          const rings = crd.map(r => {
+            const coords = r[0] || r;
+            return coords.map(([lon, lat]) => [lat, lon]);
+          });
+          const valor = +feat.properties.DESMATAM_1 || 0;
+          const color = classify(valor);
+          const pl = L.polygon(rings, { color: '#000', weight: 1, fillColor: color, fillOpacity: .7 })
+                     .addTo(layerGroup);
+          const nome = feat.properties.NOME || '—';
+          const nivel = valor.toFixed(2);
+          pl.bindTooltip(`<div><strong>${nome}</strong><br>Nível: ${nivel}</div>`);
+          pl.bindPopup(`<strong>${nome}</strong><br>Nível: ${nivel}`);
+          pl.on('click', () => map.setView(pl.getBounds().getCenter(), map.getZoom() + 1));
+        });
+      };
 
-  /* ------------ TABELA DATATABLES ----------------------------- */
-  let dtInstance=null;
-  const renderTable=(m,u,uf)=>{
-    showLoading('top-table');
-    const rows=filter(m,u,uf)
-                .sort((a,b)=>(+b.properties.DESMATAM_1||0)-(+a.properties.DESMATAM_1||0))
-                .slice(0,10)
-                .map(f=>{
-                  const p=f.properties;
-                  return[
-                    stripPrefix(p.NOME||'—'),
-                    +p['FOCOS DE C']||0,
-                    +p['N DE CAR']  ||0,
-                    +p['CAR']       ||0,
-                    +p['ESTRADAS N']||0
-                  ];
-                });
-
-    if(!dtInstance){
-      dtInstance=$('#top-table').DataTable({
-        data:rows,paging:false,searching:false,info:false,order:[],
-        initComplete:()=>hideLoading('top-table')
+      /* botão carregar mapa */
+      let mapLoaded = false;
+      document.getElementById('load-btn').addEventListener('click', () => {
+        mapLoaded = true;
+        makePolygons(filter(...currentFilters()));
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('load-btn').style.display = 'none';
+        legendDiv.innerHTML = buildClassLegend();
       });
-    }else{
-      dtInstance.clear();dtInstance.rows.add(rows).draw();
-      hideLoading('top-table');
-    }
-  };
 
-  /* filtros & interações */
-  const currentFilters=()=>[
-    document.getElementById('modalidade-filter').value||null,
-    document.getElementById('uso-filter').value       ||null,
-    document.getElementById('uf-filter').value        ||null
-  ];
-  const refreshAll=()=>{
-    const [m,u,uf]=currentFilters();
-    renderBar(m,u,uf);
-    renderPies(m,u,uf);
-    renderTable(m,u,uf);
-    if(mapLoaded)makePolygons(filter(m,u,uf));
-  };
-  ['modalidade-filter','uso-filter','uf-filter'].forEach(id=>{
-    document.getElementById(id).addEventListener('change',refreshAll);
-  });
-  document.getElementById('reset-btn').addEventListener('click',()=>{
-    document.getElementById('modalidade-filter').value='';
-    document.getElementById('uso-filter').value       ='';
-    document.getElementById('uf-filter').value        ='';
-    refreshAll();
-  });
+      /* --------------- GRÁFICOS PLOTLY ---------------------------- */
+      const barDiv = document.getElementById('bar-chart');
+      const pie1Div = document.getElementById('pie1');
+      const pie2Div = document.getElementById('pie2');
 
-  /* download CSV */
-  document.getElementById('download-btn').addEventListener('click',()=>{
-    const [m,u,uf]=currentFilters();
-    const feats=filter(m,u,uf);
-    const header='NOME,DESMATAM_1,MODALIDADE,USO,UF\n';
-    const csv=feats.map(f=>{
-      const p=f.properties;
-      return[`"${p.NOME||''}"`,p.DESMATAM_1||'',p.MODALIDADE||'',p.USO||'',p.UF||''].join(',');
-    }).join('\n');
-    saveAs(new Blob([header+csv],{type:'text/csv;charset=utf-8'}),'areas_filtradas.csv');
-  });
+      // Função para redimensionar gráfico ao mudar tamanho da janela
+      window.addEventListener('resize', () => {
+        if (barDiv && barDiv.data) Plotly.Plots.resize(barDiv);
+        if (pie1Div && pie1Div.data) Plotly.Plots.resize(pie1Div);
+        if (pie2Div && pie2Div.data) Plotly.Plots.resize(pie2Div);
+      });
 
-  /* chamada inicial */
-  refreshAll();   // executa tudo já mostrando os carregadores
+      const renderBar = (m, u, uf) => {
+        showLoading('bar-chart');
+        const rows = filter(m, u, uf).map(f => ({
+          area: stripPrefix(f.properties.NOME),
+          km: +f.properties.DESMATAM_1 || 0
+        })).sort((a, b) => b.km - a.km).slice(0, 10);
 
-})().catch(err=>console.error('[Dashboard Error]',err));
-}
-</script>
+        if (!rows.length) {
+          Plotly.newPlot(barDiv, [], {}, { responsive: true }).then(() => hideLoading('bar-chart'));
+          return;
+        }
+
+        const xVals = rows.map(r => r.km);
+        const yVals = rows.map(r => r.area);
+        const maxValBar = Math.max(...xVals);
+        // Define text e posição dinamicamente
+        const texts = xVals.map(v => v.toFixed(2));
+        const textPositions = xVals.map(v => (v > maxValBar * 0.15 ? 'inside' : 'outside'));
+        // Cor do texto: branco se dentro, preto se fora
+        const textColors = textPositions.map(pos => pos === 'inside' ? '#ffffff' : '#000000');
+
+        Plotly.newPlot(barDiv, [{
+          type: 'bar',
+          orientation: 'h',
+          x: xVals,
+          y: yVals,
+          marker: { color: '#2E8B57', line: { width: 0 } },
+          text: texts,
+          textposition: textPositions,
+          textfont: { color: textColors }
+        }], {
+          template: 'plotly_white',
+          // Ajusta altura conforme mobile ou desktop
+          height: isMobile() ? 300 : 450,
+          margin: { l: 100, r: 20, t: 60, b: 20 },
+          title: {
+            text: 'TOP 10 Áreas <br> Proteção Ambiental por Desmatamento',
+            font: { size: isMobile() ? 16 : 19, color: 'rgba(46,139,87,.6)' }
+          },
+          xaxis: {
+            title: 'km²',
+            showgrid: true,
+            gridcolor: 'rgba(0,0,0,.08)'
+          },
+          yaxis: { automargin: true }
+        }, { responsive: true }).then(() => hideLoading('bar-chart'));
+      };
+
+      /* ------------ DONUTS --------------------------------------- */
+      const renderPies = (m, u, uf) => {
+        showLoading('pie1'); showLoading('pie2');
+        const feats = filter(m, u, uf);
+        if (!feats.length) {
+          Plotly.newPlot(pie1Div, [], {}, { responsive: true }).then(() => hideLoading('pie1'));
+          Plotly.newPlot(pie2Div, [], {}, { responsive: true }).then(() => hideLoading('pie2'));
+          return;
+        }
+
+        const makePie = (div, labels, values, title) => {
+          const mob = isMobile();
+          return Plotly.newPlot(div, [{
+            type: 'pie',
+            labels: labels.map(abbreviate),
+            values,
+            hole: .35,
+            textinfo: 'none',
+            hovertemplate: '<b>%{label}</b><br>%{value:.2f} km²<br>%{percent}<extra></extra>'
+          }], {
+            template: 'plotly_white',
+            title: { text: title, font: { size: mob ? 16 : 19 } },
+            height: mob ? 280 : 400,
+            legend: mob ? {
+                      orientation: 'h', x: .5, y: - .25, xanchor: 'center', font: { size: 9 }
+                    } : {
+                      orientation: 'v', x: 1.05, y: .5, xanchor: 'left', yanchor: 'middle', font: { size: 11 }
+                    },
+            margin: mob ? { l: 10, r: 10, t: 42, b: 70 } : { l: 10, r: 140, t: 50, b: 30 }
+          }, { responsive: true });
+        };
+
+        /* pie1 ▸ UF */
+        const aggUF = {};
+        feats.forEach(f => {
+          const k = f.properties.UF || '—';
+          aggUF[k] = (aggUF[k] || 0) + (+f.properties.DESMATAM_1 || 0);
+        });
+
+        /* pie2 ▸ TOP-10 área de proteção */
+        const aggAP = {};
+        feats.forEach(f => {
+          const k = stripPrefix(f.properties.NOME || '—');
+          aggAP[k] = (aggAP[k] || 0) + (+f.properties.DESMATAM_1 || 0);
+        });
+        const top10 = Object.entries(aggAP).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+        Promise.all([
+          makePie(pie1Div, Object.keys(aggUF), Object.values(aggUF),
+                  'Ameaça de Desmatamento por Estado e Modalidade'),
+          makePie(pie2Div, top10.map(t => t[0]), top10.map(t => t[1]),
+                  'Ameaça Desmatamento <br> Área de Proteção')
+        ]).then(() => { hideLoading('pie1'); hideLoading('pie2'); });
+      };
+
+      /* ------------ TABELA DATATABLES ----------------------------- */
+      let dtInstance = null;
+      const renderTable = (m, u, uf) => {
+        showLoading('top-table');
+        const rows = filter(m, u, uf)
+                    .sort((a, b) => (+b.properties.DESMATAM_1 || 0) - (+a.properties.DESMATAM_1 || 0))
+                    .slice(0, 10)
+                    .map(f => {
+                      const p = f.properties;
+                      return [
+                        stripPrefix(p.NOME || '—'),
+                        +p['FOCOS DE C'] || 0,
+                        +p['N DE CAR']   || 0,
+                        +p['CAR']        || 0,
+                        +p['ESTRADAS N'] || 0
+                      ];
+                    });
+
+        if (!dtInstance) {
+          dtInstance = $('#top-table').DataTable({
+            data: rows,
+            paging: false,
+            searching: false,
+            info: false,
+            order: [],
+            initComplete: () => hideLoading('top-table')
+          });
+        } else {
+          dtInstance.clear();
+          dtInstance.rows.add(rows).draw();
+          hideLoading('top-table');
+        }
+      };
+
+      /* filtros & interações */
+      const currentFilters = () => [
+        document.getElementById('modalidade-filter').value || null,
+        document.getElementById('uso-filter').value       || null,
+        document.getElementById('uf-filter').value        || null
+      ];
+      const refreshAll = () => {
+        const [m, u, uf] = currentFilters();
+        renderBar(m, u, uf);
+        renderPies(m, u, uf);
+        renderTable(m, u, uf);
+        if (mapLoaded) makePolygons(filter(m, u, uf));
+      };
+      ['modalidade-filter','uso-filter','uf-filter'].forEach(id => {
+        document.getElementById(id).addEventListener('change', refreshAll);
+      });
+      document.getElementById('reset-btn').addEventListener('click', () => {
+        document.getElementById('modalidade-filter').value = '';
+        document.getElementById('uso-filter').value       = '';
+        document.getElementById('uf-filter').value        = '';
+        refreshAll();
+      });
+
+      /* download CSV */
+      document.getElementById('download-btn').addEventListener('click', () => {
+        const [m, u, uf] = currentFilters();
+        const feats = filter(m, u, uf);
+        const header = 'NOME,DESMATAM_1,MODALIDADE,USO,UF\n';
+        const csv = feats.map(f => {
+          const p = f.properties;
+          return [`"${(p.NOME||'').replace(/"/g, '""')}"`, p.DESMATAM_1||'', p.MODALIDADE||'', p.USO||'', p.UF||''].join(',');
+        }).join('\n');
+        saveAs(new Blob([header + csv], { type: 'text/csv;charset=utf-8' }), 'areas_filtradas.csv');
+      });
+
+      /* chamada inicial */
+      refreshAll();   // executa tudo já mostrando os carregadores
+
+    })().catch(err => console.error('[Dashboard Error]', err));
+  }
+  </script>
 </body>
 </html>
