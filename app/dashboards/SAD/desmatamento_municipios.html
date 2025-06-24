@@ -109,7 +109,7 @@
     <div class="row gx-2 mb-4">
       <div class="col-12 col-md-6 mb-4 mb-md-0">
         <div class="card h-100">
-          <div class="card-header">SAD Alerta de Degradação Florestal Acumulado – Top 10 Municípios</div>
+          <div class="card-header">SAD Alerta de Degradação Florestal Acumulado</div>
           <div class="card-body p-0">
             <div id="bar-settlement"></div>
           </div>
@@ -465,7 +465,7 @@
 
       const year = yearSelect.value;
       const titleMain = '';
-      const titleSub = `Área (${year}) – ${selSet.length ? 'Selecionados' : 'Top 10'}`;
+      const titleSub = `Área (${year}) - km²`;
       plotHorizontalBar({ containerId: 'bar-settlement', data: arr, titleTextMain: titleMain, titleTextSub: titleSub });
     }
 
