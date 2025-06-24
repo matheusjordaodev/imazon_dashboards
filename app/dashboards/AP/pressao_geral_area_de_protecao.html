@@ -386,66 +386,66 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 
     // Função renderBar ajustada para exibir texto inside/outside conforme tamanho
     const renderBar = (m, u, uf) => {
-      const rows = filterFeatures(m,u,uf).map(f => ({
-        area: stripPrefix(f.properties.NOME),
-        km:   +f.properties.DESMATAM_1 || 0
-      })).sort((a,b) => b.km - a.km).slice(0,10);
+  const rows = filterFeatures(m,u,uf).map(f => ({
+    area: stripPrefix(f.properties.NOME),
+    km:   +f.properties.DESMATAM_1 || 0
+  })).sort((a,b) => b.km - a.km).slice(0,10);
 
-      if (!rows.length) {
-        Plotly.newPlot(barDiv, [], {}, {responsive:true, displayModeBar: false});
-        return;
-      }
+  if (!rows.length) {
+    Plotly.newPlot(barDiv, [], {}, {responsive:true, displayModeBar: false});
+    return;
+  }
 
-      // Valor máximo das top 10
-      const maxKm = rows[0].km || 1;
-      // Limiar: 10% do máximo (ajustável conforme necessidade)
-      const threshold = maxKm * 0.1;
+  // Valor máximo das top 10
+  const maxKm = rows[0].km || 1;
+  // Limiar: 10% do máximo (ajustável conforme necessidade)
+  const threshold = maxKm * 0.1;
 
-      // Preparar texts, textposition e cores
-      const texts = rows.map(r => `${r.km.toLocaleString('pt-BR')} km²`);
-      const textpositions = rows.map(r => r.km >= threshold ? 'inside' : 'outside');
-      const textcolors = rows.map(r => r.km >= threshold ? '#ffffff' : '#000000');
+  // Preparar texts, textposition e cores
+  const texts = rows.map(r => `${r.km.toLocaleString('pt-BR')} km²`);
+  const textpositions = rows.map(r => r.km >= threshold ? 'inside' : 'outside');
+  const textcolors = rows.map(r => r.km >= threshold ? '#ffffff' : '#000000');
 
-      // Responsividade: margens e fonte
-      const mobile = isMobile();
-      const margin = mobile
-        ? {l:40, r:20, t:50, b:40}
-        : {l:80, r:20, t:60, b:50};
+  // Responsividade: margens e fonte
+  const mobile = isMobile();
+  const margin = mobile
+    ? {l:40, r:20, t:50, b:40}
+    : {l:80, r:20, t:60, b:50};
 
-      Plotly.newPlot(barDiv, [{
-        type: 'bar',
-        orientation: 'h',
-        x: rows.map(r => r.km),
-        y: rows.map(r => r.area),
-        marker: { color: '#2E8B57', line: { width: 0 } },
-        text: texts,
-        textposition: textpositions,
-        textfont: { color: textcolors, size: mobile ? 10 : 12 }
-      }], {
-        template: 'plotly_white',
-        
-        margin: margin,
-        autosize: true,
-        plot_bgcolor: 'rgba(0,0,0,0)',
-        paper_bgcolor: 'rgba(0,0,0,0)',
-        xaxis: {
-          title: 'km²',
-          showgrid: true,
-          gridcolor: 'rgba(0,0,0,.08)',
-          tickfont: { size: mobile ? 10 : 12 }
-        },
-        yaxis: {
-          automargin: true,
-          tickfont: { size: mobile ? 10 : 12 }
-        },
-        font: { size: mobile ? 10 : 12 }
-      }, {
-        responsive: true,
-        useResizeHandler: true,
-        displayModeBar: false,
-        style: { width: '100%', height: '100%' }
-      });
-    };
+  Plotly.newPlot(barDiv, [{
+    type: 'bar',
+    orientation: 'h',
+    x: rows.map(r => r.km),
+    y: rows.map(r => r.area),
+    marker: { color: '#2E8B57', line: { width: 0 } },
+    text: texts,
+    textposition: textpositions,
+    textfont: { color: textcolors, size: mobile ? 10 : 12 }
+  }], {
+    template: 'plotly_white',
+    margin: margin,
+    autosize: true,
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    xaxis: {
+      title: 'km²',
+      showgrid: true,
+      gridcolor: 'rgba(0,0,0,.08)',
+      tickfont: { size: mobile ? 10 : 12 }
+    },
+    yaxis: {
+      automargin: true,
+      tickfont: { size: mobile ? 10 : 12 }
+    },
+    font: { size: mobile ? 10 : 12 }
+  }, {
+    responsive: true,
+    useResizeHandler: true,
+    displayModeBar: false,
+    style: { width: '100%', height: '100%' }
+  });
+};
+
 
     /* ------------ DONUTS RESPONSIVOS --------------------------- */
     const renderPies = (m, u, uf) => {

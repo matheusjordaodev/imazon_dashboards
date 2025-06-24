@@ -27,6 +27,7 @@
 <link rel="stylesheet" href="../../../css/select-styles.css">
 <link rel="stylesheet" href="../../../css/responsive-styles.css">
 <link rel="stylesheet" href="../../../css/modal-styles.css">
+<link rel="stylesheet" href="../../../css/charts-styles.css">
   <!-- ─── CSS CUSTOM ───────────────────────────────────────────── -->
   <style>
     body{font-family:system-ui,Helvetica,Arial,sans-serif;}
@@ -195,6 +196,7 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+<script src="../../../js/barChart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
 <!-- ─── JS PRINCIPAL ─────────────────────────────────────────── -->
@@ -321,30 +323,66 @@ if(typeof window!=='undefined'&&typeof document!=='undefined'){
   const pie1Div=document.getElementById('pie1');
   const pie2Div=document.getElementById('pie2');
 
-  const renderBar=(m,u,uf)=>{
-    showLoading('bar-chart');
-    const rows=filter(m,u,uf).map(f=>({
-      area:stripPrefix(f.properties.NOME),
-      km:+f.properties.DESMATAM_1||0
-    })).sort((a,b)=>b.km-a.km).slice(0,10);
+  const renderBar = (m, u, uf) => {
+  showLoading('bar-chart');
+  const rows = filter(m, u, uf).map(f => ({
+    area: stripPrefix(f.properties.NOME),
+    km: +f.properties.DESMATAM_1 || 0
+  })).sort((a, b) => b.km - a.km).slice(0, 10);
 
-    if(!rows.length){
-      Plotly.newPlot(barDiv,[],{}, {responsive:true}).then(()=>hideLoading('bar-chart'));
-      return;
+  if (!rows.length) {
+    Plotly.newPlot(barDiv, [], {}, { responsive: true }).then(() => hideLoading('bar-chart'));
+    return;
+  }
+  // Extrai arrays
+  const xVals = rows.map(r => r.km);
+  const yLabels = rows.map(r => r.area);
+  // Formatação de texto a exibir
+  const textVals = rows.map(r => {
+    // Exemplo: formatar com 2 decimais e sufixo "km²"
+    return `${r.km.toFixed(2)}`;
+  });
+
+  Plotly.newPlot(barDiv, [{
+    type: 'bar',
+    orientation: 'h',
+    x: xVals,
+    y: yLabels,
+    text: textVals,
+    textposition: 'auto',       // 'auto' tenta dentro, se não couber, fora
+    textfont: {
+      // cor pode ser ajustada se necessário, ex: contraste
+      // Omitir se não quiser fixar: Plotly usa padrão (preto). Se barras escuras, usar branco.
+      color: '#ffffff'
+    },
+    marker: {
+      color: '#2E8B57',
+      line: { width: 0 }
     }
-    Plotly.newPlot(barDiv,[{
-      type:'bar',orientation:'h',
-      x:rows.map(r=>r.km),
-      y:rows.map(r=>r.area),
-      marker:{color:'#2E8B57',line:{width:0}}
-    }],{
-      template:'plotly_white',
-      height:450,
-      margin:{l:0,r:10,t:60,b:0},
-      xaxis:{title:'km²',showgrid:true,gridcolor:'rgba(0,0,0,.08)'},
-      yaxis:{automargin:true}
-    },{responsive:true}).then(()=>hideLoading('bar-chart'));
-  };
+  }], {
+    template: 'plotly_white',
+    // height fixo ou dinâmico? Mantém 450px, mas para responsividade a largura é responsiva.
+    height: 450,
+    margin: {
+      // Ajuste a margem esquerda para permitir labels longas sem cortar
+      l: 100, // por exemplo, ou menor dependendo do comprimento médio dos nomes
+      r: 10,
+      t: 60,
+      b: 30
+    },
+    xaxis: {
+      title: 'Desmatamento (km²)',
+      showgrid: true,
+      gridcolor: 'rgba(0,0,0,.08)'
+    },
+    yaxis: {
+      automargin: true
+    }
+  }, {
+    responsive: true
+  }).then(() => hideLoading('bar-chart'));
+};
+
 
   const renderPies=(m,u,uf)=>{
     showLoading('pie1');showLoading('pie2');

@@ -45,10 +45,10 @@
         </button>
       </div>
       <div class="col-auto d-flex align-items-center">
-        <button id="interest-btn" class="btn btn-info btn-sm custom-button me-3"
-                data-bs-toggle="modal" data-bs-target="#interest-modal">
-          <i class="fa fa-star me-1"></i>Selecionar UC de Interesse
-        </button>
+        <button id="interest-btn" class="btn btn-success btn-sm custom-button me-3"
+        data-bs-toggle="modal" data-bs-target="#interest-modal">
+  <i class="fa fa-star me-1"></i>Selecionar UC de Interesse
+</button>
         <label for="year-select" class="me-2 mb-0 fw-bold">Ano:</label>
         <select id="year-select" class="form-select form-select-sm year-select"></select>
       </div>
@@ -263,29 +263,56 @@
     }
 
     function plotBar(){
-      const data = base();
-      const agg = d3.rollup(data, v=>d3.sum(v,d=>d.AREAKM2), d=>d.UNID_CONSE);
-      let arr = [...agg].map(([UNID_CONSE,area])=>({UNID_CONSE,area}))
-                       .sort((a,b)=>b.area-a.area);
-      if(selSet.length) arr = arr.filter(d=>selSet.includes(d.UNID_CONSE));
-      else arr = arr.slice(0,10);
-      barSet = arr.map(d=>d.UNID_CONSE);
-      const leftMargin = Math.min(300, 40 + Math.max(...arr.map(d=>d.UNID_CONSE.length))*6);
+  const data = base();
+  // Agrupa por UNID_CONSE e soma área
+  const agg = d3.rollup(data, v=>d3.sum(v, d=>d.AREAKM2), d=>d.UNID_CONSE);
+  let arr = [...agg].map(([UNID_CONSE, area])=>({UNID_CONSE, area}))
+                   .sort((a,b)=>b.area - a.area);
+  // Selecionados ou top 10
+  if(selSet.length) {
+    arr = arr.filter(d => selSet.includes(d.UNID_CONSE));
+  } else {
+    arr = arr.slice(0, 10);
+  }
+  barSet = arr.map(d => d.UNID_CONSE);
+  // Margem esquerda adaptada ao tamanho do texto
+  const leftMargin = Math.min(300, 40 + Math.max(...arr.map(d=>d.UNID_CONSE.length)) * 6);
 
-      Plotly.newPlot('bar-settlement',[{
-        x: arr.map(d=>d.area),
-        y: arr.map(d=>d.UNID_CONSE),
-        type:'bar', orientation:'h',
-        marker:{color:'#28a745',opacity:.8,line:{color:'#1e7e34',width:1}}
-      }],{
-        title:{text:`Área (${yearSelect.value}) – ${selSet.length?'Selecionados':'Top 10'}`,x:.5},
-        margin:{l:leftMargin,r:10,t:50,b:30},height:450,
-        yaxis:{automargin:true},xaxis:{title:'Área (km²)'},
-        plot_bgcolor:'rgba(0,0,0,0)',paper_bgcolor:'rgba(0,0,0,0)'
-      },{
-        displayModeBar:false,responsive:true
-      });
-    }
+  // Formata valores para texto (pt-BR, 2 casas decimais)
+  const textValues = arr.map(d =>
+    d.area.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
+  );
+
+  Plotly.newPlot('bar-settlement', [{
+    x: arr.map(d => d.area),
+    y: arr.map(d => d.UNID_CONSE),
+    type: 'bar',
+    orientation: 'h',
+    marker: {
+      color: '#28a745',
+      opacity: 0.8,
+      line: { color: '#1e7e34', width: 1 }
+    },
+    text: textValues,
+    textposition: 'auto',               // auto: dentro se couber, fora caso contrário
+    insidetextfont: { color: '#ffffff' },// texto dentro da barra em branco
+    outsidetextfont: { color: '#000000' }// texto fora da barra em preto
+  }], {
+    title: {
+      text: `Área (${yearSelect.value}) – ${selSet.length?'Selecionados':'Top 10'}`,
+      x: 0.5
+    },
+    margin: { l: leftMargin, r: 10, t: 50, b: 30 },
+    height: 450,
+    yaxis: { automargin: true },
+    xaxis: { title: 'Área (km²)' },
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    paper_bgcolor: 'rgba(0,0,0,0)'
+  }, {
+    displayModeBar: false,
+    responsive: true
+  });
+}
 
     function initMap(){
       if(mapInit) return;

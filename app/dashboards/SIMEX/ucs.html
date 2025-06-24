@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="../../../css/base-styles.css">
+  <link rel="stylesheet" href="../../../css/base-styles.css">
   <link rel="stylesheet" href="../../../css/map-styles.css">
   <link rel="stylesheet" href="../../../css/button-styles.css">
   <link rel="stylesheet" href="../../../css/legend-styles.css">
@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="../../../css/select-styles.css">
   <link rel="stylesheet" href="../../../css/responsive-styles.css">
   <link rel="stylesheet" href="../../../css/modal-styles.css">
+  <link rel="stylesheet" href="../../../css/card-styles.css">
 </head>
 
 <body class="py-3">
@@ -46,9 +47,9 @@
         </button>
       </div>
       <div class="col-auto">
-        <button id="interest-btn" class="btn btn-info btn-sm custom-button"
+        <button id="interest-btn" class="btn btn-success btn-sm custom-button"
                 data-bs-toggle="modal" data-bs-target="#interest-modal">
-          <i class="fa fa-star me-1"></i>Selecionar UCs de Interesse
+          Selecionar UCs de Interesse
         </button>
       </div>
       <div class="col-auto">
@@ -278,32 +279,75 @@
     }
 
     /* ----------- GRÁFICO BARRAS ----------- */
-    function plotSettlement() {
-      const data = filtroBase();
-      const bynome = d3.rollup(
-        data, v=>d3.sum(v,d=>d.area_ha), d=>d.nome_1
-      );
-      let arr = Array.from(bynome, ([nome,area])=>({nome,area}))
-                     .sort((a,b)=>b.area-a.area);
-      if (selectedSettlements.length)
-        arr = arr.filter(d=>selectedSettlements.includes(d.nome));
-      else
-        arr = arr.slice(0,10);
-      barSettlements = arr.map(d=>d.nome);
-      const maxLen = arr.length?Math.max(...arr.map(d=>d.nome.length)):10;
-      const leftM  = Math.min(300,40+maxLen*6);
-      Plotly.newPlot('bar-settlement',[{
-        x:arr.map(d=>d.area), y:arr.map(d=>d.nome),
-        type:'bar', orientation:'h',
-        marker:{color:'#28a745',opacity:.8,line:{width:1,color:'#1e7e34'}}
-      }],{
-        title:{text:`Área Acumulada – ${selectedCategory||'Todas'}`,x:.5,font:{size:16}},
-        margin:{l:leftM,r:10,t:50,b:30},height:450,
-        yaxis:{automargin:true},xaxis:{title:'Área (ha)'},
-        plot_bgcolor:'rgba(0,0,0,0)',paper_bgcolor:'rgba(0,0,0,0)',
-        hoverlabel:{bgcolor:'#28a745',font:{color:'#fff'}}
-      },{displayModeBar:false,responsive:true});
-    }
+function plotSettlement() {
+  const data = filtroBase();
+  // Agrupa por nome da UC e soma área
+  const bynome = d3.rollup(
+    data,
+    v => d3.sum(v, d => d.area_ha),
+    d => d.nome_1
+  );
+  let arr = Array.from(bynome, ([nome, area]) => ({ nome, area }))
+                 .sort((a, b) => b.area - a.area);
+  if (selectedSettlements.length) {
+    arr = arr.filter(d => selectedSettlements.includes(d.nome));
+  } else {
+    arr = arr.slice(0, 10);
+  }
+  barSettlements = arr.map(d => d.nome);
+  // Cálculo de margem esquerda conforme comprimento do rótulo
+  const maxLen = arr.length ? Math.max(...arr.map(d => d.nome.length)) : 10;
+  const leftM = Math.min(300, 40 + maxLen * 6);
+
+  // Preparar textos a exibir nas barras (formatado pt-BR com 2 decimais)
+  const textValues = arr.map(d =>
+    d.area.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  );
+
+  Plotly.newPlot('bar-settlement', [{
+    x: arr.map(d => d.area),
+    y: arr.map(d => d.nome),
+    type: 'bar',
+    orientation: 'h',
+    marker: {
+      color: '#28a745',
+      opacity: 0.8,
+      line: { width: 1, color: '#1e7e34' }
+    },
+    text: textValues,           // adiciona o valor como texto
+    textposition: 'auto',       // 'auto' posiciona dentro ou fora conforme espaço
+    insidetextfont: { color: '#ffffff' },
+    outsidetextfont: { color: '#000000' },
+    hoverinfo: 'text',
+    hovertext: arr.map(d =>
+      `UC: ${d.nome}<br>Área: ${d.area.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2})} ha`
+    )
+  }], {
+    title: {
+      text: `Área Acumulada – ${selectedCategory || 'Todas'}`,
+      x: 0.5,
+      font: { size: 16 }
+    },
+    margin: { l: leftM, r: 10, t: 50, b: 30 },
+    height: 450,
+    yaxis: {
+      automargin: true,
+      autorange: 'reversed',  // se desejar maior no topo
+      tickfont: { size: 11 }
+    },
+    xaxis: {
+      title: 'Área (ha)',
+      tickformat: ',.0f',      // remove sufixo “k”
+      separatethousands: true
+    },
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    paper_bgcolor: 'rgba(0,0,0,0)'
+  }, {
+    displayModeBar: false,
+    responsive: true
+  });
+}
+
 
     /* ---------- LEAFLET MAP ---------- */
     function initLeaflet() {

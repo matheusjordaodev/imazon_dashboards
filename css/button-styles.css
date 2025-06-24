@@ -160,3 +160,16 @@
     var(--brand-dark) 100%
   );
 }
+
+#interest-btn {
+  background-color: #28a745; /* verde customizado */
+  border-color: #1e7e34;
+  color: #ffffff;
+}
+
+#interest-btn:hover, 
+#interest-btn:focus {
+  background-color: #218838; /* tom de hover */
+  border-color: #1e7e34;
+  color: #ffffff;
+}

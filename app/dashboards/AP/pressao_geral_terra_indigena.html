@@ -48,6 +48,7 @@
     /* ajustes mobile */
     @media (max-width:768px){
       .map-container{height:50vh;}
+      
       #bar-chart,#pie1,#pie2{height:300px!important;}
       #pie1,#pie2{height:280px!important;}      /* donuts menores   */
       #reset-btn,#download-btn{width:100%;margin-top:.25rem;}
@@ -99,12 +100,28 @@
     </div>
 
     <div class="col-12 col-md-6">
-      <div class="card h-100">
-        <div class="card-header">TOP 10 Áreas de Desmatamento por Terras Indígenas</div>
-        <div class="card-body"><div id="bar-chart" style="height:450px"></div></div>
+  <div class="card h-100">
+    <div class="card-header">TOP 10 Áreas de Desmatamento por Terras Indígenas</div>
+    <div class="card-body position-relative p-0">
+      <!-- Contêiner do gráfico -->
+      <div id="bar-chart" style="height:450px;"></div>
+      <!-- Overlay de carregamento, inicialmente visível até o gráfico renderizar -->
+      <div id="bar-loading" style="
+           display: flex;
+           position: absolute;
+           inset: 0;
+           align-items: center;
+           justify-content: center;
+           background: rgba(255,255,255,0.7);
+           z-index: 10;
+         ">
+        <div class="spinner-border text-success" role="status">
+          <span class="visually-hidden">Carregando…</span>
+        </div>
       </div>
     </div>
   </div>
+</div>
 
   <!-- DONUTS -->
   <div class="row gx-2 mb-4">
@@ -274,29 +291,104 @@ if(typeof window!=='undefined'&&typeof document!=='undefined'){
   const pie1Div=document.getElementById('pie1');
   const pie2Div=document.getElementById('pie2');
 
-  const renderBar=(m,u,uf)=>{
-    const rows=filter(m,u,uf).map(f=>({
-      area:stripPrefix(f.properties.NOME),
-      km:+f.properties.DESMATAM_1||0
-    })).sort((a,b)=>b.km-a.km).slice(0,10);
+const renderBar = (m, u, uf) => {
+  // Exibir overlay de carregamento
+  const overlay = document.getElementById('bar-loading');
+  if (overlay) overlay.style.display = 'flex';
 
-    if(!rows.length){Plotly.newPlot(barDiv,[],{}, {responsive:true});return;}
+  // Obter e filtrar dados
+  const rows = filter(m, u, uf).map(f => ({
+    area: stripPrefix(f.properties.NOME),
+    km: +f.properties.DESMATAM_1 || 0
+  })).sort((a, b) => b.km - a.km).slice(0, 10);
 
-    Plotly.newPlot(barDiv,[{
-      type:'bar',orientation:'h',
-      x:rows.map(r=>r.km),
-      y:rows.map(r=>r.area),
-      marker:{color:'#2E8B57',line:{width:0}}
-    }],{
-      template:'plotly_white',
-      height:450,
-      margin:{l:0,r:10,t:60,b:0},
-      title:{text:'TOP 10 Áreas <br> UCs por Desmatamento',
-             font:{size:19,color:'rgba(46,139,87,.6)'}},
-      xaxis:{title:'km²',showgrid:true,gridcolor:'rgba(0,0,0,.08)'},
-      yaxis:{automargin:true}
-    },{responsive:true});
+  // Se não há dados, desenha gráfico vazio e oculta overlay
+  if (!rows.length) {
+    Plotly.newPlot(barDiv, [], {}, { responsive: true }).then(() => {
+      if (overlay) overlay.style.display = 'none';
+    });
+    return;
+  }
+
+  // Preparar arrays para Plotly
+  const xVals = rows.map(r => r.km);
+  const yLabels = rows.map(r => r.area);
+
+  // Formatação de texto (valores) em pt-BR, com "km²"
+  const texts = rows.map(r => {
+    // toLocaleString para separar milhares e decimais em pt-BR
+    const numStr = r.km.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return `${numStr} km²`;
+  });
+
+  // Definir posição do texto: dentro se valor >= threshold, senão fora
+  const maxKm = rows[0].km || 1;
+  const threshold = maxKm * 0.1; // 10% do maior; ajuste se quiser outro limiar
+  const textpositions = rows.map(r => (r.km >= threshold ? 'inside' : 'outside'));
+  // Cor do texto: branco dentro de barras escuras, preto quando fora
+  const textcolors = rows.map(r => (r.km >= threshold ? '#ffffff' : '#000000'));
+
+  // Responsividade: detectar mobile para ajustar margens/fontes
+  const mobile = isMobile();
+  // Ajuste margem esquerda para não cortar labels longas
+  const marginLeft = mobile ? 40 : 100; // exemplo: em desktop deixamos 100px para labels
+  const margin = mobile
+    ? { l: marginLeft, r: 20, t: 50, b: 40 }
+    : { l: marginLeft, r: 20, t: 60, b: 30 };
+
+  // Construir trace
+  const trace = {
+    type: 'bar',
+    orientation: 'h',
+    x: xVals,
+    y: yLabels,
+    marker: { color: '#2E8B57', line: { width: 0 } },
+    text: texts,
+    textposition: textpositions,
+    textfont: { color: textcolors, size: mobile ? 10 : 12 }
   };
+
+  // Layout: usa autosize ou height fixo. Como o container #bar-chart tem style="height:450px",
+  // e Plotly usa useResizeHandler/style: {width:'100%',height:'100%'}, ele preencherá o contêiner.
+  const layout = {
+    template: 'plotly_white',
+    // height: 450, // opcional; se precisar forçar, mas se usa style height no contêiner, autosize costuma bastar
+    margin: margin,
+    title: {
+      text: 'TOP 10 Áreas de Desmatamento por Terras Indígenas',
+      font: { size: mobile ? 14 : 19, color: 'rgba(46,139,87,.6)' }
+    },
+    xaxis: {
+      title: 'km²',
+      showgrid: true,
+      gridcolor: 'rgba(0,0,0,.08)',
+      tickfont: { size: mobile ? 10 : 12 }
+    },
+    yaxis: {
+      automargin: true,
+      tickfont: { size: mobile ? 10 : 12 }
+    },
+    font: { size: mobile ? 10 : 12 },
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    paper_bgcolor: 'rgba(0,0,0,0)'
+  };
+
+  const config = {
+    responsive: true,
+    displayModeBar: false,
+    useResizeHandler: true,
+    // style: { width: '100%', height: '100%' } // Plotly já aplica por default quando useResizeHandler é true
+  };
+
+  // Chamar Plotly.newPlot e ao completar, esconder overlay
+  Plotly.newPlot(barDiv, [trace], layout, config).then(() => {
+    if (overlay) overlay.style.display = 'none';
+  }).catch(err => {
+    console.error('Erro ao renderizar gráfico de barras:', err);
+    if (overlay) overlay.style.display = 'none';
+  });
+};
+
 
   /* ------------ DONUTS RESPONSIVOS --------------------------- */
   const renderPies=(m,u,uf)=>{

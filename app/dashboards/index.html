@@ -17,16 +17,16 @@
   <style>
     /* =============== VARIÁVEIS ================= */
     :root {
-      --sb-w: 290px;           /* largura da sidebar (expandida) */
-      --sb-collapsed-w: 70px;  /* largura da sidebar colapsada */
-      --ft-h: 45px;            /* altura do footer */
-      --tb-h: 56px;            /* altura da topbar */
-      --primary-green: #4a9b8e;   /* cor verde principal */
-      --secondary-green: #5cb3a6; /* cor verde secundária */
-      --light-green: #e8f5f3;     /* cor verde clara para hover */
-      --dark-text: #2c3e50;       /* cor do texto escuro */
-      --light-text: #ffffff;      /* cor do texto claro */
-    }
+  --sb-w: 290px;           /* largura da sidebar (expandida) */
+  --sb-collapsed-w: 70px;  /* largura da sidebar colapsada */
+  --ft-h: 45px;            /* altura do footer */
+  --tb-h: 56px;            /* altura da topbar */
+  --primary-color: #007C4F; /* cor principal extraída da imagem */
+  --secondary-color: #005A3F; /* um tom mais escuro para gradiente */
+  --hover-color: #339080;   /* ou outro tom claro para hover */
+  --dark-text: #2c3e50;     /* cor do texto escuro */
+  --light-text: #ffffff;    /* cor do texto claro */
+}
 
     /* =============== RESET E PREVENÇÃO DE OVERFLOW ================= */
     * {
@@ -49,7 +49,7 @@
       left: 0;
       right: 0;
       height: var(--tb-h);
-      background: var(--primary-green);
+      background: var(--primary-color);
       color: var(--light-text);
       align-items: center;
       padding: 0 15px;
@@ -84,7 +84,7 @@
       top: var(--tb-h); /* abaixo do topbar */
       left: 0;
       height: calc(100vh - var(--tb-h));
-      background: linear-gradient(180deg, var(--primary-green) 0%, var(--secondary-green) 100%);
+       background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
       overflow-y: auto;
       overflow-x: hidden;
       transition: width .3s ease, transform .3s ease;
@@ -452,7 +452,7 @@
       <i class="fas fa-bars"></i>
     </button>
     <div class="topbar-brand">
-      <span style="color: #FFD700;">Imazon</span><span style="color: rgb(6, 172, 48);">Geo</span>
+      <span style="color: #FFD700;">Imazon</span><span style="color: rgb(255, 255, 255);">Geo</span>
     </div>
   </div>
 
@@ -546,6 +546,14 @@
           <a href="#" class="menu-item iframe-link" data-src="SAD/desmatamento_municipios.html" title="Desmatamentos - Municípios">
             <i class="fas fa-industry menu-item-icon"></i>
             <span class="menu-item-text">Desmatamentos - Municípios</span>
+          </a>
+                    <a href="#" class="menu-item iframe-link" data-src="SAD/desmatamento_terras_indigenas.html" title="Desmatamentos - Terras Indígenas">
+            <i class="fas fa-industry menu-item-icon"></i>
+            <span class="menu-item-text">Desmatamentos - Terras Indígenas</span>
+          </a>
+                    <a href="#" class="menu-item iframe-link" data-src="SAD/desmatamento_unidades_de_conservacao.html" title="Desmatamentos - Unidades de Conservação">
+            <i class="fas fa-industry menu-item-icon"></i>
+            <span class="menu-item-text">Desmatamentos - Unidades de Conservação</span>
           </a>
         </div>
       </div>

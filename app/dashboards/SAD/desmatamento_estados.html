@@ -21,6 +21,7 @@
 <link rel="stylesheet" href="../../../css/select-styles.css">
 <link rel="stylesheet" href="../../../css/responsive-styles.css">
 <link rel="stylesheet" href="../../../css/modal-styles.css">
+<link rel="stylesheet" href="../../../css/card-styles.css">
 </head>
 
 <body class="py-3">
@@ -47,9 +48,9 @@
       </button>
     </div>
     <div class="col-auto d-flex align-items-center">
-      <button id="interest-btn" class="btn btn-info btn-sm custom-button me-3" data-bs-toggle="modal" data-bs-target="#interest-modal">
-        <i class="fa fa-star me-1"></i>Selecionar Área de Interesse
-      </button>
+     <button id="interest-btn" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#interest-modal">
+    Selecionar Área de Interesse
+  </button>
       <label for="year-select" class="me-2 mb-0 fw-bold">Ano:</label>
       <select id="year-select" class="form-select form-select-sm year-select"></select>
     </div>
@@ -253,25 +254,55 @@
     return out;
   }
 
-  // gráfico de barras
-  function plotBar(){
-    const data = base();
-    const agg = d3.rollup(data, v=>d3.sum(v,d=>d.AREAKM2), d=>d[CSV_UF_KEY]);
-    let arr = [...agg].map(([e,a])=>({Estado:e, area:a})).sort((a,b)=>b.area-a.area);
-    if(selSet.length) arr = arr.filter(d=>selSet.includes(d.Estado)); else arr = arr.slice(0,10);
-    barSet = arr.map(d=>d.Estado);
-    const leftMargin = Math.min(300, 40 + Math.max(...arr.map(d=>d.Estado.length)) * 6);
-    Plotly.newPlot('bar-settlement',[{
-      x:arr.map(d=>d.area), y:arr.map(d=>d.Estado),
-      type:'bar', orientation:'h',
-      marker:{color:'#28a745',opacity:.8,line:{color:'#1e7e34',width:1}}
-    }],{
-      title:{text:`Área (${yearSelect.value}) – ${selSet.length?'Selecionados':'Top 10'}`,x:0.5},
-      margin:{l:leftMargin,r:10,t:50,b:30},height:450,
-      yaxis:{automargin:true},xaxis:{title:'Área (km²)'},
-      plot_bgcolor:'rgba(0,0,0,0)',paper_bgcolor:'rgba(0,0,0,0)'
-    },{displayModeBar:false,responsive:true});
+// gráfico de barras
+function plotBar(){
+  const data = base();
+  const agg = d3.rollup(data, v=>d3.sum(v,d=>d.AREAKM2), d=>d[CSV_UF_KEY]);
+  let arr = [...agg].map(([e,a])=>({Estado:e, area:a})).sort((a,b)=>b.area-a.area);
+  if(selSet.length) {
+    arr = arr.filter(d=>selSet.includes(d.Estado));
+  } else {
+    arr = arr.slice(0,10);
   }
+  barSet = arr.map(d=>d.Estado);
+
+  // ajusta margem esquerda para comportar rótulos do eixo Y
+  const leftMargin = Math.min(300, 40 + Math.max(...arr.map(d=>d.Estado.length)) * 6);
+
+  // prepara os textos formatados, usando locale pt-BR e 2 casas decimais
+  const textValues = arr.map(d =>
+    d.area.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
+  );
+
+  Plotly.newPlot('bar-settlement', [{
+    x: arr.map(d=>d.area),
+    y: arr.map(d=>d.Estado),
+    type: 'bar',
+    orientation: 'h',
+    marker: {
+      color: '#28a745',
+      opacity: .8,
+      line: { color: '#1e7e34', width: 1 }
+    },
+    text: textValues,
+    textposition: 'auto',      // auto posiciona dentro ou fora conforme espaço
+    insidetextfont: { color: '#ffffff' },  // cor do texto quando dentro da barra
+    outsidetextfont: { color: '#000000' }  // cor do texto quando fora da barra
+  }], {
+    title: { text: `Área - Ano(${yearSelect.value})`, x: 0.5 },
+    margin: { l: leftMargin, r: 10, t: 50, b: 30 },
+    height: 450,
+    yaxis: { automargin: true },
+    xaxis: { title: 'Área (km²)' },
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    paper_bgcolor: 'rgba(0,0,0,0)'
+  }, {
+    displayModeBar: false,
+    responsive: true
+  });
+}
+
+
 
   // inicializa o mapa
   function initMap(){

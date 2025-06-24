@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-      <link rel="stylesheet" href="../../../css/base-styles.css">
+  <link rel="stylesheet" href="../../../css/base-styles.css">
   <link rel="stylesheet" href="../../../css/map-styles.css">
   <link rel="stylesheet" href="../../../css/button-styles.css">
   <link rel="stylesheet" href="../../../css/legend-styles.css">
@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="../../../css/select-styles.css">
   <link rel="stylesheet" href="../../../css/responsive-styles.css">
   <link rel="stylesheet" href="../../../css/modal-styles.css">
+  <link rel="stylesheet" href="../../../css/card-styles.css">
 </head>
 <body class="py-3">
 
@@ -43,8 +44,8 @@
       </button>
     </div>
     <div class="col-auto mb-2">
-      <button id="interest-btn" class="btn btn-info btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#interest-modal">
-        <i class="fa fa-star me-1"></i>Selecionar Área de Interesse
+      <button id="interest-btn" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#interest-modal">
+        Selecionar Área de Interesse
       </button>
     </div>
   </div>
@@ -74,7 +75,7 @@
 
     <div class="col-12 col-md-6">
       <div class="card h-100">
-        <div class="card-header">Mapa de Assentamentos</div>
+        <div class="card-header">Mapa de Terras Indígenas</div>
         <div class="card-body p-0 map-container">
           <!-- Div para o mapa Leaflet -->
           <div id="map-graph" style="height:100%;"></div>
@@ -291,86 +292,95 @@
   }
 
   /* ----------- GRÁFICO BARRAS ----------- */
-  function plotSettlement() {
-    const data = filtroBase();
+function plotSettlement() {
+  const data = filtroBase();
 
-    // soma área por assentamento
-    const byterrai_nom = d3.rollup(
-      data,
-      v => d3.sum(v, d => d.area_ha),
-      d => d.terrai_nom
-    );
+  // Agrupa área por assentamento (chave: d.terrai_nom)
+  const byterrai_nom = d3.rollup(
+    data,
+    v => d3.sum(v, d => d.area_ha),
+    d => d.terrai_nom
+  );
 
-    // top-10, ordenado pela área
-    let arr = Array.from(byterrai_nom, ([terrai_nom, area]) => ({ terrai_nom, area }))
-                     .sort((a, b) => b.area - a.area);
-    
-    // Se houver assentamentos selecionados, mostrar apenas eles
-    if (selectedSettlements.length > 0) {
-      arr = arr.filter(d => selectedSettlements.includes(d.terrai_nom));
-    } else {
-      // Caso contrário, mostrar os top 10
-      arr = arr.slice(0, 10);
-    }
+  // Converte para array e ordena por área decrescente
+  let arr = Array.from(byterrai_nom, ([terrai_nom, area]) => ({ terrai_nom, area }))
+                 .sort((a, b) => b.area - a.area);
 
-    // guarda os nomes que aparecem no gráfico (usado no mapa)
-    barSettlements = arr.map(d => d.terrai_nom);
-
-    // trace Plotly
-    const trace = {
-      x          : arr.map(d => d.area),
-      y          : arr.map(d => d.terrai_nom),
-      type       : 'bar',
-      orientation: 'h',
-      marker     : { 
-        color: '#28a745',
-        opacity: 0.8,
-        line: {
-          width: 1,
-          color: '#1e7e34'
-        }
-      }
-    };
-
-    // margem esquerda proporcional ao tamanho dos rótulos
-    const maxLen     = d3.max(arr, d => d.terrai_nom.length);
-    const leftMargin = Math.min(300, 40 + maxLen * 6);
-
-    const layout = {
-      title : { 
-        text: `Área Acumulada – ${selectedCategory || 'Todas'}`, 
-        x: 0.5,
-        font: {
-          size: 16
-        }
-      },
-      margin: { l: leftMargin, r: 10, t: 50, b: 30 },
-      height: 450,
-      yaxis : { 
-        automargin: true, 
-        tickfont: { size: 11 } 
-      },
-      xaxis: {
-        title: {
-          text: 'Área (ha)',
-          font: {
-            size: 12
-          }
-        }
-      },
-      plot_bgcolor: 'rgba(0,0,0,0)',
-      paper_bgcolor: 'rgba(0,0,0,0)',
-      hoverlabel: {
-        bgcolor: '#28a745',
-        font: {
-          color: 'white'
-        }
-      }
-    };
-
-    Plotly.newPlot('bar-settlement', [trace], layout,
-                   { displayModeBar: false, responsive: true });
+  // Se houver seleção, filtra; senão pega top 10
+  if (selectedSettlements.length > 0) {
+    arr = arr.filter(d => selectedSettlements.includes(d.terrai_nom));
+  } else {
+    arr = arr.slice(0, 10);
   }
+
+  // Guarda nomes que aparecerão no gráfico (para uso no mapa etc.)
+  barSettlements = arr.map(d => d.terrai_nom);
+
+  // Se desejar manter sempre 10 linhas no gráfico (opcional para estabilidade visual),
+  // preenche com itens de área 0:
+  while (arr.length < 10) {
+    arr.push({ terrai_nom: `Assentamento ${arr.length + 1}`, area: 0 });
+  }
+
+  // Prepara array de textos, formatando valor em pt-BR com duas casas decimais
+  const textValues = arr.map(d =>
+    d.area.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  );
+
+  // Ajusta margem esquerda conforme comprimento dos rótulos
+  const maxLen = arr.length ? Math.max(...arr.map(d => d.terrai_nom.length)) : 10;
+  const leftMargin = Math.min(300, 40 + maxLen * 6);
+
+  // Monta trace com text para exibir valor dentro da barra
+  const trace = {
+    x: arr.map(d => d.area),
+    y: arr.map(d => d.terrai_nom),
+    type: 'bar',
+    orientation: 'h',
+    marker: {
+      color: '#28a745',
+      opacity: 0.8,
+      line: {
+        width: 1,
+        color: '#1e7e34'
+      }
+    },
+    text: textValues,
+    textposition: 'auto',
+    insidetextfont: { color: '#ffffff' },
+    hoverinfo: 'none'  // desabilita tooltip extra; se quiser tooltip, remova ou ajuste
+  };
+
+  const layout = {
+    title: {
+      text: `Área Acumulada – ${selectedCategory || 'Todas'}`,
+      x: 0.5,
+      font: { size: 16 }
+    },
+    margin: { l: leftMargin, r: 10, t: 50, b: 30 },
+    height: 450,
+    yaxis: {
+      automargin: true,
+      tickfont: { size: 11 },
+      autorange: 'reversed'  // faz com que a maior barra apareça no topo
+    },
+    xaxis: {
+      title: {
+        text: 'Área (ha)',
+        font: { size: 12 }
+      },
+      tickformat: ',.0f',
+      separatethousands: true
+    },
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    paper_bgcolor: 'rgba(0,0,0,0)'
+  };
+
+  Plotly.newPlot('bar-settlement', [trace], layout, {
+    displayModeBar: false,
+    responsive: true
+  });
+}
 
   /* ---------- LEAFLET MAP ---------- */
   function initLeaflet() {

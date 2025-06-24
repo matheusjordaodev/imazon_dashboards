@@ -5,9 +5,6 @@
   <title>SAD – Degradação Municípios</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ─── ESTILOS ────────────────────────────────────────────────── -->
-  
-
   <!-- ─── LIBS CSS ─────────────────────────────────────────────────── -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -21,6 +18,60 @@
   <link rel="stylesheet" href="../../../css/select-styles.css">
   <link rel="stylesheet" href="../../../css/responsive-styles.css">
   <link rel="stylesheet" href="../../../css/modal-styles.css">
+  <link rel="stylesheet" href="../../../css/card-styles.css">
+
+  <style>
+    /* Ajustes gerais para gráficos Plotly */
+    .js-plotly-plot .plotly .modebar { display: none !important; }
+    .js-plotly-plot { width:100% !important; height:100% !important; }
+
+    /* map-container height */
+    .map-container { height: 450px; }
+    @media (max-width: 767.98px) {
+      .map-container { height: 320px; }
+    }
+    @media (max-width: 575.98px) {
+      .map-container { height: 280px; }
+    }
+
+    /* Responsividade de botões e cards */
+    @media (max-width: 575.98px) {
+      .custom-button {
+        width: 100%;
+        margin-bottom: 10px;
+        font-size: 12px;
+      }
+      .col-auto { width: 100%; }
+      .card-body { padding: 5px !important; }
+      .card-header { font-size: 12px; padding: 8px; }
+      #bar-settlement, #line-graph, #yearly-graph { height: 280px !important; }
+      .modal-dialog { margin: 10px; }
+      .container-fluid { padding-left: 10px; padding-right: 10px; }
+    }
+    @media (max-width: 767.98px) {
+      .custom-button { margin-bottom: 5px; font-size: 13px; }
+      .col-md-6 { width: 100%; }
+      .card-header { font-size: 13px; }
+      #bar-settlement, #line-graph, #yearly-graph { height: 320px !important; }
+    }
+    @media (max-width: 991.98px) {
+      #bar-settlement, #line-graph, #yearly-graph { height: 380px !important; }
+      .card-header { font-size: 14px; }
+    }
+    @media (min-width: 1200px) {
+      #bar-settlement, #line-graph, #yearly-graph { height: 450px; }
+    }
+    @media (max-width: 767.98px) {
+      .fw-bold { font-size: 14px; }
+      .form-select-sm { font-size: 12px; }
+    }
+
+    /* Borda sutil ao redor do gráfico de barras */
+    #bar-settlement .plotly {
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 
 <body class="py-3">
@@ -46,9 +97,8 @@
         </button>
       </div>
       <div class="col-auto d-flex align-items-center">
-        <button id="interest-btn" class="btn btn-info btn-sm custom-button me-3"
-                data-bs-toggle="modal" data-bs-target="#interest-modal">
-          <i class="fa fa-star me-1"></i>Selecionar Municípios
+        <button id="interest-btn" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#interest-modal">
+          Selecionar Municípios
         </button>
         <label for="year-select" class="me-2 mb-0 fw-bold">Ano:</label>
         <select id="year-select" class="form-select form-select-sm"></select>
@@ -61,7 +111,7 @@
         <div class="card h-100">
           <div class="card-header">SAD Alerta de Degradação Florestal Acumulado – Top 10 Municípios</div>
           <div class="card-body p-0">
-            <div id="bar-settlement" style="height:450px"></div>
+            <div id="bar-settlement"></div>
           </div>
         </div>
       </div>
@@ -84,9 +134,7 @@
     <div class="row gx-2 mb-5">
       <div class="col-12 col-md-6 mb-4 mb-md-0">
         <div class="card h-100">
-          <div class="card-header">
-            Série Histórica – Municípios
-          </div>
+          <div class="card-header">Série Histórica – Municípios</div>
           <div class="card-body p-0">
             <div id="line-graph" style="height:450px"></div>
           </div>
@@ -199,6 +247,7 @@
     let selUF = [], selSet = [], curYear, barSet = [];
     let mapInit = false, leafletMap, geoLayer, legend, NAME_KEY = 'MUNICIPIO';
 
+    // DOM elements
     const downloadBtn         = document.getElementById('download-btn');
     const downloadStateBox    = document.getElementById('download-state-checklist');
     const decSepRadioSelector = 'input[name="dec-sep"]:checked';
@@ -216,6 +265,7 @@
     const clearSel        = document.getElementById('clear-selection');
     const applySel        = document.getElementById('apply-selection');
 
+    // Carrega GeoJSON e CSV
     async function loadGeo(){ geojson = await (await fetch(GEOJSON_URL)).json(); }
     async function loadCsv(){
       const txt = await (await fetch(CSV_URL)).text();
@@ -227,6 +277,7 @@
       }));
     }
 
+    // Configura filtros iniciais
     function buildFilters(){
       years = [...new Set(df.map(d=>d.ANO))].sort((a,b)=>a-b);
       curYear = Math.max(...years);
@@ -244,12 +295,14 @@
       buildDownloadChecklist();
     }
 
+    // Atualiza texto do botão de Estados
     function updateStateBtn(){
       if(!selUF.length) stateBtn.innerHTML = '<i class="fa fa-map me-1"></i>Selecione o Estado';
       else if(selUF.length===1) stateBtn.innerHTML = `<i class="fa fa-map me-1"></i>UF: ${selUF[0]}`;
       else stateBtn.innerHTML = `<i class="fa fa-map me-1"></i>${selUF.length} UFs`;
     }
 
+    // Filtro base conforme Ano, UFs e Municípios selecionados
     function base(){
       const y = +yearSelect.value;
       selUF = Array.from(stateSelect.selectedOptions).map(o=>o.value);
@@ -260,31 +313,163 @@
       return out;
     }
 
-    function plotBar(){
-      const data = base();
-      const agg  = d3.rollup(data, v=>d3.sum(v,d=>d.AREAKM2), d=>d.MUNICIPIO);
-      let arr = [...agg].map(([MUNICIPIO,area])=>({MUNICIPIO,area}))
-                       .sort((a,b)=>b.area-a.area);
-      if(selSet.length) arr = arr.filter(d=>selSet.includes(d.MUNICIPIO));
-      else arr = arr.slice(0,10);
-      barSet = arr.map(d=>d.MUNICIPIO);
-      const leftMargin = Math.min(300, 40 + Math.max(...arr.map(d=>d.MUNICIPIO.length))*6);
-
-      Plotly.newPlot('bar-settlement',[{
-        x: arr.map(d=>d.area),
-        y: arr.map(d=>d.MUNICIPIO),
-        type:'bar',orientation:'h',
-        marker:{color:'#28a745',opacity:.8,line:{color:'#1e7e34',width:1}}
-      }],{
-        title:{text:`Área (${yearSelect.value}) – ${selSet.length?'Selecionados':'Top 10'}`,x:.5},
-        margin:{l:leftMargin,r:10,t:50,b:30},height:450,
-        yaxis:{automargin:true},xaxis:{title:'Área (km²)'},
-        plot_bgcolor:'rgba(0,0,0,0)',paper_bgcolor:'rgba(0,0,0,0)'
-      },{
-        displayModeBar:false,responsive:true
-      });
+    // Responsividade e configuração de margens, fontes, altura
+    function getResponsiveConfig() {
+      const width = window.innerWidth;
+      if (width <= 575) {
+        return {
+          titleSize: 14,
+          axisSize: 10,
+          tickSize: 9,
+          legendSize: 8,
+          margin: { l: 80, r: 10, t: 60, b: 40 },
+          height: 280
+        };
+      } else if (width <= 767) {
+        return {
+          titleSize: 16,
+          axisSize: 11,
+          tickSize: 10,
+          legendSize: 9,
+          margin: { l: 100, r: 15, t: 70, b: 45 },
+          height: 320
+        };
+      } else if (width <= 991) {
+        return {
+          titleSize: 18,
+          axisSize: 12,
+          tickSize: 11,
+          legendSize: 10,
+          margin: { l: 120, r: 20, t: 80, b: 50 },
+          height: 380
+        };
+      } else {
+        return {
+          titleSize: 20,
+          axisSize: 14,
+          tickSize: 12,
+          legendSize: 11,
+          margin: { l: 140, r: 20, t: 90, b: 50 },
+          height: 450
+        };
+      }
     }
 
+    // Trunca texto longo
+    function truncateText(text, maxLength = 30) {
+      if (!text) return '';
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+
+    /**
+     * plotHorizontalBar: desenha gráfico horizontal estilizado.
+     * Params:
+     *  - containerId: id da div Plotly
+     *  - data: array de { key: string, value: number }
+     *  - titleTextMain: string do título principal
+     *  - titleTextSub: string do subtítulo
+     */
+    function plotHorizontalBar({ containerId, data, titleTextMain, titleTextSub }) {
+      const config = getResponsiveConfig();
+      // Ordena decrescente por value
+      const arr = data.slice().sort((a,b) => b.value - a.value);
+      // Truncar labels conforme largura
+      const maxNameLength = window.innerWidth <= 575 ? 20 : window.innerWidth <= 767 ? 25 : 30;
+      const truncatedNames = arr.map(d => truncateText(d.key, maxNameLength));
+      // Margem esquerda dinâmica: baseado no comprimento máximo
+      const maxLen = truncatedNames.reduce((max, name) => Math.max(max, name.length), 0);
+      const leftMargin = Math.min(
+        config.margin.l + 100,
+        config.margin.l + maxLen * (config.tickSize * 0.6)
+      );
+      // Valores e textos
+      const valores = arr.map(d => d.value);
+      const textos = arr.map(d => {
+        const decimals = window.innerWidth <= 575 ? 0 : 2;
+        // Formatar com separador de milhar pt-BR
+        return d.value.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + ' km²';
+      });
+      // Escala de cor graduada em verde (#28a745)
+      const maxVal = d3.max(valores) || 1;
+      const colorScale = d3.scaleLinear().domain([0, maxVal]).range([0.4, 1]);
+      const barColors = valores.map(v => {
+        const opacity = colorScale(v);
+        return `rgba(40,167,69,${opacity})`;
+      });
+      // Texto dentro/exterior
+      const mobile = window.innerWidth <= 575;
+      const textpositions = arr.map(_ => mobile ? 'inside' : 'outside');
+      const textcolors = arr.map(_ => mobile ? '#ffffff' : '#000000');
+
+      const trace = {
+        x: valores,
+        y: truncatedNames,
+        type: 'bar',
+        orientation: 'h',
+        marker: {
+          color: barColors,
+          line: { color: '#1e7e34', width: 1 }
+        },
+        text: textos,
+        textposition: textpositions,
+        textfont: { size: config.tickSize, color: textcolors },
+        texttemplate: '%{text}',
+        hovertemplate: '<b>%{customdata}</b><br>Área: %{x:.2f} km²<extra></extra>',
+        customdata: arr.map(d => d.key)
+      };
+
+      // Título duplo
+      const titleHtml =
+        `<span style="font-size:${config.titleSize}px;">${titleTextMain}</span><br>` +
+        `<span style="font-size:${Math.round(config.titleSize * 0.8)}px;color:#666;">${titleTextSub}</span>`;
+
+      const layout = {
+        title: {
+          text: titleHtml,
+          x: 0.5,
+          xanchor: 'center',
+          yanchor: 'top'
+        },
+        margin: { l: leftMargin, r: config.margin.r, t: config.margin.t, b: config.margin.b },
+        height: config.height,
+        yaxis: {
+          automargin: true,
+          tickfont: { size: config.tickSize },
+          tickmode: 'linear'
+        },
+        xaxis: {
+          title: { text: 'Área (km²)', font: { size: config.axisSize } },
+          tickfont: { size: config.tickSize },
+          showgrid: true,
+          gridcolor: 'rgba(0,0,0,0.1)'
+        },
+        plot_bgcolor: 'rgba(255,255,255,1)',
+        paper_bgcolor: 'rgba(255,255,255,1)',
+        font: { size: config.tickSize }
+      };
+
+      Plotly.newPlot(containerId, [trace], layout, { displayModeBar: false, responsive: true });
+    }
+
+    // plotBar ajustado
+    function plotBar(){
+      const dataArr = base();
+      const agg  = d3.rollup(dataArr, v=>d3.sum(v,d=>d.AREAKM2), d=>d.MUNICIPIO);
+      let arr = [...agg].map(([MUNICIPIO,area])=>({ key: MUNICIPIO, value: area }));
+      if(selSet.length) {
+        arr = arr.filter(d=>selSet.includes(d.key));
+      } else {
+        arr = arr.slice().sort((a,b)=>b.value - a.value).slice(0,10);
+      }
+      barSet = arr.map(d=>d.key);
+
+      const year = yearSelect.value;
+      const titleMain = '';
+      const titleSub = `Área (${year}) – ${selSet.length ? 'Selecionados' : 'Top 10'}`;
+      plotHorizontalBar({ containerId: 'bar-settlement', data: arr, titleTextMain: titleMain, titleTextSub: titleSub });
+    }
+
+    // Inicializa Leaflet
     function initMap(){
       if(mapInit) return;
       leafletMap = L.map('map-graph',{ zoomSnap:.3, attributionControl:false,
@@ -297,6 +482,7 @@
       mapInit=true;
     }
 
+    // legend for heat
     function heatLegend(min,max,scale){
       legend.innerHTML = `
         <h4>Área (km²)</h4>
@@ -307,18 +493,15 @@
           <span>${min.toLocaleString()}</span>
         </div>`;
       legend.querySelector('.legend-gradient').style.background =
-        `linear-gradient(to top,
-           ${scale(min)} 0%,
-           ${scale((max+min)/2)} 50%,
-           ${scale(max)} 100%)`;
+        `linear-gradient(to top, ${scale(min)} 0%, ${scale((min+max)/2)} 50%, ${scale(max)} 100%)`;
       legend.style.display='block';
     }
 
     function plotMap(){
       document.getElementById('map-title').textContent = `Mapa de Degradação Ambiental (km²) ${yearSelect.value}`;
       if(!mapInit) return;
-      const data = base();
-      const agg  = d3.rollup(data, v=>d3.sum(v,d=>d.AREAKM2), d=>d[NAME_KEY]);
+      const dataArr = base();
+      const agg  = d3.rollup(dataArr, v=>d3.sum(v,d=>d.AREAKM2), d=>d.MUNICIPIO);
       const show = selSet.length? selSet : barSet;
       const maxArea = d3.max(show,a=>agg.get(a)||0)||1;
       const color = d3.scaleSequential().domain([0,maxArea]).interpolator(d3.interpolateYlOrRd);
@@ -332,8 +515,7 @@
         onEachFeature:(f,layer)=>{
           const nome = f.properties[NAME_KEY];
           const km2  = agg.get(nome)||0;
-          const ha   = km2*1000;
-          layer.bindTooltip(`<strong>${nome}</strong><br>${ha.toLocaleString('pt-BR',{maximumFractionDigits:2})} km²`,{sticky:true});
+          layer.bindTooltip(`<strong>${nome}</strong><br>${km2.toLocaleString('pt-BR',{maximumFractionDigits:2})} km²`,{sticky:true});
           layer.on({
             mouseover:e=>e.target.setStyle({weight:2,color:'#000'}).bringToFront(),
             mouseout:e=>geoLayer.resetStyle(e.target),
@@ -357,16 +539,44 @@
       const by = d3.rollup(fil, v=>d3.sum(v,d=>d.AREAKM2), d=>d.MUNICIPIO, d=>d.ANO);
       const pal = d3.schemeTableau10;
       const show = selSet.length? selSet : (barSet.length? barSet : [...by.keys()]);
+      const config = getResponsiveConfig();
+      const maxNameLength = window.innerWidth <= 575 ? 15 : window.innerWidth <= 767 ? 20 : 25;
+
       const series = show.map((s,i)=>{
         const mp = by.get(s); if(!mp) return null;
         const yrs = [...mp.keys()].sort((a,b)=>a-b);
-        return { name:s, x:yrs, y:yrs.map(y=>mp.get(y)), mode:'lines+markers', line:{width:2,color:pal[i%pal.length]}, marker:{size:8,color:pal[i%pal.length]} };
+        return {
+          name: truncateText(s, maxNameLength),
+          x: yrs,
+          y: yrs.map(y=>mp.get(y)),
+          mode:'lines+markers',
+          line:{width:2,color:pal[i%pal.length]},
+          marker:{size: window.innerWidth<=575?4:6, color: pal[i%pal.length]},
+          hovertemplate: '<b>' + s + '</b><br>Ano: %{x}<br>Área: %{y:.2f} km²<extra></extra>'
+        };
       }).filter(Boolean);
+
       Plotly.newPlot('line-graph', series, {
-        title:{text:'Série Histórica – Municípios',x:.5,font:{size:16}},
-        xaxis:{title:'Ano'}, yaxis:{title:'Área (km²)'},
-        legend:{orientation:'h',x:0.5,xanchor:'center',y:-.2},
-        height:450,margin:{l:50,r:20,t:50,b:100}, plot_bgcolor:'rgba(0,0,0,0)', paper_bgcolor:'rgba(0,0,0,0)'
+        
+        xaxis:{ title:{ text:'Ano', font:{ size: config.axisSize }}, tickfont:{ size: config.tickSize } },
+        yaxis:{ title:{ text:'Área (km²)', font:{ size: config.axisSize }}, tickfont:{ size: config.tickSize } },
+        legend:{
+          orientation: window.innerWidth <= 767 ? 'v' : 'h',
+          x: window.innerWidth <= 767 ? 1.02 : 0.5,
+          xanchor: window.innerWidth <= 767 ? 'left' : 'center',
+          y: window.innerWidth <= 767 ? 1 : -0.2,
+          font:{ size: config.legendSize }
+        },
+        margin:{
+          l: config.margin.l - 50,
+          r: window.innerWidth <= 767 ? 120 : config.margin.r,
+          t: config.margin.t,
+          b: window.innerWidth <= 767 ? config.margin.b : config.margin.b + 60
+        },
+        height: config.height,
+        plot_bgcolor:'rgba(255,255,255,1)',
+        paper_bgcolor:'rgba(255,255,255,1)',
+        font:{ size: config.tickSize }
       }, { displayModeBar:false, responsive:true });
     }
 
@@ -375,17 +585,31 @@
         (!selUF.length||selUF.includes(d[CSV_UF_KEY])) &&
         (!selSet.length||selSet.includes(d.MUNICIPIO))
       );
-      const agg = d3.rollup(dat,v=>d3.sum(v,d=>d.AREAKM2),d=>d.ANO);
+      const agg = d3.rollup(dat, v=>d3.sum(v,d=>d.AREAKM2), d=>d.ANO);
       const anos = [...agg.keys()].sort((a,b)=>a-b);
       const val  = anos.map(a=>agg.get(a)||0);
+      const config = getResponsiveConfig();
+
       Plotly.newPlot('yearly-graph',[{
-        x:anos, y:val, type:'bar',
-        marker:{color:'rgba(40,167,69,0.7)',line:{width:1,color:'#1e7e34'}},
-        text:val.map(v=>v.toFixed(2)), textposition:'outside'
+        x: anos,
+        y: val,
+        type:'bar',
+        marker:{ color:'rgba(40,167,69,0.7)', line:{width:1,color:'#1e7e34'}},
+        text: val.map(v => window.innerWidth <= 575 ? v.toFixed(0) : v.toFixed(2)),
+        textposition: window.innerWidth <= 575 ? 'inside' : 'outside',
+        textfont:{ size: config.tickSize },
+        texttemplate: '%{text}',
+        hovertemplate: 'Ano: %{x}<br>Área Total: %{y:.2f} km²<extra></extra>'
       }],{
-        title:{text:'Área Total por Ano',x:.5}, xaxis:{title:'Ano'}, yaxis:{title:'Área (km²)'},
-        margin:{l:50,r:10,t:50,b:40}, height:450, plot_bgcolor:'rgba(0,0,0,0)', paper_bgcolor:'rgba(0,0,0,0)'
-      },{displayModeBar:false,responsive:true});
+        
+        xaxis:{ title:{ text:'Ano', font:{ size: config.axisSize }}, tickfont:{ size: config.tickSize } },
+        yaxis:{ title:{ text:'Área (km²)', font:{ size: config.axisSize }}, tickfont:{ size: config.tickSize } },
+        margin:{ l: config.margin.l - 50, r: config.margin.r, t: config.margin.t, b: config.margin.b },
+        height: config.height,
+        plot_bgcolor:'rgba(255,255,255,1)',
+        paper_bgcolor:'rgba(255,255,255,1)',
+        font:{ size: config.tickSize }
+      },{ displayModeBar:false, responsive:true });
     }
 
     function refreshList(){
@@ -416,7 +640,6 @@
     function stripAccents(txt){
       return txt.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     }
-
     function objToCsvRow(obj, headers, decSep, noAcc){
       return headers.map(h=>{
         let v = obj[h] ?? '';
@@ -427,10 +650,14 @@
     }
 
     /* eventos */
-    [yearSelect, stateSelect].forEach(el=> el.onchange = ()=>{ plotBar(); plotMap(); plotLine(); plotYearly(); });
+    [yearSelect, stateSelect].forEach(el=> el.onchange = ()=>{ 
+      plotBar(); plotMap(); plotLine(); plotYearly(); 
+      mapBtnContainer.style.display = 'block';
+    });
     resetBtn.onclick = ()=>{
       stateSelect.selectedIndex = -1; selUF = []; yearSelect.value = curYear; selSet = [];
       updateStateBtn(); plotBar(); plotMap(); plotLine(); plotYearly();
+      mapBtnContainer.style.display = 'block';
     };
     loadMapBtn.onclick = ()=>{ initMap(); plotMap(); mapBtnContainer.style.display='none'; };
     settlementSearch.oninput = refreshList;
@@ -438,12 +665,14 @@
     applySel.onclick = ()=>{
       bootstrap.Modal.getInstance(document.getElementById('interest-modal')).hide();
       plotBar(); plotMap(); plotLine(); plotYearly();
+      mapBtnContainer.style.display = 'block';
     };
     downloadBtn.onclick = ()=>{
       const selUFs = Array.from(document.querySelectorAll('.dl-uf:checked')).map(el=>el.value);
       const decSep = document.querySelector(decSepRadioSelector)?.value || '.';
       const noAcc  = removeAccentsChk.checked;
-      const rows   = df.filter(d=>!selUFs.length||selUFs.includes(d[CSV_UF_KEY]));
+      let rows   = df.filter(d=>!selUFs.length||selUFs.includes(d[CSV_UF_KEY]));
+      if(selSet.length) rows = rows.filter(d=>selSet.includes(d.MUNICIPIO));
       if(!rows.length){ alert('Nenhum registro encontrado para as UFs selecionadas.'); return; }
       const headers  = Object.keys(rows[0]);
       const csvLines = [ headers.join(';'), ...rows.map(r=>objToCsvRow(r,headers,decSep,noAcc)) ].join('\n');
@@ -455,9 +684,10 @@
       setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },0);
     };
 
-    /* inicialização */
+    // Inicialização
     try{
       await Promise.all([loadGeo(), loadCsv()]);
+      // Detecta chave de nome no GeoJSON se for diferente
       {
         const sample = geojson.features[0]?.properties||{};
         if(!('MUNICIPIO' in sample)){
@@ -467,10 +697,6 @@
             if(alt) NAME_KEY=alt;
           }
         }
-        console.log('Chave de nome no GeoJSON →', NAME_KEY);
-      }
-      if(NAME_KEY!=='MUNICIPIO'){
-        df.forEach(d=>{ d[NAME_KEY] = d.MUNICIPIO; });
       }
       buildFilters(); updateStateBtn(); refreshList();
       plotBar(); plotMap(); plotLine(); plotYearly();
@@ -480,6 +706,12 @@
         'afterbegin', `<div class="alert alert-danger">Erro: ${e.message}</div>`
       );
     }
+
+    // Replota ao redimensionar
+    window.addEventListener('resize', () => {
+      plotBar(); plotLine(); plotYearly();
+      if(mapInit) plotMap();
+    });
   })();
   </script>
 </body>
