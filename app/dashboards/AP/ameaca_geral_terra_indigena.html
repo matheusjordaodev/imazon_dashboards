@@ -496,10 +496,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     template: 'plotly_white',
     height: 450,
     margin: { l: 100, r: 10, t: 60, b: 30 },
-    title: {
-      text: 'TOP 10 Áreas <br> UCs por Desmatamento',
-      font: { size: 19, color: 'rgba(46,139,87,.6)' }
-    },
     xaxis: { title: 'km²', showgrid: true, gridcolor: 'rgba(0,0,0,.08)' },
     yaxis: { automargin: true }
   }, { responsive: true }).then(() => hideLoading('bar-chart'));
