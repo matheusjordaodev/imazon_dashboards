@@ -442,6 +442,30 @@
     #simex-content .menu-item:hover {
       padding-left: 20px;
     }
+    /* Ícones que são imagens */
+.icon-img{
+  width:30;
+  height:35px;
+  object-fit:contain;   /* preserva proporção */
+  margin-right:8px;     /* espaço antes do texto */
+  flex-shrink:0;        /* não deixa o flex reduzir o ícone */
+  filter:brightness(0) invert(1); /* deixa branco sobre fundo escuro */
+}
+
+/* quando a sidebar estiver colapsada, tira o espaço extra */
+body.sidebar-collapsed .icon-img{
+  margin-right:0;
+}
+.section-title{
+  display:flex;          /* já estava; se não, adicione */
+  align-items:center;    /* mantém tudo alinhado verticalmente */
+  width:90%;
+}
+
+.section-title span{
+  margin-left:auto;      /* “empurra” para a direita */
+}
+
   </style>
 </head>
 
@@ -470,13 +494,17 @@
     <div class="sidebar-menu">
       <!-- Seção: Áreas de Proteção Ambiental -->
       <div class="menu-section">
-        <div class="section-header" data-section="graficos" title="Áreas de Proteção Ambiental">
-          <div class="section-title">
-            <i class="fas fa-chart-bar"></i>
-            <span>Áreas de Proteção</span>
-          </div>
-          <i class="fas fa-chevron-down collapse-icon"></i>
-        </div>
+<div class="section-header" data-section="graficos" title="Áreas de Proteção Ambiental">
+  <div class="section-title">
+
+
+
+  </div>
+      <span>Áreas de Proteção</span>
+  <i class="fas fa-chevron-down collapse-icon"></i>
+</div>
+
+
         <div class="section-content" id="graficos-content">
           <a href="#" class="menu-item iframe-link active" data-src="AP/ameaca_geral_area_de_protecao.html" title="Ameaça Áreas de Proteção">
             <i class="fas fa-globe-americas menu-item-icon"></i>
@@ -509,7 +537,8 @@
       <div class="menu-section">
         <div class="section-header" data-section="sad" title="Sistema SAD">
           <div class="section-title">
-            <i class="fas fa-satellite"></i>
+            
+
             <span>Sistema SAD</span>
           </div>
           <i class="fas fa-chevron-down collapse-icon"></i>
@@ -562,8 +591,6 @@
       <div class="menu-section">
         <div class="section-header" data-section="simex" title="SIMEX">
           <div class="section-title">
-            <i class="fas fa-analytics"></i>
-            <i class="fas fa-map" style="margin-left: 4px;"></i>
             <span>SIMEX</span>
           </div>
           <i class="fas fa-chevron-down collapse-icon"></i>
@@ -597,8 +624,7 @@
       </div>
       <div class="menu-section">
     <div class="section-header" data-section="floreser" title="FloreSer">
-      <div class="section-title">
-        <i class="fas fa-seedling"></i>
+                <div class="section-title">
         <span>FloreSer</span>
       </div>
       <i class="fas fa-chevron-down collapse-icon"></i>

@@ -453,7 +453,7 @@ function plotSettlement() {
         };
       }).filter(Boolean);
       Plotly.newPlot('line-graph',series,{
-        title:{text:`Série Histórica – ${selectedCategory||'Todas'}`,x:.5,font:{size:16}},
+        
         xaxis:{title:'Ano'},yaxis:{title:'Área (ha)'},
         legend:{orientation:'h',x:0.5,xanchor:'center',y:-.2},
         margin:{l:50,r:20,t:50,b:50},height:450,

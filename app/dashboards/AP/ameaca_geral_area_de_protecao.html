@@ -443,48 +443,64 @@
 
       const renderBar = (m, u, uf) => {
         showLoading('bar-chart');
+
         const rows = filter(m, u, uf).map(f => ({
           area: stripPrefix(f.properties.NOME),
-          km: +f.properties.DESMATAM_1 || 0
-        })).sort((a, b) => b.km - a.km).slice(0, 10);
+          km:   +f.properties.DESMATAM_1 || 0
+        }))
+        .sort((a, b) => b.km - a.km)
+        .slice(0, 10);
 
+        /* caso não haja dados */
         if (!rows.length) {
-          Plotly.newPlot(barDiv, [], {}, { responsive: true }).then(() => hideLoading('bar-chart'));
+          Plotly.newPlot(barDiv, [], {}, { responsive: true })
+                .then(() => hideLoading('bar-chart'));
           return;
         }
 
-        const xVals = rows.map(r => r.km);
-        const yVals = rows.map(r => r.area);
-        const maxValBar = Math.max(...xVals);
-        // Define text e posição dinamicamente
-        const texts = xVals.map(v => v.toFixed(2));
-        const textPositions = xVals.map(v => (v > maxValBar * 0.15 ? 'inside' : 'outside'));
-        // Cor do texto: branco se dentro, preto se fora
-        const textColors = textPositions.map(pos => pos === 'inside' ? '#ffffff' : '#000000');
+        /* dados do gráfico */
+        const xVals   = rows.map(r => r.km);
+        const yVals   = rows.map(r => r.area);
+        const labels  = xVals.map(v => v.toFixed(2));   // texto exibido
 
-        Plotly.newPlot(barDiv, [{
-          type: 'bar',
-          orientation: 'h',
-          x: xVals,
-          y: yVals,
-          marker: { color: '#2E8B57', line: { width: 0 } },
-          text: texts,
-          textposition: textPositions,
-          textfont: { color: textColors }
-        }], {
-          template: 'plotly_white',
-          // Ajusta altura conforme mobile ou desktop
-          height: isMobile() ? 300 : 450,
-          margin: { l: 100, r: 20, t: 60, b: 20 },
-          
-          xaxis: {
-            title: 'km²',
-            showgrid: true,
-            gridcolor: 'rgba(0,0,0,.08)'
+        Plotly.newPlot(
+          barDiv,
+          [{
+            type        : 'bar',
+            orientation : 'h',
+            x           : xVals,
+            y           : yVals,
+            marker      : { color: '#2E8B57', line: { width: 0 } },
+
+            /* ‼ rótulos sempre fora das barras */
+            text        : labels,
+            textposition: 'outside',
+            textfont    : { size: isMobile() ? 10 : 12, color: '#000' },
+            cliponaxis  : false
+          }],
+          {
+            template : 'plotly_white',
+            height   : isMobile() ? 300 : 450,
+
+            /* ‼ espaçamento entre barras */
+            bargap   : 0.30,              // 0 – 1 (pode ajustar)
+
+            margin   : { l: 100, r: 80, t: 60, b: 20 },
+
+            xaxis    : {
+              title    : 'km²',
+              showgrid : true,
+              gridcolor: 'rgba(0,0,0,.08)'
+            },
+            yaxis    : {
+              automargin: true,
+              tickfont  : { size: isMobile() ? 10 : 12 }
+            }
           },
-          yaxis: { automargin: true }
-        }, { responsive: true }).then(() => hideLoading('bar-chart'));
+          { responsive: true }
+        ).then(() => hideLoading('bar-chart'));
       };
+
 
       /* ------------ DONUTS --------------------------------------- */
       const renderPies = (m, u, uf) => {

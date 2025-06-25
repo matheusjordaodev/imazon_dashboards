@@ -165,7 +165,7 @@
   <div class="row gx-2 mb-4">
     <div class="col-12 col-md-6 mb-4 mb-md-0">
       <div class="card h-100">
-        <div class="card-header">SAD Alerta de Degradação Florestal Acumulado Top 10</div>
+        <div class="card-header">Alerta de Degradação Florestal Acumulado Top 10</div>
         <div class="card-body p-0">
           <div id="bar-settlement"></div>
         </div>
@@ -191,7 +191,7 @@
     <div class="col-12 col-md-6 mb-4 mb-md-0">
       <div class="card h-100">
         <div class="card-header">
-          SAD de Alertas de Degradação Florestal Acumulado – Assentamentos por Estado
+          Alertas de Degradação Florestal Acumulado – Assentamentos por Estado
         </div>
         <div class="card-body p-0">
           <div id="line-graph" style="height:450px"></div>
@@ -524,7 +524,7 @@
     barSet = arr.map(d => d.key);
 
     const year = yearSelect.value;
-    const titleMain = 'SAD Alerta de Degradação Florestal Acumulado Top 10';
+    const titleMain = 'Alerta de Degradação Florestal Acumulado Top 10';
     const titleSub = `Área (${year}) – ${selSet.length ? 'Selecionados' : 'Top 10'}`;
     plotHorizontalBar({ containerId: 'bar-settlement', data: arr, titleTextMain: titleMain, titleTextSub: titleSub });
   }

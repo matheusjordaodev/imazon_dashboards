@@ -292,17 +292,18 @@ if(typeof window!=='undefined'&&typeof document!=='undefined'){
   const pie2Div=document.getElementById('pie2');
 
 const renderBar = (m, u, uf) => {
-  // Exibir overlay de carregamento
   const overlay = document.getElementById('bar-loading');
   if (overlay) overlay.style.display = 'flex';
 
-  // Obter e filtrar dados
+  /* filtra e ordena */
   const rows = filter(m, u, uf).map(f => ({
     area: stripPrefix(f.properties.NOME),
-    km: +f.properties.DESMATAM_1 || 0
-  })).sort((a, b) => b.km - a.km).slice(0, 10);
+    km   : +f.properties.DESMATAM_1 || 0
+  }))
+  .sort((a, b) => b.km - a.km)
+  .slice(0, 10);
 
-  // Se não há dados, desenha gráfico vazio e oculta overlay
+  /* sem dados */
   if (!rows.length) {
     Plotly.newPlot(barDiv, [], {}, { responsive: true }).then(() => {
       if (overlay) overlay.style.display = 'none';
@@ -310,81 +311,58 @@ const renderBar = (m, u, uf) => {
     return;
   }
 
-  // Preparar arrays para Plotly
-  const xVals = rows.map(r => r.km);
+  const xVals   = rows.map(r => r.km);
   const yLabels = rows.map(r => r.area);
+  const txtVals = xVals.map(v =>
+    `${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} km²`
+  );
 
-  // Formatação de texto (valores) em pt-BR, com "km²"
-  const texts = rows.map(r => {
-    // toLocaleString para separar milhares e decimais em pt-BR
-    const numStr = r.km.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return `${numStr} km²`;
-  });
-
-  // Definir posição do texto: dentro se valor >= threshold, senão fora
-  const maxKm = rows[0].km || 1;
-  const threshold = maxKm * 0.1; // 10% do maior; ajuste se quiser outro limiar
-  const textpositions = rows.map(r => (r.km >= threshold ? 'inside' : 'outside'));
-  // Cor do texto: branco dentro de barras escuras, preto quando fora
-  const textcolors = rows.map(r => (r.km >= threshold ? '#ffffff' : '#000000'));
-
-  // Responsividade: detectar mobile para ajustar margens/fontes
   const mobile = isMobile();
-  // Ajuste margem esquerda para não cortar labels longas
-  const marginLeft = mobile ? 40 : 100; // exemplo: em desktop deixamos 100px para labels
-  const margin = mobile
-    ? { l: marginLeft, r: 20, t: 50, b: 40 }
-    : { l: marginLeft, r: 20, t: 60, b: 30 };
 
-  // Construir trace
-  const trace = {
-    type: 'bar',
-    orientation: 'h',
-    x: xVals,
-    y: yLabels,
-    marker: { color: '#2E8B57', line: { width: 0 } },
-    text: texts,
-    textposition: textpositions,
-    textfont: { color: textcolors, size: mobile ? 10 : 12 }
-  };
+  Plotly.newPlot(
+    barDiv,
+    [{
+      type        : 'bar',
+      orientation : 'h',
+      x           : xVals,
+      y           : yLabels,
+      marker      : { color: '#2E8B57' },
 
-  // Layout: usa autosize ou height fixo. Como o container #bar-chart tem style="height:450px",
-  // e Plotly usa useResizeHandler/style: {width:'100%',height:'100%'}, ele preencherá o contêiner.
-  const layout = {
-    template: 'plotly_white',
-    // height: 450, // opcional; se precisar forçar, mas se usa style height no contêiner, autosize costuma bastar
-    margin: margin,
-    
-    xaxis: {
-      title: 'km²',
-      showgrid: true,
-      gridcolor: 'rgba(0,0,0,.08)',
-      tickfont: { size: mobile ? 10 : 12 }
+      /* etiquetas fora */
+      text        : txtVals,
+      textposition: 'outside',
+      textfont    : { size: mobile ? 10 : 12, color: '#000' },
+      cliponaxis  : false
+    }],
+    {
+      template : 'plotly_white',
+      autosize : true,
+      height   : mobile ? 320 : 450,
+
+      bargap   : 0.30,                     // espaço entre barras
+      margin   : { l: mobile ? 60 : 110, r: 90, t: 60, b: 30 },
+
+      xaxis    : {
+        title    : 'km²',
+        showgrid : true,
+        gridcolor: 'rgba(0,0,0,.08)',
+        tickfont : { size: mobile ? 10 : 12 }
+      },
+      yaxis    : { automargin: true, tickfont: { size: mobile ? 10 : 12 } }
     },
-    yaxis: {
-      automargin: true,
-      tickfont: { size: mobile ? 10 : 12 }
-    },
-    font: { size: mobile ? 10 : 12 },
-    plot_bgcolor: 'rgba(0,0,0,0)',
-    paper_bgcolor: 'rgba(0,0,0,0)'
-  };
-
-  const config = {
-    responsive: true,
-    displayModeBar: false,
-    useResizeHandler: true,
-    // style: { width: '100%', height: '100%' } // Plotly já aplica por default quando useResizeHandler é true
-  };
-
-  // Chamar Plotly.newPlot e ao completar, esconder overlay
-  Plotly.newPlot(barDiv, [trace], layout, config).then(() => {
+    { responsive: true, displayModeBar: false }
+  ).then(() => {
     if (overlay) overlay.style.display = 'none';
   }).catch(err => {
     console.error('Erro ao renderizar gráfico de barras:', err);
     if (overlay) overlay.style.display = 'none';
   });
 };
+
+/* mantém o gráfico responsivo ao redimensionar */
+window.addEventListener('resize', () => {
+  if (barDiv && barDiv.data) Plotly.Plots.resize(barDiv);
+});
 
 
   /* ------------ DONUTS RESPONSIVOS --------------------------- */

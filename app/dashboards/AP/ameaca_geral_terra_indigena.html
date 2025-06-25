@@ -160,7 +160,7 @@
 
     <div class="col-12 col-md-6">
       <div class="card h-100">
-        <div class="card-header">TOP 10 Desmatamento</div>
+        <div class="card-header">TOP 10 Desmatamento por terras Indígenas</div>
         <div class="card-body">
           <!-- wrapper com spinner -->
           <div class="loading-overlay">
@@ -458,48 +458,64 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const pie1Div = document.getElementById('pie1');
     const pie2Div = document.getElementById('pie2');
 
-    const renderBar = (m, u, uf) => {
+   /* ---------- GRÁFICO DE BARRAS ---------------------------------- */
+const renderBar = (m, u, uf) => {
   showLoading('bar-chart');
+
   const rows = filter(m, u, uf).map(f => ({
     area: stripPrefix(f.properties.NOME),
-    km: +(f.properties.DESMATAM_1) || 0
+    km  : +(f.properties.DESMATAM_1) || 0
   }))
   .sort((a, b) => b.km - a.km)
   .slice(0, 10);
 
   if (!rows.length) {
     Plotly.newPlot(barDiv, [], {}, { responsive: true })
-      .then(() => hideLoading('bar-chart'));
+          .then(() => hideLoading('bar-chart'));
     return;
   }
 
-  // Extrai arrays para x, y e text
   const xVals = rows.map(r => r.km);
-  const yLabels = rows.map(r => r.area);
+  const yVals = rows.map(r => r.area);
 
-  Plotly.newPlot(barDiv, [{
-    type: 'bar',
-    orientation: 'h',
-    x: xVals,
-    y: yLabels,
-    marker: { color: '#2E8B57', line: { width: 0 } },
-    text: xVals.map(v => {
-      // Formatação do valor: se quiser inteiro sem casas decimais
-      // ou com decimal, ajustar aqui:
-      return Number.isInteger(v) ? v : v.toFixed(2);
-    }),
-    textposition: 'auto', 
-    // opcional: texttemplate (caso queira controlar casas decimais ou sufixo)
-    // texttemplate: '%{text} km²',
-    // insidetextanchor: 'middle'
-  }], {
-    template: 'plotly_white',
-    height: 450,
-    margin: { l: 100, r: 10, t: 60, b: 30 },
-    xaxis: { title: 'km²', showgrid: true, gridcolor: 'rgba(0,0,0,.08)' },
-    yaxis: { automargin: true }
-  }, { responsive: true }).then(() => hideLoading('bar-chart'));
+  Plotly.newPlot(
+    barDiv,
+    [{
+      type        : 'bar',
+      orientation : 'h',
+      x           : xVals,
+      y           : yVals,
+      marker      : { color: '#2E8B57' },
+
+      /* ‼ etiquetas fora da barra */
+      text        : xVals.map(v => v.toFixed(2)),
+      textposition: 'outside',
+      textfont    : { size: isMobile() ? 10 : 12, color: '#000' },
+      cliponaxis  : false         // evita cortar texto
+    }],
+    {
+      template : 'plotly_white',
+      autosize : true,            // adapta-se a qualquer largura
+      height   : isMobile() ? 320 : 450,
+
+      /* ‼ espaçamento entre barras */
+      bargap   : 0.30,            // 0–1 (ajuste se quiser)
+
+      margin   : { l: 110, r: 90, t: 60, b: 30 },
+      xaxis    : { title: 'km²', showgrid: true,
+                   gridcolor: 'rgba(0,0,0,.08)' },
+      yaxis    : { automargin: true,
+                   tickfont: { size: isMobile() ? 10 : 12 } }
+    },
+    { responsive: true }
+  ).then(() => hideLoading('bar-chart'));
 };
+
+/* ─── Mantém o gráfico redimensionado ao mudar o tamanho da janela ─── */
+window.addEventListener('resize', () => {
+  if (barDiv && barDiv.data) Plotly.Plots.resize(barDiv);
+});
+
 
     /* ------------ DONUTS RESPONSIVOS --------------------------- */
     const renderPies = (m, u, uf) => {
