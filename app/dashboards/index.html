@@ -5,772 +5,162 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ImazonGeo - Dashboards</title>
   
-  <!-- Ícones e Fontes -->
+  <!-- Ícones & Fontes -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <!-- Pré-conexão para performance de fontes -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- Montserrat -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     /* =============== VARIÁVEIS ================= */
     :root {
-      --sb-w: 290px;           /* largura da sidebar (expandida) */
-      --sb-collapsed-w: 70px;  /* largura da sidebar colapsada */
-      --ft-h: 45px;            /* altura do footer */
-      --tb-h: 56px;            /* altura da topbar */
-      --primary-color: #007C4F; /* cor principal extraída da imagem */
-      --secondary-color: #005A3F; /* um tom mais escuro para gradiente */
-      --hover-color: #339080;   /* ou outro tom claro para hover */
-      --dark-text: #2c3e50;     /* cor do texto escuro */
-      --light-text: #ffffff;    /* cor do texto claro */
+      --sb-w: 290px;          /* será atualizado via JS */
+      --ft-h: 45px;           /* altura do footer */
+      --tb-h: 56px;           /* altura da topbar */
+      --primary-color: #007C4F;
+      --secondary-color: #005A3F;
+      --hover-color: #339080;
+      --dark-text: #2c3e50;
+      --light-text: #ffffff;
+
+      /* ------ Espaço entre logotipo e menu (px) ------ */
+      --logo-bottom-gap: 12px;
     }
 
-    /* =============== RESET E PREVENÇÃO DE OVERFLOW ================= */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    html, body {
-      width: 100%;
-      max-width: 100vw;
-      overflow-x: hidden !important;
-      font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      height: 100%;
+    /* ===== Reset / Base ===== */
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{width:100%;max-width:100vw;overflow-x:hidden;font-family:'Montserrat',Segoe UI,Tahoma,Geneva,Verdana,sans-serif;height:100%}
+
+    /* ===== Topbar ===== */
+    #topbar{position:fixed;top:0;left:0;right:0;height:var(--tb-h);background:var(--primary-color);color:var(--light-text);display:flex;justify-content:space-between;align-items:center;padding:0 15px;z-index:1050;width:100%;max-width:100vw}
+    .menu-toggle{background:none;border:none;color:var(--light-text);font-size:1.6rem;cursor:pointer;padding:5px 8px;display:inline-flex;align-items:center;justify-content:center}
+    .topbar-brand{font-size:1.3rem;font-weight:600}
+
+    /* ===== Sidebar ===== */
+    #sidebar{width:var(--sb-w);position:fixed;top:var(--tb-h);left:0;height:calc(100vh - var(--tb-h));background:linear-gradient(180deg,var(--primary-color) 0%,var(--secondary-color) 100%);overflow-y:auto;transition:transform .3s ease;z-index:1030;display:flex;flex-direction:column}
+    body.sidebar-collapsed #sidebar{transform:translateX(-100%)}
+
+    /* ===== Cabeçalho logo ===== */
+    .sidebar-header{background:var(--primary-color);padding:4px 20px;text-align:center;height:210px;border-bottom:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:var(--logo-bottom-gap);transition:margin-bottom .3s ease,height .3s ease,padding .3s ease}
+    .sidebar-logo{width:140px;height:auto;max-width:100%;transition:all .3s ease}
+    body.sidebar-collapsed .sidebar-header{height:0;padding:0;margin-bottom:0;border:none}
+    body.sidebar-collapsed .sidebar-logo{display:none}
+
+    /* ===== Menu ===== */
+    .sidebar-menu{flex:1 1 auto}
+    .section-header{background:rgba(255,255,255,.1);color:var(--light-text);padding:12px 20px;font-size:.9rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid rgba(255,255,255,.1);cursor:pointer;transition:background .3s ease;display:flex;align-items:center;justify-content:space-between;text-align:right}
+    .section-header:hover{background:rgba(255,255,255,.15)}
+    .section-title{display:flex;align-items:center;margin-left:auto}
+    .section-title span{margin-left:8px;text-align:right}
+    .collapse-icon{transition:transform .3s ease;font-size:1.2rem}
+    .collapse-icon.rotated{transform:rotate(180deg)}
+
+    .section-content{background:rgba(255,255,255,.05);max-height:0;overflow:hidden;transition:max-height .3s ease}
+    .section-content.expanded{max-height:1000px}
+
+    .menu-item{display:flex;align-items:center;justify-content:flex-end;padding:12px 20px;color:var(--light-text);text-decoration:none;font-size:.9rem;font-weight:400;border-bottom:1px solid rgba(255,255,255,.05);transition:all .3s ease}
+    .menu-item:hover{background:rgba(255,255,255,.1);padding-right:25px}
+    .menu-item.active{background:rgba(255,255,255,.15);font-weight:500}
+    .menu-item-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-left:auto;text-align:right}
+
+    body.sidebar-collapsed .section-content{display:none !important}
+    body.sidebar-collapsed .collapse-icon{display:none}
+
+    /* ===== Conteúdo ===== */
+    #content{position:fixed;top:var(--tb-h);left:var(--sb-w);right:0;bottom:var(--ft-h);display:flex;flex-direction:column;min-height:0;max-width:calc(100vw - var(--sb-w));overflow-x:hidden;transition:left .3s ease,max-width .3s ease}
+    body.sidebar-collapsed #content{left:0;max-width:100vw}
+    #iframe-dashboard-container{flex:1 1 auto;display:flex}
+    #dashboard-iframe{flex:1 1 100%;border:0;width:100%;height:100%}
+
+    /* ===== Footer ===== */
+    footer.footer{position:fixed;left:0;right:0;bottom:0;height:var(--ft-h);background:var(--primary-color);color:var(--light-text);display:flex;align-items:center;justify-content:center}
+
+    /* ===== Responsividade ===== */
+    @media(max-width:768px){
+      #sidebar{transform:translateX(-100%);width:260px} /* largura fixa p/ mobile */
+      #sidebar.active{transform:translateX(0)}
+      #content{left:0!important;max-width:100vw!important}
     }
 
-    /* =============== TOPBAR (sempre visível) ================= */
-    #topbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: var(--tb-h);
-      background: var(--primary-color);
-      color: var(--light-text);
-      align-items: center;
-      padding: 0 15px;
-      z-index: 1050;
-      width: 100%;
-      max-width: 100vw;
-      display: flex;
-      justify-content: space-between;
-    }
-    .menu-toggle {
-      background: none;
-      border: none;
-      color: var(--light-text);
-      font-size: 1.5rem;
-      cursor: pointer;
-      padding: 5px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .topbar-brand {
-      font-size: 1.3rem;
-      font-weight: 600;
-    }
-
-    /* =============== SIDEBAR ================= */
-    #sidebar {
-      width: var(--sb-w);
-      max-width: var(--sb-w);
-      position: fixed;
-      top: var(--tb-h); /* abaixo do topbar */
-      left: 0;
-      height: calc(100vh - var(--tb-h));
-      background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-      overflow-y: auto;
-      overflow-x: hidden;
-      transition: width .3s ease, transform .3s ease;
-      z-index: 1030;
-      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      min-width: var(--sb-collapsed-w);
-    }
-    body.sidebar-collapsed #sidebar {
-      width: var(--sb-collapsed-w);
-      max-width: var(--sb-collapsed-w);
-    }
-
-    /* =============== CABEÇALHO DA SIDEBAR ================= */
-    .sidebar-header {
-      background: var(--primary-color);
-      padding: 4px 20px;
-      text-align: center;
-      height: 210px;
-      border-bottom: 1px solid rgba(255,255,255,0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: height 0.3s ease, padding 0.3s ease;
-      overflow: hidden;
-    }
-    .sidebar-logo {
-      width: 140px;
-      height: auto;
-      max-width: 100%;
-      transition: all 0.3s ease;
-    }
-    
-    /* Ajuste para ocultar completamente o cabeçalho quando recolhido */
-    body.sidebar-collapsed .sidebar-header {
-      height: 0;
-      padding: 0;
-      border: none;
-    }
-    body.sidebar-collapsed .sidebar-logo {
-      display: none;
-    }
-
-    /* =============== MENU DA SIDEBAR ================= */
-    .sidebar-menu {
-      padding: 0;
-      margin: 0;
-      flex: 1 1 auto;
-    }
-    .menu-section {
-      margin-bottom: 0;
-    }
-    .section-header {
-      background: rgba(255,255,255,0.1);
-      color: var(--light-text);
-      padding: 12px 20px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      margin: 0;
-      cursor: pointer;
-      transition: background 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: relative; /* necessário para o badge de sigla */
-    }
-    .section-header:hover {
-      background: rgba(255,255,255,0.15);
-    }
-    .section-title {
-      display: flex;
-      align-items: center;
-    }
-    .section-title span {
-      margin-left: 8px;
-    }
-    .section-title i {
-      font-size: 1rem;
-    }
-    .collapse-icon {
-      transition: transform 0.3s ease;
-      font-size: 1.2rem;
-    }
-    .collapse-icon.rotated {
-      transform: rotate(180deg);
-    }
-    .section-content {
-      background: rgba(255,255,255,0.05);
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease;
-    }
-    .section-content.expanded {
-      max-height: 1000px;
-    }
-    .menu-item {
-      display: flex;
-      align-items: center;
-      padding: 12px 20px;
-      color: var(--light-text);
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 400;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      transition: all 0.3s ease;
-      position: relative;
-    }
-    .menu-item:hover {
-      background: rgba(255,255,255,0.1);
-      padding-left: 25px;
-    }
-    .menu-item.active {
-      background: rgba(255,255,255,0.15);
-      border-left: 4px solid var(--light-text);
-      font-weight: 500;
-    }
-    .menu-item-icon {
-      width: 20px;
-      height: 20px;
-      margin-right: 12px;
-      font-size: 1rem;
-      text-align: center;
-      flex-shrink: 0;
-      opacity: 0.9;
-    }
-    .menu-item-text {
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      transition: opacity .3s ease;
-    }
-    body.sidebar-collapsed .menu-item-text {
-      opacity: 0;
-      width: 0;
-      padding: 0;
-      margin: 0;
-      pointer-events: none;
-    }
-    body.sidebar-collapsed .menu-item {
-      justify-content: center;
-      padding: 10px 0;
-    }
-    body.sidebar-collapsed .section-content {
-      display: none !important;
-    }
-    body.sidebar-collapsed .collapse-icon {
-      display: none;
-    }
-    body.sidebar-collapsed .section-header {
-  padding: 15px 0 25px 0; /* Aumente o padding inferior para acomodar a sigla */
-  position: relative; /* Necessário para posicionar a sigla */
-}
-    body.sidebar-collapsed .section-title span {
-      display: none;
-    }
-    body.sidebar-collapsed .section-title {
-  margin-bottom: 5px;
-}
-
-    /* === Badge de sigla quando recolhido === */
-    body.sidebar-collapsed .section-header::after {
-  content: attr(data-abbr);
-  position: absolute;
-  bottom: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--light-text);
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-    /* Tooltip padrão já existente */
-    .section-header[title]:hover::after {
-      content: attr(title);
-      position: absolute;
-      left: 100%;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(0,0,0,0.75);
-      color: #fff;
-      padding: 4px 8px;
-      border-radius: 4px;
-      white-space: nowrap;
-      margin-left: 8px;
-      font-size: 0.85rem;
-      z-index: 2000;
-    }
-
-    /* =============== CONTEÚDO PRINCIPAL ================= */
-    #content {
-      position: fixed;
-      top: var(--tb-h);
-      left: var(--sb-w);
-      right: 0;
-      bottom: var(--ft-h);
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      max-width: calc(100vw - var(--sb-w));
-      overflow-x: hidden;
-      transition: left .3s ease, max-width .3s ease;
-    }
-    body.sidebar-collapsed #content {
-      left: var(--sb-collapsed-w);
-      max-width: calc(100vw - var(--sb-collapsed-w));
-    }
-    #iframe-dashboard-container {
-      flex: 1 1 auto;
-      display: flex;
-      margin: 0;
-      padding: 0;
-      min-height: 0;
-      width: 100%;
-      max-width: 100%;
-      overflow: hidden;
-    }
-    #dashboard-iframe {
-      flex: 1 1 100%;
-      border: 0;
-      width: 100%;
-      height: 100%;
-      min-height: 0;
-      max-width: 100%;
-      overflow: hidden;
-    }
-
-    /* =============== FOOTER ================= */
-    footer.footer {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: var(--ft-h);
-      background: var(--primary-color);
-      color: var(--light-text);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      max-width: 100vw;
-      overflow: hidden;
-    }
-
-    /* =============== RESPONSIVIDADE ================= */
-    @media (max-width: 992px) {
-      /* Em tablets e mobile, o botão já está sempre visível, então não precisa alterar */
-    }
-    @media (max-width: 768px) {
-      /* Sidebar slide-in */
-      #sidebar {
-        transform: translateX(-100%);
-      }
-      #sidebar.active {
-        transform: translateX(0);
-      }
-      #content {
-        left: 0 !important;
-        max-width: 100vw !important;
-      }
-      .sidebar-overlay {
-        position: fixed;
-        top: var(--tb-h);
-        left: 0;
-        width: 100%;
-        height: calc(100vh - var(--tb-h));
-        background: rgba(0,0,0,0.5);
-        z-index: 1020;
-        display: none;
-      }
-      body.sidebar-active .sidebar-overlay {
-        display: block;
-      }
-      .section-header {
-        padding: 10px 15px;
-        font-size: 0.85rem;
-      }
-      .menu-item {
-        padding: 10px 15px;
-        font-size: 0.85rem;
-      }
-      /* ao colapsar em mobile, não afeta o estado colapsado do desktop */
-      body.sidebar-collapsed #sidebar {
-        transform: translateX(-100%);
-      }
-      body.sidebar-collapsed #content {
-        left: 0;
-        max-width: 100vw;
-      }
-    }
-    @media (max-width: 576px) {
-      /* Ajustes menores */
-      :root {
-        --sb-w: 260px;
-      }
-      .menu-item-icon {
-        width: 18px;
-        height: 18px;
-        margin-right: 10px;
-      }
-      .menu-item {
-        font-size: 0.8rem;
-        padding: 8px 12px;
-      }
-    }
-
-    /* =============== SCROLLBAR CUSTOMIZADA ================= */
-    #sidebar::-webkit-scrollbar {
-      width: 6px;
-    }
-    #sidebar::-webkit-scrollbar-track {
-      background: rgba(255,255,255,0.1);
-    }
-    #sidebar::-webkit-scrollbar-thumb {
-      background: rgba(255,255,255,0.3);
-      border-radius: 3px;
-    }
-    #sidebar::-webkit-scrollbar-thumb:hover {
-      background: rgba(255,255,255,0.5);
-    }
-    #dashboard-iframe::-webkit-scrollbar {
-      width: 0;
-      height: 0;
-    }
-    #dashboard-iframe {
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-
-    /* =============== UTILITÁRIOS ================= */
-    .iframe-link.active {
-      background: rgba(255,255,255,0.15) !important;
-      font-weight: 500 !important;
-      border-left: 4px solid var(--light-text) !important;
-    }
+    /* ===== Scrollbar ===== */
+    #sidebar::-webkit-scrollbar{width:6px}
+    #sidebar::-webkit-scrollbar-track{background:rgba(255,255,255,.1)}
+    #sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:3px}
+    #sidebar::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.5)}
   </style>
 </head>
-
-
 <body>
-  <!-- Topbar (Desktop e Mobile) -->
-  <div id="topbar">
-    <button class="menu-toggle" id="menuToggle">
-      <i class="fas fa-bars"></i>
-    </button>
-    <div class="topbar-brand">
-      <span style="color: #ffffff;">Imazon</span><span style="color: rgb(63, 230, 13);">Geo</span>
-    </div>
-  </div>
+  <!-- Topbar -->
+  <div id="topbar"><button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button><div class="topbar-brand"><span style="color:#fff">Imazon</span><span style="color:#3fe60d">Geo</span></div></div>
 
   <!-- Overlay para Mobile -->
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <!-- Sidebar -->
   <nav id="sidebar">
-    <!-- Cabeçalho da Sidebar -->
     <div class="sidebar-header">
-      <img src="../../img/imazon.png" alt="ImazonGeo" width="296" height="273">
+      <img src="../../img/imazon.png" alt="ImazonGeo" width="270" height="232">
     </div>
-
-    <!-- Menu da Sidebar -->
     <div class="sidebar-menu">
-      <!-- Seção: Áreas de Proteção Ambiental -->
-      <div class="menu-section">
-<div class="section-header" data-section="graficos" 
-     title="Áreas de Proteção Ambiental" 
-     data-abbr="APA"> <!-- Adicione esta linha -->
-  <div class="section-title">
-    <span>Áreas de Proteção</span>
-  </div>
-  <i class="fas fa-chevron-down collapse-icon"></i>
-</div>
-
-
-        <div class="section-content" id="graficos-content">
-          <a href="#" class="menu-item iframe-link active" data-src="AP/ameaca_geral_area_de_protecao.html" title="Ameaça Áreas de Proteção">
-            
-            <span class="menu-item-text">Ameaça Áreas de Proteção</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="AP/ameaca_geral_terra_indigena.html" title="Ameaça Terras Indígenas">
-            
-            <span class="menu-item-text">Ameaça Terras Indígenas</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="AP/ameaca_geral_ucs.html" title="Ameaça Unidades Conservação">
-            
-            <span class="menu-item-text">Ameaça Unidades Conservação</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="AP/pressao_geral_area_de_protecao.html" title="Pressão Áreas de Proteção">
-            
-            <span class="menu-item-text">Pressão Áreas de Proteção</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="AP/pressao_geral_terra_indigena.html" title="Pressão Terras Indígenas">
-            
-            <span class="menu-item-text">Pressão Terras Indígenas</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="AP/pressao_geral_ucs.html" title="Pressão Unidades Conservação">
-            
-            <span class="menu-item-text">Pressão Unidades Conservação</span>
-          </a>
-        </div>
-      </div>
-
-      <!-- Seção: Sistema SAD -->
-      <div class="menu-section">
-        <div class="section-header" data-section="sad" 
-     title="Sistema SAD" 
-     data-abbr="SAD"> <!-- Adicione esta linha -->
-  <div class="section-title">
-    <span>Sistema SAD</span>
-  </div>
-  <i class="fas fa-chevron-down collapse-icon"></i>
-</div>
-        <div class="section-content" id="sad-content">
-          <a href="#" class="menu-item iframe-link" data-src="SAD/degradacao_assentamentos.html" title="Degradação Assentamentos">
-            
-            <span class="menu-item-text">Degradação Assentamentos</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="SAD/degradacao_estados.html" title="Degradação - Estados">
-            
-            <span class="menu-item-text">Degradação - Estados</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="SAD/degradacao_municipios.html" title="Degradação - Municípios">
-            
-            <span class="menu-item-text">Degradação - Municípios</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="SAD/degradacao_terras_indigenas.html" title="Degradação - Terras Indígenas">
-            
-            <span class="menu-item-text">Degradação - Terras Indígenas</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="SAD/degradacao_unidades_de_conservacao.html" title="Degradação - Unidades de Conservação">
-            
-            <span class="menu-item-text">Degradação - Unidades de Conservação</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="SAD/desmatamento_assentamentos.html" title="Desmatamentos - Assentamentos">
-            
-            <span class="menu-item-text">Desmatamentos - Assentamentos</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="SAD/desmatamento_estados.html" title="Desmatamentos - Estados">
-            
-            <span class="menu-item-text">Desmatamentos - Estados</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="SAD/desmatamento_municipios.html" title="Desmatamentos - Municípios">
-            
-            <span class="menu-item-text">Desmatamentos - Municípios</span>
-          </a>
-                    <a href="#" class="menu-item iframe-link" data-src="SAD/desmatamento_terras_indigenas.html" title="Desmatamentos - Terras Indígenas">
-            
-            <span class="menu-item-text">Desmatamentos - Terras Indígenas</span>
-          </a>
-                    <a href="#" class="menu-item iframe-link" data-src="SAD/desmatamento_unidades_de_conservacao.html" title="Desmatamentos - Unidades de Conservação">
-            
-            <span class="menu-item-text">Desmatamentos - Unidades de Conservação</span>
-          </a>
-        </div>
-      </div>
-
-      <!-- Seção: SIMEX -->
-      <div class="menu-section">
-        <div class="section-header" data-section="simex" 
-     title="SIMEX" 
-     data-abbr="SIMEX">
-  <div class="section-title">
-    <span>SIMEX</span>
-  </div>
-  <i class="fas fa-chevron-down collapse-icon"></i>
-</div>
-        <div class="section-content" id="simex-content">
-          <a href="#" class="menu-item iframe-link" data-src="SIMEX/assentamentos.html" title="Assentamentos">
-            
-            <span class="menu-item-text">Assentamentos</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="SIMEX/imoveis_rurais.html" title="Imóveis Rurais">
-            
-            <span class="menu-item-text">Imóveis Rurais</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="SIMEX/municipios.html" title="Municípios">
-            
-            <span class="menu-item-text">Municípios</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="SIMEX/terras_sem_destinacao.html" title="Terra Sem Destinação">
-            
-            <span class="menu-item-text">Terra Sem Destinação</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="SIMEX/terras_indigenas.html" title="Terras Indígenas">
-            
-            <span class="menu-item-text">Terras Indígenas</span>
-          </a>
-          <a href="#" class="menu-item iframe-link" data-src="SIMEX/ucs.html" title="Unidades de Conservação">
-            
-            <span class="menu-item-text">Unidades de Conservação</span>
-          </a>
-        </div>
-      </div>
-      <div class="menu-section">
-    <div class="section-header" data-section="floreser" 
-     title="FloreSer" 
-     data-abbr="FLORESER"> 
-  <div class="section-title">
-    <span>FloreSer</span>
-  </div>
-  <i class="fas fa-chevron-down collapse-icon"></i>
-</div>
-    <div class="section-content" id="floreser-content">
-      
-      <a href="#" class="menu-item iframe-link" data-src="FLORESER/index.html" title="Dashboard Principal FloreSer">
-        
-        <span class="menu-item-text">FloreSer</span>
-      </a>
-
-    </div>
-  </div>
-
-
+      <!-- Seções -->
+      <div class="menu-section"><div class="section-header" data-section="graficos" title="Ameaça e Pressão"><div class="section-title"><span>Ameaça e Pressão</span></div><i class="fas fa-chevron-down collapse-icon"></i></div><div class="section-content" id="graficos-content"><a href="#" class="menu-item iframe-link active" data-src="AP_ameaca.html"><span class="menu-item-text">Ameaça</span></a><a href="#" class="menu-item iframe-link" data-src="AP_pressao.html"><span class="menu-item-text">Pressão</span></a></div></div>
+      <div class="menu-section"><div class="section-header" data-section="sad" title="Sistema SAD"><div class="section-title"><span>Sistema SAD</span></div><i class="fas fa-chevron-down collapse-icon"></i></div><div class="section-content" id="sad-content"><a href="#" class="menu-item iframe-link" data-src="SAD_degradacao.html"><span class="menu-item-text">Desmatamentos</span></a><a href="#" class="menu-item iframe-link" data-src="SAD_desmatamentos.html"><span class="menu-item-text">Degradação</span></a></div></div>
+      <div class="menu-section"><div class="section-header" data-section="simex" title="SIMEX"><div class="section-title"><span>SIMEX</span></div><i class="fas fa-chevron-down collapse-icon"></i></div><div class="section-content" id="simex-content"><a href="#" class="menu-item iframe-link" data-src="SIMEX.html"><span class="menu-item-text">SIMEX</span></a></div></div>
+      <div class="menu-section"><div class="section-header" data-section="floreser" title="FloreSer"><div class="section-title"><span>FloreSer</span></div><i class="fas fa-chevron-down collapse-icon"></i></div><div class="section-content" id="floreser-content"><a href="#" class="menu-item iframe-link" data-src="FLORESER/index.html"><span class="menu-item-text">FloreSer</span></a></div></div>
     </div>
   </nav>
 
-  <!-- Conteúdo Principal -->
-  <div id="content">
-    <div id="iframe-dashboard-container">
-      <!-- O iframe carregado inicialmente -->
-      <iframe id="dashboard-iframe" loading="lazy" src="AP/ameaca_geral_area_de_protecao.html"></iframe>
-    </div>
-  </div>
+  <!-- Conteúdo principal -->
+  <div id="content"><div id="iframe-dashboard-container"><iframe id="dashboard-iframe" loading="lazy" src="AP/ameaca_geral_area_de_protecao.html"></iframe></div></div>
 
   <!-- Footer -->
-  <footer class="footer">
-    <p style="margin: 0;">
-      <a href="/" style="color: #fffffe; text-decoration: none;">Imazon</a>&nbsp;
-      <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">
-        <img src="https://i.creativecommons.org/l/by-sa/4.0/80x15.png" alt="Licença CC-BY-SA" style="vertical-align: middle;"/>
-      </a>
-    </p>
-  </footer>
+  <footer class="footer"><p style="margin:0"><a href="/" style="color:#fffffe;text-decoration:none">Imazon</a>&nbsp;<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img src="https://i.creativecommons.org/l/by-sa/4.0/80x15.png" alt="Licença CC-BY-SA" style="vertical-align:middle"></a></p></footer>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const iframe = document.getElementById('dashboard-iframe');
-      const links = document.querySelectorAll('.iframe-link');
-      const sidebarOverlay = document.getElementById('sidebarOverlay');
-      const sidebar = document.getElementById('sidebar');
-      const body = document.body;
-      const menuToggle = document.getElementById('menuToggle');
-      const collapseBtn = document.getElementById('collapseBtn');
+    document.addEventListener('DOMContentLoaded',()=>{
+      const iframe=document.getElementById('dashboard-iframe');
+      const links=document.querySelectorAll('.iframe-link');
+      const sidebarOverlay=document.getElementById('sidebarOverlay');
+      const sidebar=document.getElementById('sidebar');
+      const body=document.body;const menuToggle=document.getElementById('menuToggle');
 
-      // Carregar primeiro dashboard
-      if (links.length) {
-        links[0].classList.add('active');
-        iframe.src = links[0].dataset.src;
+      /* ---- Largura dinâmica da sidebar (desktop) ---- */
+      function adjustSidebarWidth(){
+        const vw=Math.max(document.documentElement.clientWidth||0,window.innerWidth||0);
+        if(vw<=768){return;} // mobile usa largura fixa
+        const txtWidths=[...document.querySelectorAll('.section-header')].map(h=>{
+          const sp=h.querySelector('span');return sp?sp.getBoundingClientRect().width:0;});
+        const maxTxt=Math.max(...txtWidths,140); // 140px mínimo p/ logo
+        const padding=60; /* espaço flecha + paddings laterais */
+        let newW=Math.ceil(maxTxt+padding);
+        newW=Math.min(newW,320); // evita sidebar enorme
+        document.documentElement.style.setProperty('--sb-w',`${newW}px`);
       }
 
-      // Seções recolhíveis
-      document.querySelectorAll('.section-header').forEach(header => {
-        header.addEventListener('click', () => {
-          // Se estiver colapsado em desktop, ao clicar expande sidebar e depois a seção
-          if (window.innerWidth > 768 && body.classList.contains('sidebar-collapsed')) {
-            body.classList.remove('sidebar-collapsed');
-            setTimeout(() => {
-              const sectionId = header.dataset.section;
-              const content = document.getElementById(`${sectionId}-content`);
-              const icon = header.querySelector('.collapse-icon');
-              document.querySelectorAll('.section-content').forEach(c => {
-                if (c !== content) c.classList.remove('expanded');
-              });
-              document.querySelectorAll('.collapse-icon').forEach(ic => ic.classList.remove('rotated'));
-              content.classList.toggle('expanded');
-              icon.classList.toggle('rotated');
-            }, 300);
-            return;
-          }
-          // Expande/recolhe normalmente
-          const sectionId = header.dataset.section;
-          const content = document.getElementById(`${sectionId}-content`);
-          const icon = header.querySelector('.collapse-icon');
-          content.classList.toggle('expanded');
-          icon.classList.toggle('rotated');
-        });
-      });
+      /* ---- Ajuste iframe ---- */
+      function adjustIframe(){iframe.style.width='100%';iframe.style.maxWidth='100%';}
 
-      // Troca de dashboard
-      links.forEach(link => {
-        link.addEventListener('click', ev => {
-          ev.preventDefault();
-          const url = link.dataset.src;
-          if (!url) return;
-          links.forEach(l => l.classList.remove('active'));
-          link.classList.add('active');
-          iframe.src = url;
-          // Em mobile, fechar sidebar após selecionar
-          if (window.innerWidth <= 768) {
-            body.classList.remove('sidebar-active');
-            sidebar.classList.remove('active');
-            sidebarOverlay.style.display = 'none';
-          }
-        });
-      });
+      /* ---- Troca inicial ---- */
+      if(links.length){links[0].classList.add('active');iframe.src=links[0].dataset.src;}
+      adjustSidebarWidth();
+      adjustIframe();
 
-      // Controle da sidebar mobile e desktop pelo botão menuToggle
-      menuToggle.addEventListener('click', () => {
-        if (window.innerWidth > 768) {
-          // Desktop: usa botão para colapsar/expandir sidebar
-          body.classList.toggle('sidebar-collapsed');
-          // Ajusta iframe após transição
-          setTimeout(adjustIframe, 300);
-        } else {
-          // Mobile: slide-in/out
-          body.classList.toggle('sidebar-active');
-          sidebar.classList.toggle('active');
-          sidebarOverlay.style.display = body.classList.contains('sidebar-active') ? 'block' : 'none';
-        }
-      });
-      sidebarOverlay.addEventListener('click', () => {
-        body.classList.remove('sidebar-active');
-        sidebar.classList.remove('active');
-        sidebarOverlay.style.display = 'none';
-      });
+      /* ---- Seções ---- */
+      document.querySelectorAll('.section-header').forEach(header=>header.addEventListener('click',()=>{
+        const id=header.dataset.section;const content=document.getElementById(id+'-content');const icon=header.querySelector('.collapse-icon');content.classList.toggle('expanded');icon.classList.toggle('rotated');}));
 
-      // Botão de colapsar/expandir (desktop) continua funcional
-      collapseBtn.addEventListener('click', () => {
-        if (window.innerWidth <= 768) return;
-        body.classList.toggle('sidebar-collapsed');
-        setTimeout(adjustIframe, 300);
-      });
+      /* ---- Links ---- */
+      links.forEach(link=>{link.addEventListener('click',ev=>{ev.preventDefault();const url=link.dataset.src;if(!url)return;links.forEach(l=>l.classList.remove('active'));link.classList.add('active');iframe.src=url;if(window.innerWidth<=768){body.classList.remove('sidebar-active');sidebar.classList.remove('active');sidebarOverlay.style.display='none';}})});
 
-      // Iniciar com a primeira seção expandida
-      if (document.querySelector('.section-header')) {
-        document.querySelector('.section-header').click();
-      }
+      /* ---------- Menu toggle ---------- */
+      menuToggle.addEventListener('click',()=>{if(window.innerWidth>768){body.classList.toggle('sidebar-collapsed');}else{body.classList.toggle('sidebar-active');sidebar.classList.toggle('active');sidebarOverlay.style.display=body.classList.contains('sidebar-active')?'block':'none';}});
+      sidebarOverlay.addEventListener('click',()=>{body.classList.remove('sidebar-active');sidebar.classList.remove('active');sidebarOverlay.style.display='none'});
 
-      // Função para ajustar o iframe
-      function adjustIframe() {
-        const containerWidth = iframe.parentElement.offsetWidth;
-        iframe.style.width = '100%';
-        iframe.style.maxWidth = containerWidth + 'px';
-        try {
-          if (iframe.contentWindow) {
-            iframe.contentWindow.postMessage({
-              type: 'resize',
-              width: containerWidth,
-              height: iframe.offsetHeight
-            }, '*');
-          }
-        } catch (e) {
-          // Ignorar erros de cross-origin
-        }
-      }
-
-      // Redimensionar quando a janela mudar de tamanho
-      let resizeTimeout;
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-          // Em desktop, manter colapsado se já estava
-          if (window.innerWidth <= 768 && body.classList.contains('sidebar-collapsed')) {
-            body.classList.remove('sidebar-collapsed');
-          }
-          adjustIframe();
-        }, 250);
-      });
-
-      // Ajustar iframe quando carregado
-      iframe.addEventListener('load', () => {
-        setTimeout(adjustIframe, 500);
-      });
-
-      // Detectar mudanças de orientação (mobile)
-      window.addEventListener('orientationchange', () => {
-        setTimeout(adjustIframe, 500);
-      });
+      /* ---------- Resize ---------- */
+      let resizeTimeout;window.addEventListener('resize',()=>{clearTimeout(resizeTimeout);resizeTimeout=setTimeout(()=>{adjustSidebarWidth();adjustIframe();},200);});
+      iframe.addEventListener('load',()=>setTimeout(adjustIframe,300));
     });
-
-    // Funções auxiliares
-    function downloadData() {
-      alert('Funcionalidade de download em desenvolvimento');
-    }
-    function printGraphics() {
-      window.print();
-    }
-    function showInfo() {
-      alert('Informações sobre os dados e metodologia em desenvolvimento');
-    }
   </script>
 </body>
 </html>
-
