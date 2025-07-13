@@ -2,63 +2,237 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <title>SAD – Assentamentos</title>
+  <title>SAD – Sistema de Alerta de Degradação Florestal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Montserrat Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- libs CSS -->
+  <!-- Bibliotecas CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <link rel="stylesheet" href="../../../css/base-styles.css">
-  <link rel="stylesheet" href="../../../css/map-styles.css">
-  <link rel="stylesheet" href="../../../css/button-styles.css">
-  <link rel="stylesheet" href="../../../css/legend-styles.css">
-  <link rel="stylesheet" href="../../../css/card-styles.css">
-  <link rel="stylesheet" href="../../../css/controls-styles.css">
-  <link rel="stylesheet" href="../../../css/select-styles.css">
-  <link rel="stylesheet" href="../../../css/responsive-styles.css">
-  <link rel="stylesheet" href="../../../css/modal-styles.css">
   <style>
-    html, body {
-      font-family: 'Montserrat', sans-serif;
+    :root {
+      --primary-green: #28a745;
+      --dark-green: #1e7e34;
+      --light-gray: #f8f9fa;
+      --medium-gray: #e9ecef;
+      --dark-gray: #495057;
+      --card-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      --card-shadow-hover: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    body {
+      background-color: var(--light-gray);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 15px;
+    }
+    
+    .dashboard-header {
+      background: linear-gradient(120deg, #2c7744, var(--dark-green));
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: var(--card-shadow);
+    }
+    
+    .dashboard-title {
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+    
+    .dashboard-subtitle {
+      opacity: 0.9;
+      font-size: 1.1rem;
+    }
+    
+    .card {
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+      border: none;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      overflow: hidden;
+      margin-bottom: 20px;
+      background-color: #fff;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--card-shadow-hover);
+    }
+    
+    /* Títulos em cinza escuro e negrito */
+    .card-header {
+      background-color: white !important;
+      color: var(--dark-gray) !important;
+      font-weight: 700 !important;
+      border-bottom: 1px solid var(--medium-gray) !important;
+      padding: 12px 20px;
+      font-size: 1.1rem;
+    }
+    
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 20px;
+      background: white;
+      padding: 12px 15px;
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+    }
+    
+    .year-selector {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+      background: white;
+      padding: 5px 15px;
+      border-radius: 30px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .year-selector label {
+      margin-right: 10px;
+      font-weight: 500;
+      color: var(--dark-gray);
+    }
+    
+    .map-container {
+      border-radius: 0 0 10px 10px;
+      overflow: hidden;
+      background: #f0f8ff;
+    }
+    
+    #map-graph {
+      height: 100%;
+      min-height: 450px;
+      background: #e6f7ff;
+    }
+    
+    /* Legenda em formato de barra vertical */
+    .heat-legend {
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      line-height: 1.4;
+      z-index: 1000;
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      font-size: 0.8rem;
+      width: 110px;
+    }
+    
+    .legend-title {
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 5px;
+      color: var(--dark-gray);
+    }
+    
+    .legend-gradient {
+      height: 150px;
+      width: 25px;
+      margin: 0 auto;
+      border-radius: 3px;
+    }
+    
+    .legend-labels {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 150px;
+      position: absolute;
+      left: 40px;
+      top: 35px;
+      font-size: 0.75rem;
+    }
+    
+    .custom-button {
+      background: linear-gradient(120deg, var(--primary-green), var(--dark-green));
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 8px 18px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .custom-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    }
+    
+    /* Remover linhas de fundo dos gráficos */
+    .gridlayer, .cartesianlayer > .grid {
+      display: none !important;
+    }
+    
+    .js-plotly-plot .plotly .main-svg {
+      background-color: transparent !important;
+    }
+    
+    .settlement-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .settlement-item:hover {
+      background-color: #f0f8ff;
+    }
+    
+    .settlement-item.selected {
+      background-color: #e0f7e9;
+      font-weight: 600;
+    }
+    
+    .selection-info {
+      padding: 8px 0;
+      font-weight: 500;
+      color: var(--dark-gray);
+    }
+    
+    /* Melhorias na responsividade */
+    @media (max-width: 768px) {
+      .controls-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .year-selector {
+        margin-left: 0;
+        width: 100%;
+      }
     }
   </style>
 </head>
 
-<body class="py-3">
+<body>
+
   <div class="container-fluid" id="app-root">
-
-    <!-- botões principais -->
-    <div class="row mb-3 gy-2">
-      <div class="col-auto">
-        <button id="reset-btn" class="btn btn-success btn-sm custom-button">
-          <i class="fa fa-filter me-1"></i>Remover Filtros
-        </button>
-      </div>
-      <div class="col-auto">
-        <button id="state-btn" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#state-modal">
-          <i class="fa fa-map me-1"></i>Selecione o Estado
-        </button>
-      </div>
-      <div class="col-auto">
-        <button id="download-btn-open" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#download-modal">
-          <i class="fa fa-download me-1"></i>Baixar CSV
-        </button>
-      </div>
-      <div class="col-auto">
-        <button id="interest-btn" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#interest-modal">
-          Selecionar Área de Interesse
-        </button>
-      </div>
-    </div>
-
-    <!-- filtros -->
-    <div class="row g-2 align-items-end mb-4">
-      <div class="col-auto fw-bold">Ano:</div>
-      <div class="col-6 col-md-3">
+    <!-- Linha de controles superior -->
+    <div class="controls-row">
+      <button id="reset-btn" class="btn btn-success btn-sm custom-button">
+        <i class="fa fa-filter me-1"></i>Remover Filtros
+      </button>
+      <button id="state-btn" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#state-modal">
+        <i class="fa fa-map me-1"></i>Selecione o Estado
+      </button>
+      <button id="download-btn-open" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#download-modal">
+        <i class="fa fa-download me-1"></i>Baixar CSV
+      </button>
+      <button id="interest-btn" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#interest-modal">
+        Selecionar Área de Interesse
+      </button>
+      
+      <!-- Seletor de ano ao lado do botão de interesse -->
+      <div class="year-selector">
+        <label for="year-select">Ano:</label>
         <select id="year-select" class="form-select form-select-sm"></select>
       </div>
     </div>
@@ -78,11 +252,6 @@
           <div class="card-header" id="map-title">Mapa de Degradação Ambiental (km²)</div>
           <div class="card-body p-0 map-container">
             <div id="map-graph" style="height:100%"></div>
-            <div id="map-load-btn-container">
-              <button id="load-map-btn" class="btn btn-success">
-                <i class="fas fa-map me-2"></i>Carregar Mapa
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -112,7 +281,7 @@
 
   </div><!-- /container -->
 
-  <!-- MODAIS (idênticos ao original) -->
+  <!-- MODAIS -->
   <!-- estados -->
   <div class="modal fade" id="state-modal" tabindex="-1">
     <div class="modal-dialog">
@@ -175,13 +344,13 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <div class="search-box">
+          <div class="search-box mb-3">
             <input type="text" id="settlement-search" class="form-control" placeholder="Buscar assentamento…">
           </div>
           <div class="selection-info">
             <span id="selected-count">0</span> selecionados
           </div>
-          <div id="settlement-list" class="settlement-list"></div>
+          <div id="settlement-list" class="settlement-list mt-2" style="max-height: 300px; overflow-y: auto;"></div>
         </div>
         <div class="modal-footer">
           <button id="clear-selection" class="btn btn-outline-secondary">Limpar Seleção</button>
@@ -191,7 +360,7 @@
     </div>
   </div>
 
-  <!-- libs JS -->
+  <!-- Bibliotecas JavaScript -->
   <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -199,8 +368,10 @@
 
   <script type="module">
   (async () => {
+    // URLs dos dados reais
     const GEOJSON_URL = "/dataset/sad/geojson/AMZ_assentamentos.geojson";
     const CSV_URL     = "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_04_2024_assentamentos.csv";
+    
     const normUF      = s => (s||'').toString().toUpperCase();
     const CSV_UF_KEY  = 'ESTADO';
     const BRAZIL_BOUNDS = L.latLngBounds(
@@ -212,14 +383,14 @@
     let selUF = [], selSet = [], curYear, barSet = [];
     let mapInit = false, leafletMap, geoLayer, legend;
     let NAME_KEY = 'ASSENTAMEN';
+    let selectedSettlement = null;
+    let settlementPolygons = new Map();
 
-    // DOM
+    // Elementos DOM
     const stateBtn         = document.getElementById('state-btn');
     const stateSelect      = document.getElementById('state-select');
     const resetBtn         = document.getElementById('reset-btn');
     const yearSelect       = document.getElementById('year-select');
-    const loadMapBtn       = document.getElementById('load-map-btn');
-    const mapBtnContainer  = document.getElementById('map-load-btn-container');
     const settlementList   = document.getElementById('settlement-list');
     const settlementSearch = document.getElementById('settlement-search');
     const selectedCount    = document.getElementById('selected-count');
@@ -230,38 +401,69 @@
     const decSepSelector   = 'input[name="dec-sep"]:checked';
     const removeAccentsChk = document.getElementById('remove-accents');
 
+    // Carrega o GeoJSON com os dados reais
     async function loadGeo(){ 
-      geojson = await (await fetch(GEOJSON_URL)).json(); 
+      try {
+        const response = await fetch(GEOJSON_URL);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        geojson = await response.json();
+        
+        // Processa os assentamentos
+        geojson.features.forEach(feature => {
+          const name = feature.properties[NAME_KEY];
+          if (name) {
+            settlementPolygons.set(name, feature);
+          }
+        });
+      } catch(e) {
+        console.error("Erro ao carregar GeoJSON:", e);
+        // Exibe mensagem de erro no dashboard
+        document.getElementById('app-root').insertAdjacentHTML(
+          'afterbegin', `<div class="alert alert-danger">Erro ao carregar dados geográficos: ${e.message}</div>`
+        );
+      }
     }
+    
+    // Carrega o CSV com os dados reais
     async function loadCsv(){
-      const txt = await (await fetch(CSV_URL)).text();
-      df = d3.csvParse(txt, d => ({
-        ...d,
-        ANO     : +d.ANO     || null,
-        AREAKM2 : +d.AREAKM2 || 0,
-        [CSV_UF_KEY]: normUF(d[CSV_UF_KEY]),
-        // Garante ASSENTAMEN como string, prevenir undefined
-        ASSENTAMEN: d.ASSENTAMEN != null ? String(d.ASSENTAMEN) : ''
-      }));
+      try {
+        const response = await fetch(CSV_URL);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const txt = await response.text();
+        
+        df = d3.csvParse(txt, d => ({
+          ...d,
+          ANO     : +d.ANO     || null,
+          AREAKM2 : +d.AREAKM2 || 0,
+          [CSV_UF_KEY]: normUF(d[CSV_UF_KEY]),
+          ASSENTAMEN: d.ASSENTAMEN != null ? String(d.ASSENTAMEN) : ''
+        }));
+      } catch(e) {
+        console.error("Erro ao carregar CSV:", e);
+        // Exibe mensagem de erro no dashboard
+        document.getElementById('app-root').insertAdjacentHTML(
+          'afterbegin', `<div class="alert alert-danger">Erro ao carregar dados: ${e.message}</div>`
+        );
+        df = [];
+      }
     }
 
+    // Constrói os filtros com base nos dados carregados
     function buildFilters(){
       years = [...new Set(df.map(d=>d.ANO))].sort((a,b)=>a-b);
       curYear = Math.max(...years);
       yearSelect.innerHTML = years.map(y=>`<option>${y}</option>`).join('');
       yearSelect.value = curYear;
 
-      const geoUF = [...new Set(
-        geojson.features.map(f=>normUF(f.properties.UF||f.properties.uf)).filter(Boolean)
-      )];
       const csvUF = [...new Set(df.map(d=>d[CSV_UF_KEY]).filter(Boolean))];
-      ufs = [...new Set([...geoUF, ...csvUF])].sort();
+      ufs = [...new Set([...csvUF])].sort();
       stateSelect.innerHTML = ufs.map(u=>`<option value="${u}">${u}</option>`).join('');
 
       allSet = [...new Set(df.map(d=>d.ASSENTAMEN))].sort();
       buildDownloadChecklist();
     }
 
+    // Atualiza o texto do botão de seleção de estado
     function updateStateBtn(){
       if(!selUF.length) 
         stateBtn.innerHTML = '<i class="fa fa-map me-1"></i>Selecione o Estado';
@@ -271,6 +473,7 @@
         stateBtn.innerHTML = `<i class="fa fa-map me-1"></i>${selUF.length} UFs`;
     }
 
+    // Filtra os dados baseados nas seleções atuais
     function base(){
       const y = +yearSelect.value;
       selUF = Array.from(stateSelect.selectedOptions).map(o=>o.value);
@@ -286,89 +489,104 @@
       return out;
     }
 
-    // Função plotBar modificada para exibir valores mesmo em barras pequenas,
-    // e tratar labels undefined de modo seguro
+    // Plota o gráfico de barras
     function plotBar(){
-  const data = base();
-  // Agrupa por ASSENTAMEN e soma área
-  const agg = d3.rollup(data, v => d3.sum(v, d => d.AREAKM2), d => {
-    const label = d.ASSENTAMEN != null ? String(d.ASSENTAMEN) : '';
-    return label;
-  });
-  let arr = [...agg].map(([a, area])=>({ ASSENTAMEN: a, area }))
-                   .sort((a, b) => b.area - a.area);
-  // Selecionados ou Top 10
-  if (selSet.length) {
-    arr = arr.filter(d => selSet.includes(d.ASSENTAMEN));
-  } else {
-    arr = arr.slice(0, 10);
-  }
-  barSet = arr.map(d => d.ASSENTAMEN);
+      const data = base();
+      // Agrupa por ASSENTAMEN e soma área
+      const agg = d3.rollup(data, v => d3.sum(v, d => d.AREAKM2), d => {
+        const label = d.ASSENTAMEN != null ? String(d.ASSENTAMEN) : '';
+        return label;
+      });
+      let arr = [...agg].map(([a, area])=>({ ASSENTAMEN: a, area }))
+                       .sort((a, b) => b.area - a.area);
+      // Selecionados ou Top 10
+      if (selSet.length) {
+        arr = arr.filter(d => selSet.includes(d.ASSENTAMEN));
+      } else {
+        arr = arr.slice(0, 10);
+      }
+      barSet = arr.map(d => d.ASSENTAMEN);
 
-  // Ajusta margem esquerda conforme tamanho do texto (string segura)
-  let leftMargin;
-  if (arr.length) {
-    const lengths = arr.map(d => {
-      const label = d.ASSENTAMEN != null ? String(d.ASSENTAMEN) : '';
-      return label.length;
-    });
-    const maxLen = Math.max(...lengths);
-    // limite maior se precisar de espaço extra
-    leftMargin = Math.min(400, 40 + maxLen * 6);
-  } else {
-    leftMargin = 40;
-  }
+      // Ajusta margem esquerda conforme tamanho do texto
+      let leftMargin;
+      if (arr.length) {
+        const lengths = arr.map(d => {
+          const label = d.ASSENTAMEN != null ? String(d.ASSENTAMEN) : '';
+          return label.length;
+        });
+        const maxLen = Math.max(...lengths);
+        leftMargin = Math.min(400, 40 + maxLen * 6);
+      } else {
+        leftMargin = 40;
+      }
 
-  // Formata valores para texto (pt-BR, 2 casas decimais)
-  const textValues = arr.map(d =>
-    (typeof d.area === 'number'
-      ? d.area.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
-      : '')
-  );
+      // Formata valores para texto
+      const textValues = arr.map(d =>
+        (typeof d.area === 'number'
+          ? d.area.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
+          : '')
+      );
 
-  Plotly.newPlot('bar-settlement', [{
-    x: arr.map(d => d.area),
-    y: arr.map(d => {
-      const label = d.ASSENTAMEN != null ? String(d.ASSENTAMEN) : '';
-      return label;
-    }),
-    type: 'bar',
-    orientation: 'h',
-    marker: {
-      color: '#28a745',
-      opacity: 0.8,
-      line: { color: '#1e7e34', width: 1 }
-    },
-    text: textValues,
-    textposition: 'auto',
-    insidetextfont: { color: '#ffffff' },
-    outsidetextfont: { color: '#000000' }
-  }], {
-    title: {
-      text: `Área (${yearSelect.value}) - Assentamentos`,
-      x: 0.5
-    },
-    margin: { l: leftMargin, r: 10, t: 50, b: 30 },
-    height: 450,
-    yaxis: {
-      automargin: true,
-      autorange: 'reversed'  // maior valor no topo
-    },
-    xaxis: {
-      title: 'Área (ha)',
-      tickformat: ',.0f',      // mostra “20000” em vez de “20k”
-      separatethousands: true  // garante separador de milhares
-    },
-    plot_bgcolor: 'rgba(0,0,0,0)',
-    paper_bgcolor: 'rgba(0,0,0,0)'
-  }, {
-    displayModeBar: false,
-    responsive: true
-    // Se quiser forçar locale pt-br para legendas do Plotly, carregar o script de locale e passar locale aqui:
-    // , locale: 'pt-br'
-  });
-}
+      const plotData = [{
+        x: arr.map(d => d.area),
+        y: arr.map(d => {
+          const label = d.ASSENTAMEN != null ? String(d.ASSENTAMEN) : '';
+          return label;
+        }),
+        type: 'bar',
+        orientation: 'h',
+        marker: {
+          color: arr.map(d => selectedSettlement === d.ASSENTAMEN 
+            ? '#ff6b6b' 
+            : '#28a745'),
+          opacity: 0.8,
+          line: { color: '#1e7e34', width: 1 }
+        },
+        text: textValues,
+        textposition: 'auto',
+        insidetextfont: { color: '#ffffff' },
+        outsidetextfont: { color: '#000000' }
+      }];
 
+      const layout = {
+        margin: { l: leftMargin, r: 10, t: 30, b: 30 },
+        height: 450,
+        yaxis: {
+          automargin: true,
+          autorange: 'reversed',
+          showgrid: false,
+          zeroline: false
+        },
+        xaxis: {
+          title: 'Área (ha)',
+          tickformat: ',.0f',
+          separatethousands: true,
+          showgrid: false,
+          zeroline: false
+        },
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        paper_bgcolor: 'rgba(0,0,0,0)'
+      };
+
+      const config = {
+        displayModeBar: false,
+        responsive: true
+      };
+
+      Plotly.newPlot('bar-settlement', plotData, layout, config)
+        .then(gd => {
+          gd.on('plotly_click', data => {
+            if (data.points.length) {
+              const settlementName = data.points[0].y;
+              selectedSettlement = settlementName;
+              plotBar();
+              focusOnSettlement(settlementName);
+            }
+          });
+        });
+    }
+
+    // Inicializa o mapa
     function initMap(){
       if(mapInit) return;
       leafletMap = L.map('map-graph',{zoomSnap:.3,attributionControl:false,
@@ -381,23 +599,51 @@
       mapInit = true;
     }
 
-    function heatLegend(min,max,scale){
+    // Cria a legenda em formato de barra vertical
+    function heatLegend(min, max, scale){
+      const fmtMin = min.toLocaleString();
+      const fmtMed = ((min+max)/2).toLocaleString();
+      const fmtMax = max.toLocaleString();
+      
       legend.innerHTML = `
-        <h4>Área&nbsp;(km²)</h4>
-        <div class="legend-gradient"></div>
+        <div class="legend-title">Área (km²)</div>
+        <div class="legend-gradient" style="background:linear-gradient(to top, ${scale(min)} 0%, ${scale((min+max)/2)} 50%, ${scale(max)} 100%)"></div>
         <div class="legend-labels">
-          <span>${max.toLocaleString()}</span>
-          <span>${((max+min)/2).toLocaleString()}</span>
-          <span>${min.toLocaleString()}</span>
+          <div>${fmtMax}</div>
+          <div>${fmtMed}</div>
+          <div>${fmtMin}</div>
         </div>`;
-      legend.querySelector('.legend-gradient').style.background =
-        `linear-gradient(to top, ${scale(min)} 0%, ${scale((min+max)/2)} 50%, ${scale(max)} 100%)`;
       legend.style.display='block';
     }
 
+    // Foca no assentamento selecionado
+    function focusOnSettlement(settlementName) {
+      if (!leafletMap) return;
+      
+      if (settlementPolygons.has(settlementName)) {
+        const feature = settlementPolygons.get(settlementName);
+        const layer = L.geoJSON(feature);
+        leafletMap.flyToBounds(layer.getBounds(), {
+          padding: [50, 50],
+          animate: true,
+          duration: 1.5
+        });
+        
+        if (window.highlightLayer) leafletMap.removeLayer(window.highlightLayer);
+        window.highlightLayer = L.geoJSON(feature, {
+          style: {
+            color: '#ff0000',
+            weight: 3,
+            fillOpacity: 0
+          }
+        }).addTo(leafletMap);
+      }
+    }
+
+    // Plota o mapa com os dados
     function plotMap(){
       document.getElementById('map-title').textContent = `Mapa de Degradação Ambiental (km²) ${yearSelect.value}`;
-      if(!mapInit) return;
+      if(!mapInit) initMap();
       const data = base();
       const agg  = d3.rollup(data, v=>d3.sum(v,d=>d.AREAKM2), d => {
         const label = d.ASSENTAMEN != null ? String(d.ASSENTAMEN) : '';
@@ -408,28 +654,36 @@
       const color = d3.scaleSequential().domain([0,maxVal]).interpolator(d3.interpolateYlOrRd);
       heatLegend(0, maxVal, color);
       if(geoLayer) geoLayer.remove();
+      
+      // Cria camada de assentamentos
       geoLayer = L.geoJSON(geojson, {
         coordsToLatLng: c => L.latLng(c[1],c[0]),
         filter: f => {
           const propName = f.properties[NAME_KEY];
-          const label = propName != null ? String(propName) : '';
-          return show.includes(label);
+          return propName && show.includes(propName);
         },
         style: f => {
           const propName = f.properties[NAME_KEY];
-          const label = propName != null ? String(propName) : '';
-          const area = agg.get(label) || 0;
-          return { weight:1.2, color:'#555', fillOpacity:.75, fillColor: color(area) };
+          const area = agg.get(propName) || 0;
+          return { 
+            weight:1.2, 
+            color:'#555', 
+            fillOpacity:.75, 
+            fillColor: color(area) 
+          };
         },
         onEachFeature: (f,layer) => {
           const propName = f.properties[NAME_KEY];
-          const label = propName != null ? String(propName) : '';
-          const km2 = agg.get(label) || 0;
-          layer.bindTooltip(`<strong>${label}</strong><br>${km2.toLocaleString('pt-BR',{maximumFractionDigits:2})} km²`,{sticky:true});
+          const km2 = agg.get(propName) || 0;
+          layer.bindTooltip(`<strong>${propName}</strong><br>${km2.toLocaleString('pt-BR',{maximumFractionDigits:2})} km²`,{sticky:true});
           layer.on({
             mouseover: e => e.target.setStyle({weight:2,color:'#000'}).bringToFront(),
             mouseout: e => geoLayer.resetStyle(e.target),
-            click: e => leafletMap.fitBounds(e.target.getBounds(),{maxZoom:10})
+            click: e => {
+              leafletMap.fitBounds(e.target.getBounds(),{maxZoom:10});
+              selectedSettlement = propName;
+              plotBar();
+            }
           });
         }
       }).addTo(leafletMap);
@@ -441,17 +695,14 @@
       }
     }
 
-    // plotLine com robustez para labels e verificações
+    // Plota o gráfico de linha (série temporal)
     function plotLine(){
-      console.log("plotLine: selSet=", selSet, "barSet=", barSet);
-      // Filtra df conforme UF e ASSENTAMEN
       const fil = df.filter(d => {
         const label = d.ASSENTAMEN != null ? String(d.ASSENTAMEN) : '';
         return (!selUF.length || selUF.includes(d[CSV_UF_KEY]))
             && (!selSet.length || selSet.includes(label));
       });
-      console.log("plotLine fil.length:", fil.length);
-      // Agrupa por ASSENTAMEN e ANO
+      
       const by = d3.rollup(
         fil,
         v => d3.sum(v, d => d.AREAKM2),
@@ -461,9 +712,8 @@
         },
         d => d.ANO
       );
-      console.log("plotLine agrupamento keys:", [...by.keys()]);
+      
       const pal = d3.schemeTableau10;
-      // Determina quais séries mostrar
       let show;
       if (selSet.length) {
         show = selSet.slice();
@@ -472,11 +722,8 @@
       } else {
         show = [...by.keys()].map(k => k != null ? String(k) : '');
       }
-      // Filtra apenas labels que existam em by
       show = show.filter(s => by.has(s));
-      console.log("plotLine séries em show após filtrar:", show);
 
-      // Monta séries
       const series = show.map((s, i) => {
         const mp = by.get(s);
         if (!mp) return null;
@@ -496,24 +743,38 @@
       }).filter(Boolean);
 
       if (!series.length) {
-        console.warn("plotLine: Nenhuma série disponível para exibição.");
         Plotly.purge('line-graph');
         return;
       }
 
       const layout = {
-        title: { text: 'Série Histórica – Assentamentos', x: 0.5 },
-        xaxis: { title: 'Ano' },
-        yaxis: { title: 'Área (km²)' },
+        xaxis: { 
+          title: 'Ano',
+          showgrid: false,
+          zeroline: false
+        },
+        yaxis: { 
+          title: 'Área (km²)',
+          showgrid: false,
+          zeroline: false
+        },
         legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.2 },
-        margin: { l: 50, r: 20, t: 50, b: 100 },
+        margin: { l: 50, r: 20, t: 30, b: 100 },
         height: 450,
         plot_bgcolor: 'rgba(0,0,0,0)',
         paper_bgcolor: 'rgba(0,0,0,0)'
       };
+      
+      if (years.length > 0) {
+        const minYear = 2008;
+        const maxYear = Math.max(...years);
+        layout.xaxis.range = [minYear - 0.5, maxYear + 0.5];
+      }
+      
       Plotly.newPlot('line-graph', series, layout, { displayModeBar: false, responsive: true });
     }
 
+    // Plota o gráfico anual
     function plotYearly(){
       const dat = df.filter(d=>
         (!selUF.length || selUF.includes(d[CSV_UF_KEY])) &&
@@ -522,18 +783,41 @@
       const agg = d3.rollup(dat, v=>d3.sum(v,d=>d.AREAKM2), d=>d.ANO);
       const anos = [...agg.keys()].sort((a,b)=>a-b);
       const val  = anos.map(a=>agg.get(a)||0);
+      
+      const layout = {
+        xaxis:{
+          title:'Ano',
+          showgrid: false,
+          zeroline: false
+        }, 
+        yaxis:{
+          title:'Área (km²)',
+          showgrid: false,
+          zeroline: false
+        },
+        margin:{l:50,r:10,t:30,b:40}, 
+        height:450,
+        plot_bgcolor:'rgba(0,0,0,0)', 
+        paper_bgcolor:'rgba(0,0,0,0)'
+      };
+      
+      if (years.length > 0) {
+        const minYear = 2008;
+        const maxYear = Math.max(...years);
+        layout.xaxis.range = [minYear - 0.5, maxYear + 0.5];
+      }
+      
       Plotly.newPlot('yearly-graph',[{
-        x: anos, y: val, type: 'bar',
+        x: anos, 
+        y: val, 
+        type: 'bar',
         marker:{color:'rgba(40,167,69,0.7)',line:{width:1,color:'#1e7e34'}},
-        text: val.map(v=> (typeof v==='number' ? v.toFixed(2) : '')), textposition:'outside'
-      }],{
-        title:{text:'Área Total por Ano',x:0.5},
-        xaxis:{title:'Ano'}, yaxis:{title:'Área (km²)'},
-        margin:{l:50,r:10,t:50,b:40}, height:450,
-        plot_bgcolor:'rgba(0,0,0,0)', paper_bgcolor:'rgba(0,0,0,0)'
-      },{displayModeBar:false,responsive:true});
+        text: val.map(v=> (typeof v==='number' ? v.toFixed(2) : '')), 
+        textposition:'outside'
+      }], layout, {displayModeBar:false,responsive:true});
     }
 
+    // Atualiza a lista de assentamentos
     function refreshList(){
       const term = (settlementSearch.value||'').toLowerCase();
       settlementList.innerHTML = allSet
@@ -552,6 +836,7 @@
       });
     }
 
+    // Constrói a lista de estados para download
     function buildDownloadChecklist(){
       downloadStateBox.innerHTML = ufs.map(uf=>`
         <div class="form-check form-check-inline mb-1">
@@ -560,9 +845,12 @@
         </div>`).join('');
     }
 
+    // Remove acentos para download
     function stripAccents(txt){
       return txt.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     }
+    
+    // Converte objeto para linha CSV
     function objToCsvRow(obj,headers,decSep,noAcc){
       return headers.map(h=>{
         let v = obj[h] ?? '';
@@ -572,25 +860,33 @@
       }).join(';');
     }
 
-    // eventos
+    // Event listeners
     [yearSelect, stateSelect].forEach(el => el.onchange = ()=>{
       plotBar(); plotMap(); plotLine(); plotYearly();
     });
+    
     resetBtn.onclick = ()=>{
       stateSelect.selectedIndex = -1;
       selUF = [];
       yearSelect.value = curYear;
       selSet = [];
+      selectedSettlement = null;
       updateStateBtn();
       plotBar(); plotMap(); plotLine(); plotYearly();
     };
-    loadMapBtn.onclick = ()=>{ initMap(); plotMap(); mapBtnContainer.style.display='none'; };
+    
     settlementSearch.oninput = refreshList;
-    clearSel.onclick = ()=>{ selSet = []; refreshList(); };
+    
+    clearSel.onclick = ()=>{ 
+      selSet = []; 
+      refreshList(); 
+    };
+    
     applySel.onclick = ()=>{
       bootstrap.Modal.getInstance(document.getElementById('interest-modal')).hide();
       plotBar(); plotMap(); plotLine(); plotYearly();
     };
+    
     downloadBtn.onclick = ()=>{
       const selUFs = Array.from(document.querySelectorAll('.dl-uf:checked')).map(el=>el.value);
       const decSep = (document.querySelector(decSepSelector)||{}).value || '.';
@@ -607,12 +903,12 @@
       setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },0);
     };
 
-    /* inicialização */
+    // Inicialização do dashboard
     try{
       await Promise.all([loadGeo(), loadCsv()]);
 
-      /* identifica coluna de nome no GeoJSON */
-      {
+      // Verifica a chave de nome no GeoJSON
+      if(geojson && geojson.features.length > 0) {
         const sample = geojson.features[0]?.properties || {};
         if(!('ASSENTAMEN' in sample)){
           if('NOME_PROJ2' in sample) NAME_KEY='NOME_PROJ2';
@@ -621,19 +917,14 @@
             if(alt) NAME_KEY=alt;
           }
         }
-        console.log('Campo-nome usado no GeoJSON →', NAME_KEY);
-      }
-
-      /* garante campo NAME_KEY também no CSV (para filtros) */
-      if(NAME_KEY !== 'ASSENTAMEN'){
-        df.forEach(d=>{
-          d[NAME_KEY] = d.ASSENTAMEN != null ? String(d.ASSENTAMEN) : '';
-        });
       }
 
       buildFilters();
       updateStateBtn();
       refreshList();
+      
+      initMap();
+      
       plotBar();
       plotMap();
       plotLine();
