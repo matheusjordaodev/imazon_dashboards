@@ -5,29 +5,384 @@
   <title>SIMEX - Unidades de Conservação</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ─── ESTILOS ────────────────────────────────────────────────── -->
-  
-
-  <!-- libs CSS -->
+  <!-- Bibliotecas CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-      <link rel="stylesheet" href="../../../css/base-styles.css">
-  <link rel="stylesheet" href="../../../css/map-styles.css">
-  <link rel="stylesheet" href="../../../css/button-styles.css">
-  <link rel="stylesheet" href="../../../css/legend-styles.css">
-  <link rel="stylesheet" href="../../../css/card-styles.css">
-  <link rel="stylesheet" href="../../../css/controls-styles.css">
-  <link rel="stylesheet" href="../../../css/select-styles.css">
-  <link rel="stylesheet" href="../../../css/responsive-styles.css">
-  <link rel="stylesheet" href="../../../css/modal-styles.css">
+  
+  <style>
+    :root {
+      --primary-color: #008055;
+      --primary-light: #008055;
+      --primary-dark: #003300;
+      --secondary-color: #00796B;
+      --accent-color: #FF6D00;
+      --text-color: #212121;
+      --text-light: #757575;
+      --background-color: #F5F5F5;
+      --card-color: #FFFFFF;
+      --border-radius: 10px;
+      --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    /* Reset e estilos base */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+      padding: 15px;
+    }
+
+    /* Header com gradiente e efeito de profundidade */
+    .dashboard-header {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 25px;
+      border-radius: var(--border-radius);
+      margin-bottom: 30px;
+      box-shadow: var(--box-shadow);
+      text-align: center;
+      position: relative;
+    }
+
+    .dashboard-header::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 5px;
+      background-color: var(--accent-color);
+      border-radius: 5px;
+    }
+
+    .dashboard-title {
+      font-weight: 700;
+      margin-bottom: 8px;
+      font-size: 2.5em;
+      letter-spacing: 1px;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .dashboard-subtitle {
+      opacity: 0.9;
+      font-size: 1.2em;
+      font-weight: 300;
+    }
+
+    /* Container principal */
+    .container-fluid {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Cards com estilo moderno */
+    .card {
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      border: none;
+      transition: var(--transition);
+      overflow: hidden;
+      margin-bottom: 20px;
+      background-color: var(--card-color);
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Títulos dos cards */
+    .card-header {
+      background-color: var(--card-color) !important;
+      color: var(--primary-dark) !important;
+      font-weight: 700 !important;
+      border-bottom: 1px solid var(--accent-color) !important;
+      padding: 20px;
+      font-size: 1.2em;
+      position: relative;
+    }
+
+    .card-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 20px;
+      width: 50px;
+      height: 3px;
+      background-color: var(--accent-color);
+      border-radius: 3px;
+    }
+
+    /* Controles superiores */
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 30px;
+      background: var(--card-color);
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      position: relative;
+      z-index: 10;
+    }
+
+    .year-selector {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+      background: var(--card-color);
+      padding: 5px 15px;
+      border-radius: 30px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .year-selector label {
+      margin-right: 10px;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    /* Botões com estilo moderno */
+    .custom-button {
+      background: linear-gradient(120deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-weight: 600;
+      transition: var(--transition);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-family: 'Montserrat', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .custom-button:hover {
+      background: linear-gradient(120deg, var(--primary-dark), var(--primary-color));
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+      color: white;
+    }
+
+    .custom-button:active {
+      transform: translateY(0);
+    }
+
+    /* Selects com estilo moderno */
+    select {
+      font-family: 'Montserrat', sans-serif;
+      padding: 12px 15px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      background-color: #fff;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 16px;
+      padding-right: 40px;
+      transition: var(--transition);
+    }
+
+    select:hover {
+      border-color: var(--primary-light);
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(0, 128, 85, 0.2);
+    }
+
+    /* Container do mapa */
+    .map-container {
+      border-radius: 0 0 var(--border-radius) var(--border-radius);
+      overflow: hidden;
+      background: #f0f8ff;
+      height: 100%;
+    }
+
+    #map-graph {
+      height: 100%;
+      min-height: 450px;
+      background: #e6f7ff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Legenda em formato de barra vertical */
+    .heat-legend {
+      background: var(--card-color);
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: var(--box-shadow);
+      line-height: 1.4;
+      z-index: 1000;
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      font-size: 0.8rem;
+      width: 110px;
+    }
+
+    .legend-title {
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 5px;
+      color: var(--primary-dark);
+    }
+
+    .legend-gradient {
+      height: 150px;
+      width: 25px;
+      margin: 0 auto;
+      border-radius: 3px;
+    }
+
+    .legend-labels {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 150px;
+      position: absolute;
+      left: 40px;
+      top: 35px;
+      font-size: 0.75rem;
+    }
+
+    /* Remover linhas de fundo dos gráficos */
+    .gridlayer, .cartesianlayer > .grid {
+      display: none !important;
+    }
+
+    .js-plotly-plot .plotly .main-svg {
+      background-color: transparent !important;
+    }
+
+    /* Itens de assentamento */
+    .settlement-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .settlement-item:hover {
+      background-color: #f0f8ff;
+    }
+
+    .settlement-item.selected {
+      background-color: #e0f7e9;
+      font-weight: 600;
+    }
+
+    .selection-info {
+      padding: 8px 0;
+      font-weight: 500;
+      color: var(--text-color);
+    }
+
+    /* Estilos para o Leaflet */
+    .leaflet-control-layers {
+      border-radius: 8px !important;
+      box-shadow: var(--box-shadow) !important;
+    }
+
+    .leaflet-control-zoom {
+      border-radius: 8px !important;
+      box-shadow: var(--box-shadow) !important;
+    }
+
+    .leaflet-control-zoom a {
+      background-color: white !important;
+      color: var(--primary-dark) !important;
+    }
+
+    .leaflet-control-zoom a:hover {
+      background-color: #f5f5f5 !important;
+    }
+
+    /* Animações */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out forwards;
+    }
+
+    .fade-in-1 { animation-delay: 0.1s; }
+    .fade-in-2 { animation-delay: 0.2s; }
+    .fade-in-3 { animation-delay: 0.3s; }
+
+    /* Melhorias na responsividade */
+    @media (max-width: 992px) {
+      .dashboard-title {
+        font-size: 2em;
+      }
+      
+      .dashboard-subtitle {
+        font-size: 1em;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .controls-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .year-selector {
+        margin-left: 0;
+        width: 100%;
+      }
+
+      .dashboard-title {
+        font-size: 1.8em;
+      }
+      
+      #map-graph {
+        min-height: 350px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .dashboard-title {
+        font-size: 1.5em;
+      }
+    }
+  </style>
 </head>
 
 <body class="py-3">
+      <div class="dashboard-header fade-in fade-in-1">
+      <img src="../../img/simex.png" alt="Logo SIMEX" style="max-width: 150px; height: auto; display: block; margin: 0 auto;">
+      <div class="dashboard-subtitle">Exploração Madeireira em Terras Indígenas</div>
+    </div>
   <div class="container-fluid px-3 px-md-5" id="app-root">
 
     <!-- toolbar filtros + anos + categoria -->
-    <div class="row mb-4 gy-2 align-items-end">
+    <div class="row mb-4 gy-2 align-items-end fade-in fade-in-1">
       <div class="col-auto">
         <button id="reset-btn" class="btn btn-success btn-sm custom-button">
           <i class="fa fa-filter me-1"></i>Remover Filtros
@@ -66,7 +421,7 @@
     </div>
 
     <!-- barra + mapa -->
-    <div class="row gx-2 mb-4">
+    <div class="row gx-2 mb-4 fade-in fade-in-2">
       <div class="col-12 col-md-6 mb-4 mb-md-0">
         <div class="card h-100">
           <div class="card-header">Área Acumulada de Exploração Madeireira – Top 10 UCs</div>
@@ -80,18 +435,13 @@
           <div class="card-header" id="map-title">Mapa de Degradação (ha)</div>
           <div class="card-body p-0 map-container">
             <div id="map-graph" style="height:100%;"></div>
-            <div id="map-load-btn-container">
-              <button id="load-map-btn" class="btn btn-success">
-                <i class="fas fa-map me-2"></i>Carregar Mapa
-              </button>
-            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- série histórica -->
-    <div class="row gx-2 mb-5">
+    <div class="row gx-2 mb-5 fade-in fade-in-3">
       <div class="col-12">
         <div class="card h-100">
           <div class="card-header">Série Histórica</div>
@@ -162,13 +512,13 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div class="search-box">
+        <div class="search-box mb-3">
           <input type="text" id="settlement-search" class="form-control" placeholder="Buscar UC…">
         </div>
         <div class="selection-info">
           <span id="selected-count">0</span> de 10 selecionados
         </div>
-        <div id="settlement-list" class="settlement-list"></div>
+        <div id="settlement-list" class="settlement-list mt-2" style="max-height: 300px; overflow-y: auto;"></div>
       </div>
       <div class="modal-footer">
         <button id="clear-selection" class="btn btn-outline-secondary">Limpar Seleção</button>
@@ -196,8 +546,6 @@
     const startYearSelect   = document.getElementById('start-year-select');
     const endYearSelect     = document.getElementById('end-year-select');
     const categorySelect    = document.getElementById('category-select');
-    const loadMapBtn        = document.getElementById('load-map-btn');
-    const mapBtnContainer   = document.getElementById('map-load-btn-container');
     const interestBtn       = document.getElementById('interest-btn');
     const settlementSearch  = document.getElementById('settlement-search');
     const settlementList    = document.getElementById('settlement-list');
@@ -278,75 +626,73 @@
     }
 
     /* ----------- GRÁFICO BARRAS ----------- */
-/* ----------- GRÁFICO BARRAS ----------- */
-function plotSettlement() {
-  const data = filtroBase();
-  const bynome = d3.rollup(
-    data,
-    v => d3.sum(v, d => d.area_ha),
-    d => d.nome  // ou d.nome no outro exemplo
-  );
-  let arr = Array.from(bynome, ([nome, area]) => ({ nome, area }))
+    function plotSettlement() {
+      const data = filtroBase();
+      const bynome = d3.rollup(
+        data,
+        v => d3.sum(v, d => d.area_ha),
+        d => d.nome
+      );
+      let arr = Array.from(bynome, ([nome, area]) => ({ nome, area }))
                  .sort((a, b) => b.area - a.area);
-  if (selectedSettlements.length) {
-    arr = arr.filter(d => selectedSettlements.includes(d.nome));
-  } else {
-    arr = arr.slice(0, 10);
-  }
-  barSettlements = arr.map(d => d.nome);
-  // Calcula margem esquerda conforme comprimento do rótulo
-  const maxLen = arr.length ? Math.max(...arr.map(d => d.nome.length)) : 10;
-  const leftM = Math.min(300, 40 + maxLen * 6);
+      if (selectedSettlements.length) {
+        arr = arr.filter(d => selectedSettlements.includes(d.nome));
+      } else {
+        arr = arr.slice(0, 10);
+      }
+      barSettlements = arr.map(d => d.nome);
+      // Calcula margem esquerda conforme comprimento do rótulo
+      const maxLen = arr.length ? Math.max(...arr.map(d => d.nome.length)) : 10;
+      const leftM = Math.min(300, 40 + maxLen * 6);
 
-  // Prepara array de textos formatados em pt-BR com 2 decimais
-  const textValues = arr.map(d =>
-    d.area.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  );
+      // Prepara array de textos formatados em pt-BR com 2 decimais
+      const textValues = arr.map(d =>
+        d.area.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      );
 
-  Plotly.newPlot('bar-settlement', [{
-    x: arr.map(d => d.area),
-    y: arr.map(d => d.nome),
-    type: 'bar',
-    orientation: 'h',
-    marker: {
-      color: '#28a745',
-      opacity: 0.8,
-      line: { width: 1, color: '#1e7e34' }
-    },
-    text: textValues,        // exibe valor na barra
-    textposition: 'auto',    // posiciona dentro ou fora conforme espaço
-    insidetextfont: { color: '#ffffff' },
-    outsidetextfont: { color: '#000000' },
-    hoverinfo: 'text',
-    hovertext: arr.map(d =>
-      `UC: ${d.nome}<br>Área: ${d.area.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2})} ha`
-    )
-  }], {
-    title: {
-      text: `Área Acumulada – ${selectedCategory || 'Todas'}`,
-      x: 0.5,
-      font: { size: 16 }
-    },
-    margin: { l: leftM, r: 10, t: 50, b: 30 },
-    height: 450,
-    yaxis: {
-      automargin: true,
-      autorange: 'reversed',  // opcional: maior valor no topo
-      tickfont: { size: 11 }
-    },
-    xaxis: {
-      title: 'Área (ha)',
-      tickformat: ',.0f',
-      separatethousands: true
-    },
-    plot_bgcolor: 'rgba(0,0,0,0)',
-    paper_bgcolor: 'rgba(0,0,0,0)'
-  }, {
-    displayModeBar: false,
-    responsive: true
-  });
-}
-
+      Plotly.newPlot('bar-settlement', [{
+        x: arr.map(d => d.area),
+        y: arr.map(d => d.nome),
+        type: 'bar',
+        orientation: 'h',
+        marker: {
+          color: '#28a745',
+          opacity: 0.8,
+          line: { width: 1, color: '#1e7e34' }
+        },
+        text: textValues,        // exibe valor na barra
+        textposition: 'auto',    // posiciona dentro ou fora conforme espaço
+        insidetextfont: { color: '#ffffff' },
+        outsidetextfont: { color: '#000000' },
+        hoverinfo: 'text',
+        hovertext: arr.map(d =>
+          `UC: ${d.nome}<br>Área: ${d.area.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2})} ha`
+        )
+      }], {
+        title: {
+          text: `Área Acumulada – ${selectedCategory || 'Todas'}`,
+          x: 0.5,
+          font: { size: 16 }
+        },
+        margin: { l: leftM, r: 10, t: 50, b: 30 },
+        height: 450,
+        yaxis: {
+          automargin: true,
+          autorange: 'reversed',  // opcional: maior valor no topo
+          tickfont: { size: 11 }
+        },
+        xaxis: {
+          title: 'Área (ha)',
+          tickformat: ',.0f',
+          separatethousands: true
+        },
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        paper_bgcolor: 'rgba(0,0,0,0)'
+      }, {
+        displayModeBar: false,
+        responsive: true
+      });
+    }
 
     /* ---------- LEAFLET MAP ---------- */
     function initLeaflet() {
@@ -369,7 +715,7 @@ function plotSettlement() {
         return v.toFixed(0);
       };
       legendContainer.innerHTML = `
-        <h4>Área (ha)</h4>
+        <div class="legend-title">Área (ha)</div>
         <div class="legend-gradient"></div>
         <div class="legend-labels">
           <span>${fmt(maxVal)}</span>
@@ -378,15 +724,16 @@ function plotSettlement() {
         </div>`;
       const grad = legendContainer.querySelector('.legend-gradient');
       grad.style.background = `linear-gradient(to top,
-        ${scale(maxVal)} 0%,
+        ${scale(minVal)} 0%,
         ${scale((maxVal+minVal)/2)} 50%,
-        ${scale(minVal)} 100%)`;
+        ${scale(maxVal)} 100%)`;
       legendContainer.style.display='block';
     }
 
     /* ---------- DESENHA MAPA ---------- */
     function plotMap() {
-      if (!mapInitialized) return;
+      if (!mapInitialized) initLeaflet();
+      
       const data = filtroBase();
       const bynome = d3.rollup(
         data, v=>d3.sum(v,d=>d.area_ha), d=>d.nome
@@ -522,11 +869,6 @@ function plotSettlement() {
       plotSettlement(); plotMap(); plotLine();
     };
 
-    loadMapBtn.onclick = ()=>{
-      initLeaflet(); plotMap();
-      mapBtnContainer.style.display = 'none';
-    };
-
     settlementSearch.oninput = populateSettlementList;
     clearSelection.onclick    = ()=>{ selectedSettlements = []; populateSettlementList(); };
     applySelection.onclick    = ()=>{
@@ -557,6 +899,7 @@ function plotSettlement() {
       populateSettlementList();
       buildDownloadChecklist();
       plotSettlement();
+      plotMap();  // Carrega o mapa automaticamente
       plotLine();
     } catch (err) {
       console.error(err);
