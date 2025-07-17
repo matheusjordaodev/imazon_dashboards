@@ -2,717 +2,540 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <title>SIMEX - Municípios</title>
+  <title>SIMEX - Imóveis Rurais</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- CSS de bibliotecas e estilos customizados -->
+  <!-- Bibliotecas CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <link rel="stylesheet" href="../../../css/base-styles.css">
-  <link rel="stylesheet" href="../../../css/map-styles.css">
-  <link rel="stylesheet" href="../../../css/button-styles.css">
-  <link rel="stylesheet" href="../../../css/legend-styles.css">
-  <link rel="stylesheet" href="../../../css/card-styles.css">
-  <link rel="stylesheet" href="../../../css/controls-styles.css">
-  <link rel="stylesheet" href="../../../css/select-styles.css">
-  <link rel="stylesheet" href="../../../css/responsive-styles.css">
-  <link rel="stylesheet" href="../../../css/modal-styles.css">
-  <link rel="stylesheet" href="../../../css/card-styles.css">
 
-  
+  <style>
+    :root {
+      --primary-color: #008055;
+      --primary-light: #008055;
+      --primary-dark: #003300;
+      --secondary-color: #00796B;
+      --accent-color: #FF6D00;
+      --text-color: #212121;
+      --text-light: #757575;
+      --background-color: #F5F5F5;
+      --card-color: #FFFFFF;
+      --border-radius: 10px;
+      --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    /* Reset e estilos base */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+      padding: 15px;
+    }
+
+    /* Header com gradiente */
+    .dashboard-header {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 25px;
+      border-radius: var(--border-radius);
+      margin-bottom: 30px;
+      box-shadow: var(--box-shadow);
+      text-align: center;
+      position: relative;
+    }
+    .dashboard-header::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 5px;
+      background-color: var(--accent-color);
+      border-radius: 5px;
+    }
+    .dashboard-title { font-weight: 700; margin-bottom: 8px; font-size: 2.5em; letter-spacing: 1px; text-shadow: 1px 1px 3px rgba(0,0,0,0.3);}
+    .dashboard-subtitle { opacity: 0.9; font-size: 1.2em; font-weight: 300; }
+
+    /* Container principal */
+    .container-fluid { max-width: 1400px; margin: 0 auto; }
+
+    /* Cards */
+    .card {
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      border: none;
+      transition: var(--transition);
+      overflow: hidden;
+      margin-bottom: 20px;
+      background-color: var(--card-color);
+    }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+
+    .card-header {
+      background-color: var(--card-color)!important;
+      color: var(--primary-dark)!important;
+      font-weight: 700!important;
+      border-bottom: 1px solid var(--accent-color)!important;
+      padding: 20px;
+      font-size: 1.2em;
+      position: relative;
+    }
+    .card-header::after {
+      content:''; position:absolute; bottom:0; left:20px; width:50px; height:3px;
+      background-color:var(--accent-color); border-radius:3px;
+    }
+
+    /* Controles superiores */
+    .controls-row {
+      display:flex; flex-wrap:wrap; gap:15px; align-items:center; margin-bottom:30px;
+      background:var(--card-color); padding:20px; border-radius:var(--border-radius);
+      box-shadow:var(--box-shadow); position:relative; z-index:10;
+    }
+
+    /* Botões */
+    .custom-button{
+      background:linear-gradient(120deg,var(--primary-color),var(--primary-dark));
+      color:#fff;border:none;border-radius:8px;padding:12px 20px;font-weight:600;
+      transition:var(--transition);box-shadow:0 4px 6px rgba(0,0,0,.1);
+      text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:8px;
+    }
+    .custom-button:hover{background:linear-gradient(120deg,var(--primary-dark),var(--primary-color));transform:translateY(-2px);box-shadow:0 6px 12px rgba(0,0,0,.15);}
+    .custom-button:active{transform:translateY(0);}
+
+    /* Select */
+    select{
+      font-family:'Montserrat',sans-serif;padding:12px 15px;border-radius:8px;border:1px solid #ddd;
+      background:#fff;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat:no-repeat;background-position:right 10px center;background-size:16px;padding-right:40px;transition:var(--transition);
+    }
+    select:hover{border-color:var(--primary-light);}
+    select:focus{outline:none;border-color:var(--primary-color);box-shadow:0 0 0 3px rgba(0,128,85,.2);}
+
+    /* Mapa */
+    .map-container{border-radius:0 0 var(--border-radius) var(--border-radius);overflow:hidden;background:#f0f8ff;}
+    #map-graph{height:100%;min-height:450px;background:#e6f7ff;border-radius:8px;overflow:hidden;box-shadow:inset 0 0 10px rgba(0,0,0,.1);}
+
+    /* Legenda vertical */
+    .heat-legend{
+      background:var(--card-color);padding:10px;border-radius:8px;box-shadow:var(--box-shadow);
+      line-height:1.4;z-index:1000;position:absolute;bottom:20px;right:20px;font-size:.8rem;width:110px;
+    }
+    .legend-title{font-weight:600;text-align:center;margin-bottom:5px;color:var(--primary-dark);}
+    .legend-gradient{height:150px;width:25px;margin:0 auto;border-radius:3px;}
+    .legend-labels{display:flex;flex-direction:column;justify-content:space-between;height:150px;position:absolute;left:40px;top:35px;font-size:.75rem;}
+
+    /* Plotly fundo transparente */
+    .gridlayer, .cartesianlayer>.grid{display:none!important;}
+    .js-plotly-plot .plotly .main-svg{background:transparent!important;}
+
+    /* Lista de imóveis rurais */
+    .settlement-item{padding:8px 12px;border-bottom:1px solid #eee;cursor:pointer;transition:background-color .2s;}
+    .settlement-item:hover{background:#f0f8ff;}
+    .settlement-item.selected{background:#e0f7e9;font-weight:600;}
+    .selection-info{padding:8px 0;font-weight:500;color:var(--text-color);}
+
+    /* Leaflet */
+    .leaflet-control-layers,.leaflet-control-zoom{border-radius:8px!important;box-shadow:var(--box-shadow)!important;}
+    .leaflet-control-zoom a{background:#fff!important;color:var(--primary-dark)!important;}
+    .leaflet-control-zoom a:hover{background:#f5f5f5!important;}
+
+    /* Animações */
+    @keyframes fadeIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+    .fade-in{animation:fadeIn .5s ease-in-out forwards;}
+    .fade-in-1{animation-delay:.1s;} .fade-in-2{animation-delay:.2s;} .fade-in-3{animation-delay:.3s;}
+
+    /* Responsividade */
+    @media (max-width:992px){.dashboard-title{font-size:2em;}.dashboard-subtitle{font-size:1em;}}
+    @media (max-width:768px){
+      .controls-row{flex-direction:column;align-items:flex-start;}
+      .year-selector{margin-left:0;width:100%;}
+      .dashboard-title{font-size:1.8em;} #map-graph{min-height:350px;}
+    }
+    @media (max-width:576px){.dashboard-title{font-size:1.5em;}}
+  </style>
 </head>
-<body class="py-3">
 
-<div class="container-fluid" id="app-root">
-
-  <!-- BOTÕES PRINCIPAIS -->
-  <div class="row mb-3">
-    <div class="col-auto mb-2">
-      <button id="reset-btn" class="btn btn-success btn-sm custom-button">
-        <i class="fa fa-filter me-1"></i>Remover Filtros
-      </button>
+<body>
+  <div class="container-fluid" id="app-root">
+    <!-- Header -->
+    <div class="dashboard-header fade-in fade-in-1">
+      <img src="../../img/simex.png" alt="Logo SIMEX" style="max-width:150px;height:auto;display:block;margin:0 auto;">
+      <div class="dashboard-subtitle">Exploração Madeireira em Imóveis Rurais</div>
     </div>
-    <div class="col-auto mb-2">
-      <button id="state-btn" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#state-modal">
-        <i class="fa fa-map me-1"></i>Selecione o Estado
-      </button>
+
+    <!-- Controles -->
+    <div class="controls-row fade-in fade-in-2">
+      <button id="reset-btn" class="btn btn-success btn-sm custom-button"><i class="fa fa-filter me-1"></i>Remover Filtros</button>
+      <button id="state-btn" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#state-modal"><i class="fa fa-map me-1"></i>Selecione o Estado</button>
+      <button id="download-btn-open" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#download-modal"><i class="fa fa-download me-1"></i>Baixar CSV</button>
+      <button id="interest-btn" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#interest-modal">Selecionar Área de Interesse</button>
     </div>
-    <div class="col-auto mb-2">
-      <button id="download-btn-open" class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#download-modal">
-        <i class="fa fa-download me-1"></i>Baixar CSV
-      </button>
+
+    <!-- Filtros -->
+    <div class="row g-2 align-items-center mb-4 fade-in fade-in-3">
+      <div class="col-12 col-md-auto"><label class="fw-bold">Ano Início:</label></div>
+      <div class="col-12 col-md-2"><select id="start-year-select" class="form-select form-select-sm"></select></div>
+
+      <div class="col-12 col-md-auto"><label class="fw-bold">Ano Fim:</label></div>
+      <div class="col-12 col-md-2"><select id="end-year-select" class="form-select form-select-sm"></select></div>
+
+      <div class="col-12 col-md-auto"><label class="fw-bold">Categoria:</label></div>
+      <div class="col-12 col-md-3"><select id="category-select" class="form-select form-select-sm"></select></div>
     </div>
-    <div class="col-auto mb-2">
-<button class="btn btn-success btn-sm custom-button" data-bs-toggle="modal" data-bs-target="#interest-modal">
-  Selecionar Área de Interesse
-</button>
 
-
-    </div>
-  </div>
-
-  <!-- FILTROS ANO & CATEGORIA -->
-  <div class="row g-2 align-items-end mb-4">
-    <div class="col-12 col-md-auto"><label class="fw-bold">Ano Início:</label></div>
-    <div class="col-12 col-md-3"><select id="start-year-select" class="form-select form-select-sm"></select></div>
-
-    <div class="col-12 col-md-auto"><label class="fw-bold">Ano Fim:</label></div>
-    <div class="col-12 col-md-3"><select id="end-year-select" class="form-select form-select-sm"></select></div>
-
-    <div class="col-12 col-md-auto"><label class="fw-bold">Categoria:</label></div>
-    <div class="col-12 col-md-3"><select id="category-select" class="form-select form-select-sm"></select></div>
-  </div>
-
-  <!-- MAPA + BARRA -->
-  <div class="row gx-2 mb-4">
-    <!-- Gráfico de barras -->
-    <div class="col-12 col-md-6 mb-4 mb-md-0">
-      <div class="card h-100">
-        <div class="card-header">Área Acumulada de Exploração Madeireira - Top 10 Municípios</div>
-        <div class="card-body p-0">
-          <div id="bar-settlement" style="height:450px;"></div>
-          <!-- Botão para exibir/ocultar dados do gráfico -->
-          <div class="text-end">
-            <button id="toggle-bar-data-btn" class="btn btn-outline-secondary btn-sm">
-              Exibir Dados
-            </button>
+    <!-- Mapa + Barras -->
+    <div class="row gx-2 mb-4 fade-in fade-in-3">
+      <!-- Barras -->
+      <div class="col-12 col-md-6 mb-4 mb-md-0">
+        <div class="card h-100">
+          <div class="card-header">Área Acumulada de Exploração Madeireira - Top 10 Imóveis Rurais</div>
+          <div class="card-body p-0">
+            <div id="bar-settlement" style="height:450px;"></div>
+            <div class="text-end p-2">
+              <button id="toggle-bar-data-btn" class="btn btn-outline-secondary btn-sm">Exibir Dados</button>
+            </div>
+            <div id="bar-data-table" class="px-3 pb-3" style="display:none;"></div>
           </div>
-          <!-- Container da tabela de dados -->
-          <div id="bar-data-table" class="px-3 pb-3" style="display: none;">
-            <!-- A tabela será inserida dinamicamente via JS -->
+        </div>
+      </div>
+
+      <!-- Mapa Leaflet -->
+      <div class="col-12 col-md-6">
+        <div class="card h-100">
+          <div class="card-header">Mapa de Imóveis Rurais</div>
+          <div class="card-body p-0 map-container">
+            <div id="map-graph" style="height:100%; background:#fff;"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Mapa Leaflet -->
-    <div class="col-12 col-md-6">
-      <div class="card h-100">
-        <div class="card-header">Mapa de Municípios</div>
-        <div class="card-body p-0 map-container">
-          <div id="map-graph" style="height:100%;"></div>
-          <div id="map-load-btn-container">
-            <button id="load-map-btn" class="btn btn-success">
-              <i class="fas fa-map me-2"></i>Carregar Mapa
-            </button>
+    <!-- Série histórica -->
+    <div class="row gx-2 mb-5 fade-in fade-in-3">
+      <div class="col">
+        <div class="card h-100">
+          <div class="card-header">Série Histórica</div>
+          <div class="card-body p-0">
+            <div id="line-graph" style="height:450px;"></div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- SÉRIE HISTÓRICA -->
-  <div class="row gx-2 mb-5">
-    <div class="col">
-      <div class="card h-100">
-        <div class="card-header">Série Histórica</div>
-        <div class="card-body p-0">
-          <div id="line-graph" style="height:450px;"></div>
-        </div>
-      </div>
-    </div>
+  <!-- === MODAIS =================================================== -->
+  <!-- Estados -->
+  <div class="modal fade" id="state-modal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Escolha os Estados</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body"><select id="state-select" class="form-select" multiple size="8"></select></div>
+      <div class="modal-footer"><button class="btn btn-danger" data-bs-dismiss="modal">Fechar</button></div>
+    </div></div>
   </div>
 
-</div>
-
-<!-- Modal Estados -->
-<div class="modal fade" id="state-modal" tabindex="-1">
-  <div class="modal-dialog"><div class="modal-content">
-    <div class="modal-header">
-      <h5 class="modal-title">Escolha os Estados</h5>
-      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-    </div>
-    <div class="modal-body">
-      <select id="state-select" class="form-select" multiple size="8"></select>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-danger" data-bs-dismiss="modal">Fechar</button>
-    </div>
-  </div></div>
-</div>
-
-<!-- Modal Download -->
-<div class="modal fade" id="download-modal" tabindex="-1">
-  <div class="modal-dialog modal-lg"><div class="modal-content">
-    <div class="modal-header">
-      <h5 class="modal-title">Configurações de Download</h5>
-      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-    </div>
-    <div class="modal-body">
-      <div id="download-state-checklist" class="mb-3"></div><hr>
-      <div class="mb-2">
-        <label class="me-2">Separador decimal</label>
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="radio" name="dec-sep" id="dec-dot" value="." checked>
-          <label class="form-check-label" for="dec-dot">Ponto</label>
+  <!-- Download -->
+  <div class="modal fade" id="download-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Configurações de Download</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div id="download-state-checklist" class="mb-3"></div><hr>
+        <div class="mb-2">
+          <label class="me-2">Separador decimal</label>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="dec-sep" id="dec-dot" value="." checked>
+            <label class="form-check-label" for="dec-dot">Ponto</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="dec-sep" id="dec-comma" value=",">
+            <label class="form-check-label" for="dec-comma">Vírgula</label>
+          </div>
         </div>
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="radio" name="dec-sep" id="dec-comma" value=",">
-          <label class="form-check-label" for="dec-comma">Vírgula</label>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="remove-accents">
+          <label class="form-check-label" for="remove-accents">Sem acentuação</label>
         </div>
       </div>
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="remove-accents">
-        <label class="form-check-label" for="remove-accents">Sem acentuação</label>
+      <div class="modal-footer">
+        <button id="download-btn" class="btn btn-success me-2">Download</button>
+        <button class="btn btn-danger" data-bs-dismiss="modal">Fechar</button>
       </div>
-    </div>
-    <div class="modal-footer">
-      <button id="download-btn" class="btn btn-success me-2">Download</button>
-      <button class="btn btn-danger" data-bs-dismiss="modal">Fechar</button>
-    </div>
-  </div></div>
-</div>
+    </div></div>
+  </div>
 
-<!-- Modal Áreas de Interesse -->
-<div class="modal fade" id="interest-modal" tabindex="-1">
-  <div class="modal-dialog modal-lg"><div class="modal-content">
-    <div class="modal-header">
-      <h5 class="modal-title">Selecionar Municípios de Interesse</h5>
-      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-    </div>
-    <div class="modal-body">
-      <div class="search-box">
-        <input type="text" id="settlement-search" class="form-control" placeholder="Buscar município...">
+  <!-- Áreas de interesse -->
+  <div class="modal fade" id="interest-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Selecionar Imóveis Rurais de Interesse</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="search-box mb-3"><input type="text" id="settlement-search" class="form-control" placeholder="Buscar imóvel rural…"></div>
+        <div class="selection-info"><span id="selected-count">0</span> de 10 selecionados</div>
+        <div id="settlement-list" class="settlement-list mt-2" style="max-height:300px; overflow-y:auto;"></div>
       </div>
-      <div class="selection-info">
-        <span id="selected-count">0</span> de 10 selecionados
+      <div class="modal-footer">
+        <button id="clear-selection" class="btn btn-outline-secondary">Limpar Seleção</button>
+        <button id="apply-selection" class="btn btn-success">Aplicar Seleção</button>
       </div>
-      <div id="settlement-list" class="settlement-list">
-        <!-- Lista de municípios será preenchida dinamicamente -->
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button id="clear-selection" class="btn btn-outline-secondary">Limpar Seleção</button>
-      <button id="apply-selection" class="btn btn-success">Aplicar Seleção</button>
-    </div>
-  </div></div>
-</div>
+    </div></div>
+  </div>
 
-<!-- JS libs -->
-<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Bibliotecas JS -->
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script type="module">
-(async () => {
-  /* ----------------- CONSTANTES ----------------- */
-  const GEOJSON_URL = "https://cdn.jsdelivr.net/gh/imazon-cgi/simex@main/datasets/geojson/limite_municipios_amz_legal.geojson";
-  const CSV_URL = new URL("/dataset/simex/csv/simex_amazonia_PAMT2007_2023_municipios.csv", window.location.origin).href;
+  <script type="module">
+  (async () => {
+    /* ------------------- CONSTANTES ------------------- */
+    const GEOJSON_URL = new URL("/dataset/simex/geojson/simex_amazonia_PAMT2007_2023_mun.geojson", window.location.origin).href;
+    const CSV_URL     = new URL("/dataset/simex/csv/simex_amazonia_PAMT2007_2023_imoveisrurais.csv", window.location.origin).href;
 
-  /* --------------- ELEMENTOS DOM --------------- */
-  const stateSelect      = document.getElementById('state-select');
-  const resetBtn         = document.getElementById('reset-btn');
-  const startYearSelect  = document.getElementById('start-year-select');
-  const endYearSelect    = document.getElementById('end-year-select');
-  const categorySelect   = document.getElementById('category-select');
-  const loadMapBtn       = document.getElementById('load-map-btn');
-  const mapBtnContainer  = document.getElementById('map-load-btn-container');
-  const settlementList   = document.getElementById('settlement-list');
-  const settlementSearch = document.getElementById('settlement-search');
-  const selectedCount    = document.getElementById('selected-count');
-  const clearSelection   = document.getElementById('clear-selection');
-  const applySelection   = document.getElementById('apply-selection');
-  const toggleBarDataBtn = document.getElementById('toggle-bar-data-btn');
-  const barDataTableDiv  = document.getElementById('bar-data-table');
+    /* ------------------- ELEMENTOS DOM ---------------- */
+    const stateSelect      = document.getElementById('state-select');
+    const resetBtn         = document.getElementById('reset-btn');
+    const startYearSelect  = document.getElementById('start-year-select');
+    const endYearSelect    = document.getElementById('end-year-select');
+    const categorySelect   = document.getElementById('category-select');
+    const settlementList   = document.getElementById('settlement-list');
+    const settlementSearch = document.getElementById('settlement-search');
+    const selectedCount    = document.getElementById('selected-count');
+    const clearSelection   = document.getElementById('clear-selection');
+    const applySelection   = document.getElementById('apply-selection');
+    const toggleBarDataBtn = document.getElementById('toggle-bar-data-btn');
+    const barDataTableDiv  = document.getElementById('bar-data-table');
 
-  /* ----------------- ESTADO ------------------ */
-  let geojson, df = [];
-  let barSettlements = [];
-  let listStates = [], listYears = [], allSettlements = [];
-  let selectedStates = [], selectedCategory = '', selectedSettlements = [];
-  let currentYear;
-  let leafletMap, geoLayer;
-  let mapInitialized = false;
-  let legendContainer;
-  // Guarda últimos dados do gráfico de barras
-  let lastBarData = [];
+    /* ------------------- ESTADO ----------------------- */
+    let geojson, df = [];
+    let barSettlements = [];
+    let listStates = [], listYears = [], allSettlements = [];
+    let selectedStates = [], selectedCategory = '', selectedSettlements = [];
+    let leafletMap, geoLayer, legendContainer;
+    let mapInitialized = false;
+    let lastBarData = [];
 
-  /* ----------------- LOADERS ----------------- */
-  async function loadGeoJSON() {
-    const resp = await fetch(GEOJSON_URL);
-    if (!resp.ok) throw new Error(`GeoJSON: ${resp.status}`);
-    geojson = await resp.json();
-  }
-
-  async function loadCSV() {
-    const resp = await fetch(CSV_URL);
-    if (!resp.ok) throw new Error(`CSV: ${resp.status}`);
-    const text = await resp.text();
-    df = d3.csvParse(text, d => ({
-      ...d,
-      ano     : d.ano     !== '' ? +d.ano     : null,
-      area_ha : d.area_ha !== '' ? +d.area_ha : null
-    }));
-
-    // Listas auxiliares
-    listStates     = [...new Set(df.map(d => d.sigla_uf))].sort();
-    listYears      = [...new Set(df.map(d => d.ano))].sort((a,b)=>a-b);
-    allSettlements = [...new Set(df.map(d => d.nome))].sort();
-    currentYear    = Math.max(...listYears);
-  }
-
-  /* ------------------ FILTROS ------------------ */
-  function buildFilters() {
-    /* Estados */
-    stateSelect.innerHTML = '';
-    listStates.forEach(s =>
-      stateSelect.insertAdjacentHTML('beforeend', `<option value="${s}">${s}</option>`));
-
-    /* Anos */
-    startYearSelect.innerHTML = '';
-    endYearSelect.innerHTML   = '';
-    listYears.forEach(y => {
-      startYearSelect.insertAdjacentHTML('beforeend', `<option>${y}</option>`);
-      endYearSelect.insertAdjacentHTML  ('beforeend', `<option>${y}</option>`);
-    });
-    startYearSelect.value = listYears[0];
-    endYearSelect.value   = listYears.at(-1);
-
-    /* Categorias */
-    const categories = [
-      { label: 'Todas',          value: ''               },
-      { label: 'Não autorizada', value: 'não autorizada' },
-      { label: 'Autorizada',     value: 'autorizada'     },
-      { label: 'Análise',        value: 'análise'        }
-    ];
-    categorySelect.innerHTML = categories
-      .map(o => `<option value="${o.value}">${o.label}</option>`).join('');
-  }
-
-  /* ----------- BASE PARA FILTRO ----------- */
-  function filtroBase() {
-    const startYear = +startYearSelect.value;
-    const endYear   = +endYearSelect.value;
-    selectedCategory = categorySelect.value;
-    selectedStates   = Array.from(stateSelect.selectedOptions).map(o => o.value);
-
-    // Filtra os dados
-    let filtered = df
-      .filter(d => d.ano >= startYear && d.ano <= endYear)
-      .filter(d => !selectedCategory || d.categoria === selectedCategory)
-      .filter(d => !selectedStates.length || selectedStates.includes(d.sigla_uf));
-    
-    // Se houver municípios selecionados, filtrar por eles
-    if (selectedSettlements.length > 0) {
-      filtered = filtered.filter(d => selectedSettlements.includes(d.nome));
+    /* ------------------- LOADERS ---------------------- */
+    async function loadGeoJSON() {
+      const r = await fetch(GEOJSON_URL);
+      if (!r.ok) throw new Error(`GeoJSON: ${r.status}`);
+      geojson = await r.json();
     }
-    return filtered;
-  }
-
-  /* ----------- GRÁFICO BARRAS e armazenamento de dados ----------- */
-  function plotSettlement() {
-    const data = filtroBase();
-
-    // soma área por município
-    const bynome = d3.rollup(
-      data,
-      v => d3.sum(v, d => d.area_ha),
-      d => d.nome
-    );
-
-    // top-10, ordenado pela área
-    let arr = Array.from(bynome, ([nome, area]) => ({ nome, area }))
-                     .sort((a, b) => b.area - a.area);
-    
-    // Se houver municípios selecionados, mostrar apenas eles
-    if (selectedSettlements.length > 0) {
-      arr = arr.filter(d => selectedSettlements.includes(d.nome));
-    } else {
-      // Caso contrário, mostrar os top 10
-      arr = arr.slice(0, 10);
+    async function loadCSV() {
+      const r = await fetch(CSV_URL);
+      if (!r.ok) throw new Error(`CSV: ${r.status}`);
+      const txt = await r.text();
+      df = d3.csvParse(txt, d => ({...d, ano:+d.ano, area_ha:+d.area_ha}));
+      listStates     = [...new Set(df.map(d=>d.sigla_uf))].sort();
+      listYears      = [...new Set(df.map(d=>d.ano))].sort((a,b)=>a-b);
+      allSettlements = [...new Set(df.map(d=>d.nome))].sort();
     }
 
-    // guarda os nomes que aparecem no gráfico (usado no mapa e série)
-    barSettlements = arr.map(d => d.nome);
-
-    // armazenar para exibir tabela
-    lastBarData = arr.map(d => ({
-      nome: d.nome,
-      area: d.area
-    }));
-
-    // trace Plotly com exibição de valor dentro da barra
-    const textValues = arr.map(d => d.area.toLocaleString('pt-BR', { maximumFractionDigits: 2 }));
-    const trace = {
-      x          : arr.map(d => d.area),
-      y          : arr.map(d => d.nome),
-      type       : 'bar',
-      orientation: 'h',
-      text       : textValues,
-      textposition: 'auto',
-      marker     : { 
-        color: '#28a745',
-        opacity: 0.8,
-        line: {
-          width: 1,
-          color: '#1e7e34'
-        }
-      },
-      hovertemplate: '<b>%{y}</b><br>%{x:,.2f} ha<extra></extra>'
-    };
-
-    // margem esquerda proporcional ao tamanho dos rótulos
-    const maxLen     = d3.max(arr, d => d.nome.length) || 0;
-    const leftMargin = Math.min(400, 40 + maxLen * 6);
-
-    const layout = {
-      title : { 
-        text: `Área Acumulada – ${selectedCategory || 'Todas'}`, 
-        x: 0.5,
-        font: {
-          size: 16
-        }
-      },
-      margin: { l: leftMargin, r: 10, t: 50, b: 30 },
-      height: 450,
-      yaxis : { 
-        automargin: true, 
-        tickfont: { size: 11 } 
-      },
-      xaxis: {
-        title: {
-          text: 'Área (ha)',
-          font: {
-            size: 12
-          }
-        },
-        tickformat: ',.0f',
-        separatethousands: true
-      },
-      plot_bgcolor: 'rgba(0,0,0,0)',
-      paper_bgcolor: 'rgba(0,0,0,0)',
-      hoverlabel: {
-        bgcolor: '#28a745',
-        font: {
-          color: 'white'
-        }
-      }
-    };
-
-    Plotly.newPlot('bar-settlement', [trace], layout,
-                   { displayModeBar: false, responsive: true });
-
-    // Se a tabela estiver visível, atualizar conteúdo
-    if (barDataTableDiv.style.display !== 'none') {
-      renderBarDataTable();
-    }
-  }
-
-  /* ---------- Função para renderizar a tabela de dados do gráfico de barras ---------- */
-  function renderBarDataTable() {
-    // Usa lastBarData: array de objetos { nome, area }
-    if (!lastBarData || !lastBarData.length) {
-      barDataTableDiv.innerHTML = '<p class="text-muted">Sem dados para exibir.</p>';
-      return;
-    }
-    // Monta HTML da tabela
-    let html = '<div class="table-responsive"><table class="table table-sm table-striped mb-0">';
-    html += '<thead><tr><th>Município</th><th class="text-end">Área (ha)</th></tr></thead><tbody>';
-    lastBarData.forEach(row => {
-      const areaFmt = row.area.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      html += `<tr><td>${row.nome}</td><td class="text-end">${areaFmt}</td></tr>`;
-    });
-    html += '</tbody></table></div>';
-    barDataTableDiv.innerHTML = html;
-  }
-
-  /* ---------- LEAFLET MAP ---------- */
-  function initLeaflet() {
-    if (mapInitialized) return;
-    
-    leafletMap = L.map('map-graph', {
-      zoomSnap: 0.25,
-      attributionControl: false
-    }).setView([-14, -55], 4);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(leafletMap);
-
-    // Criar container para a legenda
-    legendContainer = L.DomUtil.create('div', 'heat-legend');
-    legendContainer.style.display = 'none';
-    leafletMap.getContainer().appendChild(legendContainer);
-
-    mapInitialized = true;
-  }
-
-  /* ---------- ATUALIZA BARRA DE CALOR ---------- */
-  function updateHeatLegend(minVal, maxVal, colorScale) {
-    if (!legendContainer) return;
-    const formatValue = val => {
-      if (val >= 1000000) return `${(val/1000000).toFixed(1)}M`;
-      if (val >= 1000) return `${(val/1000).toFixed(0)}k`;
-      return val.toFixed(0);
-    };
-    legendContainer.innerHTML = `
-      <h4>Área (ha)</h4>
-      <div class="legend-gradient"></div>
-      <div class="legend-labels">
-        <span>${formatValue(maxVal)}</span>
-        <span>${formatValue((maxVal + minVal)/2)}</span>
-        <span>${formatValue(minVal)}</span>
-      </div>
-    `;
-    const gradient = legendContainer.querySelector('.legend-gradient');
-    gradient.style.background = `linear-gradient(to top, 
-      ${colorScale(maxVal)} 0%, 
-      ${colorScale((maxVal + minVal)/2)} 50%, 
-      ${colorScale(minVal)} 100%)`;
-    legendContainer.style.display = 'block';
-  }
-
-  /* ---------- DESENHA / ATUALIZA MAPA LEAFLET ---------- */
-  function plotMap() {
-    if (!mapInitialized) return;
-
-    const base = filtroBase();
-
-    const bynome = d3.rollup(
-      base,
-      v => d3.sum(v, d => d.area_ha),
-      d => d.nome
-    );
-
-    let settlementsToShow = [];
-    if (selectedSettlements.length > 0) {
-      settlementsToShow = selectedSettlements;
-    } else if (barSettlements.length > 0) {
-      settlementsToShow = barSettlements;
+    /* ------------------- FILTROS ---------------------- */
+    function buildFilters(){
+      stateSelect.innerHTML = listStates.map(s=>`<option value="${s}">${s}</option>`).join('');
+      startYearSelect.innerHTML = listYears.map(y=>`<option>${y}</option>`).join('');
+      endYearSelect.innerHTML   = startYearSelect.innerHTML;
+      startYearSelect.value = listYears[0];
+      endYearSelect.value   = listYears.at(-1);
+      categorySelect.innerHTML = [
+        {label:'Todas',value:''},
+        {label:'Não autorizada',value:'não autorizada'},
+        {label:'Autorizada',value:'autorizada'},
+        {label:'Análise',value:'análise'}
+      ].map(o=>`<option value="${o.value}">${o.label}</option>`).join('');
     }
 
-    const settlementsData = settlementsToShow.map(nome => ({
-      nome,
-      area: bynome.get(nome) || 0
-    }));
-
-    const maxArea = d3.max(settlementsData, d => d.area) || 1;
-    const minVal = 0;
-    const maxVal = maxArea;
-    const colorScale = d3.scaleSequential()
-                         .domain([minVal, maxVal])
-                         .interpolator(d3.interpolateYlOrRd);
-
-    updateHeatLegend(minVal, maxVal, colorScale);
-
-    if (geoLayer) geoLayer.remove();
-
-    geoLayer = L.geoJSON(geojson, {
-      filter: f => settlementsToShow.includes(f.properties.NM_MUN),
-      style : f => {
-        const nome = f.properties.NM_MUN;
-        const area = bynome.get(nome) || 0;
-        return {
-          weight      : 1.2,
-          color       : '#555',
-          fillOpacity : 0.75,
-          fillColor   : colorScale(area)
-        };
-      },
-      onEachFeature: (f, layer) => {
-        const nome = f.properties.NM_MUN;
-        const area = bynome.get(nome) || 0;
-        layer.bindTooltip(
-          `<strong>${nome}</strong><br>` +
-          `${area.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} ha`,
-          { sticky: true }
-        );
-        layer.on({
-          mouseover: e => {
-            e.target.setStyle({ 
-              weight: 2, 
-              color: '#000',
-              fillOpacity: 0.9
-            }).bringToFront();
-          },
-          mouseout : e => geoLayer.resetStyle(e.target),
-          click    : e => leafletMap.fitBounds(e.target.getBounds(), { maxZoom: 10 })
-        });
-      }
-    }).addTo(leafletMap);
-  }
-
-  /* ---------- GRÁFICO LINHA ---------- */
-  function plotLine() {
-    const data = filtroBase();
-    const byAno = d3.rollup(
-      data,
-      v => d3.sum(v, d => d.area_ha),
-      d => d.nome,
-      d => d.ano
-    );
-
-    const palette = d3.schemeTableau10;
-    let settlementsToShow = [];
-    if (selectedSettlements.length > 0) {
-      settlementsToShow = selectedSettlements;
-    } else if (barSettlements.length > 0) {
-      settlementsToShow = barSettlements;
-    } else {
-      settlementsToShow = Array.from(byAno.keys());
+    function filtroBase(){
+      const sy = +startYearSelect.value,
+            ey = +endYearSelect.value;
+      selectedCategory = categorySelect.value;
+      selectedStates   = Array.from(stateSelect.selectedOptions).map(o=>o.value);
+      let f = df.filter(d=>d.ano>=sy&&d.ano<=ey)
+                .filter(d=>!selectedCategory||d.categoria===selectedCategory)
+                .filter(d=>!selectedStates.length||selectedStates.includes(d.sigla_uf));
+      if(selectedSettlements.length) f = f.filter(d=>selectedSettlements.includes(d.nome));
+      return f;
     }
 
-    const series = settlementsToShow
-      .map((nome, idx) => {
-        const mapY = byAno.get(nome);
-        if (!mapY) return null;
-        const years = [...mapY.keys()].sort((a, b) => a - b);
-        const color = palette[idx % palette.length];
-        return {
-          name : nome,
-          x    : years,
-          y    : years.map(y => mapY.get(y)),
-          mode : 'lines+markers',
-          line : { width: 2, color },
-          marker: { size: 8, color }
-        };
-      })
-      .filter(Boolean);
+    /* ------------------- GRÁFICO BARRAS --------------- */
+    function plotSettlement(){
+      const data = filtroBase();
+      const bynome = d3.rollup(data,v=>d3.sum(v,d=>d.area_ha),d=>d.nome);
+      let arr = Array.from(bynome,([nome,area])=>({nome,area}))
+                     .sort((a,b)=>b.area-a.area);
+      arr = selectedSettlements.length ? arr.filter(d=>selectedSettlements.includes(d.nome)) : arr.slice(0,10);
+      barSettlements = arr.map(d=>d.nome);
+      lastBarData = arr.map(d=>({nome:d.nome,area:d.area}));
 
-    const layout = {
-      xaxis: { 
-        title: 'Ano',
-        gridcolor: '#f0f0f0'
-      },
-      yaxis: { 
-        title: 'Área (ha)',
-        gridcolor: '#f0f0f0'
-      },
-      legend: { 
-        orientation: 'h', 
-        x: 0.5, 
-        y: -0.2,
-        bgcolor: 'rgba(255,255,255,0.7)'
-      },
-      margin: { l: 50, t: 50, b: 50, r: 20 },
-      height: 450,
-      plot_bgcolor: 'rgba(0,0,0,0)',
-      paper_bgcolor: 'rgba(0,0,0,0)',
-      hovermode: 'closest'
-    };
-    
-    Plotly.newPlot('line-graph', series, layout,
-                   { displayModeBar: false, responsive: true });
-  }
+      const trace = {
+        x: arr.map(d=>d.area),
+        y: arr.map(d=>d.nome),
+        type:'bar', orientation:'h',
+        text: arr.map(d=>d.area.toLocaleString('pt-BR',{maximumFractionDigits:2})),
+        textposition:'auto',
+        marker:{color:'#28a745',opacity:.8,line:{width:1,color:'#1e7e34'}},
+        hovertemplate:'<b>%{y}</b><br>%{x:,.2f} ha<extra></extra>'
+      };
+      const leftMargin = Math.min(400, 40 + (d3.max(arr,d=>d.nome.length)||0)*6);
+      Plotly.newPlot('bar-settlement',[trace],{
+        margin:{l:leftMargin,r:10,t:30,b:30},height:450,
+        xaxis:{title:{text:'Área (ha)',font:{size:12}},tickformat: ',.0f',separatethousands:true},
+        yaxis:{automargin:true,tickfont:{size:11}},
+        plot_bgcolor:'rgba(0,0,0,0)',paper_bgcolor:'rgba(0,0,0,0)',
+        hoverlabel:{bgcolor:'#28a745',font:{color:'#fff'}}
+      },{displayModeBar:false,responsive:true});
 
-  /* ---------- POPULAR LISTA DE MUNICÍPIOS ---------- */
-  function populateSettlementList() {
-    settlementList.innerHTML = '';
-    
-    const searchTerm = settlementSearch.value.toLowerCase();
-    const filteredSettlements = allSettlements.filter(nome => 
-      nome.toLowerCase().includes(searchTerm)
-    );
-    filteredSettlements.forEach(nome => {
-      const isSelected = selectedSettlements.includes(nome);
-      const item = document.createElement('div');
-      item.className = `settlement-item ${isSelected ? 'selected' : ''}`;
-      item.dataset.nome = nome;
-      item.innerHTML = nome;
-      item.addEventListener('click', () => {
-        toggleSettlementSelection(nome);
+      if(barDataTableDiv.style.display!=='none') renderBarDataTable();
+    }
+
+    function renderBarDataTable(){
+      if(!lastBarData.length){barDataTableDiv.innerHTML='<p class="text-muted">Sem dados para exibir.</p>';return;}
+      let html='<div class="table-responsive"><table class="table table-sm table-striped mb-0"><thead><tr><th>Imóvel Rural</th><th class="text-end">Área (ha)</th></tr></thead><tbody>';
+      lastBarData.forEach(r=>{
+        const areaFmt = r.area.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+        html+=`<tr><td>${r.nome}</td><td class="text-end">${areaFmt}</td></tr>`;
       });
-      settlementList.appendChild(item);
-    });
-    updateSelectionCount();
-  }
-
-  /* ---------- ALTERNAR SELEÇÃO DE MUNICÍPIOS ---------- */
-  function toggleSettlementSelection(nome) {
-    const index = selectedSettlements.indexOf(nome);
-    if (index === -1) {
-      if (selectedSettlements.length >= 10) {
-        alert('Você pode selecionar no máximo 10 municípios.');
-        return;
-      }
-      selectedSettlements.push(nome);
-    } else {
-      selectedSettlements.splice(index, 1);
+      barDataTableDiv.innerHTML=html+'</tbody></table></div>';
     }
-    populateSettlementList();
-  }
 
-  /* ---------- ATUALIZAR CONTADOR DE SELEÇÃO ---------- */
-  function updateSelectionCount() {
-    selectedCount.textContent = selectedSettlements.length;
-  }
+    /* ------------------- LEAFLET MAP ------------------ */
+    function initLeaflet(){
+      if(mapInitialized) return;
+      leafletMap = L.map('map-graph',{zoomSnap:.25,attributionControl:false}).setView([-14,-55],4);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,
+        attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(leafletMap);
 
-  /* ------------- EVENTOS ------------- */
-  [startYearSelect, endYearSelect, categorySelect, stateSelect]
-    .forEach(el => el.addEventListener('change', () => {
-      plotSettlement(); 
-      plotMap(); 
-      plotLine();
+      legendContainer = L.DomUtil.create('div','heat-legend'); legendContainer.style.display='none';
+      leafletMap.getContainer().appendChild(legendContainer);
+      mapInitialized = true;
+    }
+
+    function updateHeatLegend(minVal,maxVal,colorScale){
+      const fmt=v=>v>=1e6?`${(v/1e6).toFixed(1)}M`:v>=1e3?`${(v/1e3).toFixed(0)}k`:v.toFixed(0);
+      legendContainer.innerHTML=
+        `<div class="legend-title">Área (ha)</div>
+         <div class="legend-gradient"></div>
+         <div class="legend-labels">
+           <span>${fmt(maxVal)}</span>
+           <span>${fmt((maxVal+minVal)/2)}</span>
+           <span>${fmt(minVal)}</span>
+         </div>`;
+      const grad=legendContainer.querySelector('.legend-gradient');
+      grad.style.background=`linear-gradient(to top,${colorScale(maxVal)} 0%,${colorScale((maxVal+minVal)/2)} 50%,${colorScale(minVal)} 100%)`;
+      legendContainer.style.display='block';
+    }
+
+    function plotMap(){
+      if(!mapInitialized) return;
+      const data = filtroBase();
+      const bynome = d3.rollup(data,v=>d3.sum(v,d=>d.area_ha),d=>d.nome);
+      let show = selectedSettlements.length ? selectedSettlements : (barSettlements.length ? barSettlements : []);
+      const settData = show.map(nome=>({nome,area:bynome.get(nome)||0}));
+      const maxArea = d3.max(settData,d=>d.area)||1;
+      const color = d3.scaleSequential().domain([0,maxArea]).interpolator(d3.interpolateYlOrRd);
+      updateHeatLegend(0,maxArea,color);
+
+      if(geoLayer) geoLayer.remove();
+      geoLayer = L.geoJSON(geojson,{
+        filter:f=>show.includes(f.properties.nome),
+        style:f=>{
+          const a = bynome.get(f.properties.nome)||0;
+          return {weight:1.2,color:'#555',fillOpacity:.75,fillColor:color(a)};
+        },
+        onEachFeature:(f,layer)=>{
+          const nome=f.properties.nome,area=bynome.get(nome)||0;
+          layer.bindTooltip(`<strong>${nome}</strong><br>${area.toLocaleString('pt-BR',{ maximumFractionDigits:2})} ha`,{sticky:true});
+          layer.on({
+            mouseover:e=>e.target.setStyle({weight:2,color:'#000',fillOpacity:.9}).bringToFront(),
+            mouseout:e=>geoLayer.resetStyle(e.target)
+            /* clique removido */
+          });
+        }
+      }).addTo(leafletMap);
+    }
+
+    /* ------------------- SÉRIE HISTÓRICA -------------- */
+    function plotLine(){
+      const data = filtroBase();
+      const byAno = d3.rollup(data,v=>d3.sum(v,d=>d.area_ha),d=>d.nome,d=>d.ano);
+      const palette=d3.schemeTableau10;
+      let show = selectedSettlements.length ? selectedSettlements : (barSettlements.length ? barSettlements : Array.from(byAno.keys()));
+      const series = show.map((nome,i)=>{
+        const m = byAno.get(nome); if(!m) return null;
+        const years=[...m.keys()].sort((a,b)=>a-b);
+        return {name:nome,x:years,y:years.map(y=>m.get(y)),mode:'lines+markers',
+          line:{width:2,color:palette[i%palette.length]},marker:{size:8,color:palette[i%palette.length]}};
+      }).filter(Boolean);
+      Plotly.newPlot('line-graph',series,{
+        xaxis:{title:'Ano',gridcolor:'#f0f0f0'},yaxis:{title:'Área (ha)',gridcolor:'#f0f0f0'},
+        legend:{orientation:'h',x:.5,y:-.2,bgcolor:'rgba(255,255,255,.7)'},
+        margin:{l:50,t:50,b:50,r:20},height:450,
+        plot_bgcolor:'rgba(0,0,0,0)',paper_bgcolor:'rgba(0,0,0,0)',hovermode:'closest'
+      },{displayModeBar:false,responsive:true});
+    }
+
+    /* ------------------- LISTA DE IMÓVEIS ------------- */
+    function populateSettlementList(){
+      settlementList.innerHTML='';
+      const q=settlementSearch.value.toLowerCase();
+      allSettlements.filter(n=>n.toLowerCase().includes(q)).forEach(nome=>{
+        const sel = selectedSettlements.includes(nome);
+        const div=document.createElement('div');
+        div.className=`settlement-item ${sel?'selected':''}`;
+        div.dataset.nome=nome; div.textContent=nome;
+        div.onclick=()=>toggleSettlementSelection(nome);
+        settlementList.appendChild(div);
+      });
+      selectedCount.textContent=selectedSettlements.length;
+    }
+    function toggleSettlementSelection(nome){
+      const i=selectedSettlements.indexOf(nome);
+      if(i===-1){
+        if(selectedSettlements.length>=10){alert('Você pode selecionar no máximo 10 imóveis rurais.');return;}
+        selectedSettlements.push(nome);
+      }else selectedSettlements.splice(i,1);
+      populateSettlementList();
+    }
+
+    /* ------------------- EVENTOS ---------------------- */
+    [startYearSelect,endYearSelect,categorySelect,stateSelect].forEach(el=>el.addEventListener('change',()=>{
+      plotSettlement(); plotMap(); plotLine();
     }));
+    resetBtn.onclick=()=>{
+      stateSelect.selectedIndex=-1; categorySelect.value='';
+      startYearSelect.value=listYears[0]; endYearSelect.value=listYears.at(-1);
+      selectedSettlements=[]; populateSettlementList();
+      plotSettlement(); plotMap(); plotLine();
+    };
+    settlementSearch.oninput=populateSettlementList;
+    clearSelection.onclick=()=>{selectedSettlements=[]; populateSettlementList();};
+    applySelection.onclick=()=>{
+      bootstrap.Modal.getInstance(document.getElementById('interest-modal')).hide();
+      plotSettlement(); plotMap(); plotLine();
+    };
+    toggleBarDataBtn.onclick=()=>{
+      if(barDataTableDiv.style.display==='none'){renderBarDataTable();barDataTableDiv.style.display='block';toggleBarDataBtn.textContent='Ocultar Dados';}
+      else{barDataTableDiv.style.display='none';toggleBarDataBtn.textContent='Exibir Dados';}
+    };
 
-  resetBtn.addEventListener('click', () => {
-    stateSelect.selectedIndex = -1;
-    categorySelect.value = '';
-    startYearSelect.value = listYears[0];
-    endYearSelect.value   = listYears.at(-1);
-    selectedSettlements = [];
-    plotSettlement(); 
-    plotMap(); 
-    plotLine();
-  });
-
-  // Carregar mapa com invalidateSize
-  loadMapBtn.addEventListener('click', () => {
-    initLeaflet();
-    // Oculta overlay
-    mapBtnContainer.style.display = 'none';
-    // Aguarda um instante para recálculo de tamanho
-    setTimeout(() => {
-      leafletMap.invalidateSize();
-      plotMap();
-      document.getElementById('map-graph').style.backgroundColor = '#fff';
-    }, 200);
-  });
-
-  settlementSearch.addEventListener('input', populateSettlementList);
-  clearSelection.addEventListener('click', () => {
-    selectedSettlements = [];
-    populateSettlementList();
-  });
-  applySelection.addEventListener('click', () => {
-    const modal = bootstrap.Modal.getInstance(document.getElementById('interest-modal'));
-    modal.hide();
-    plotSettlement();
-    plotMap();
-    plotLine();
-  });
-
-  // Listener para o botão “Exibir Dados”
-  toggleBarDataBtn.addEventListener('click', () => {
-    if (barDataTableDiv.style.display === 'none') {
-      // Exibir: renderizar tabela e mostrar
-      renderBarDataTable();
-      barDataTableDiv.style.display = 'block';
-      toggleBarDataBtn.textContent = 'Ocultar Dados';
-    } else {
-      // Ocultar
-      barDataTableDiv.style.display = 'none';
-      toggleBarDataBtn.textContent = 'Exibir Dados';
+    /* ------------------- INICIALIZAÇÃO ---------------- */
+    try{
+      await Promise.all([loadGeoJSON(),loadCSV()]);
+      buildFilters(); populateSettlementList();
+      initLeaflet(); leafletMap.invalidateSize();
+      plotSettlement(); plotMap(); plotLine();
+    }catch(err){
+      console.error(err);
+      document.getElementById('app-root').insertAdjacentHTML('afterbegin',`<div class="alert alert-danger">Erro: ${err.message}</div>`);
     }
-  });
-
-  /* ---------------- INICIALIZAÇÃO ---------------- */
-  try {
-    await Promise.all([loadGeoJSON(), loadCSV()]);
-    buildFilters();
-    populateSettlementList();
-    plotSettlement();
-    plotLine();
-  } catch (err) {
-    console.error(err);
-    document.getElementById('app-root')
-      .insertAdjacentHTML('afterbegin',
-        `<div class="alert alert-danger">Erro: ${err.message}</div>`);
-  }
-})();
-</script>
+  })();
+  </script>
 </body>
 </html>
