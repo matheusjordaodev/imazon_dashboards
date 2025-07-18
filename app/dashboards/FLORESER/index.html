@@ -440,6 +440,43 @@
         min-width: 100%;
       }
     }
+        .dashboard-header {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 25px;
+      border-radius: var(--border-radius);
+      margin-bottom: 30px;
+      box-shadow: var(--box-shadow);
+      text-align: center;
+      position: relative;
+    }
+
+    .dashboard-header::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 5px;
+      background-color: var(--accent-color);
+      border-radius: 5px;
+    }
+
+    .dashboard-title {
+      font-weight: 700;
+      margin-bottom: 8px;
+      font-size: 2.5em;
+      letter-spacing: 1px;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .dashboard-subtitle {
+      opacity: 0.9;
+      font-size: 1.2em;
+      font-weight: 300;
+    }
+
   </style>
 </head>
 <body>
@@ -447,7 +484,7 @@
     <div class="loader"></div>
   </div>
 
-  
+
   <div class="container-fluid" id="app-root">
     <!-- Header com gradiente -->
     <div class="dashboard-header fade-in fade-in-1">
@@ -456,7 +493,6 @@
     </div>
 
   <div class="container">
-    <!-- Container para filtros -->
     <div class="filter-container fade-in fade-in-1">
       <div class="filter-item">
         <label class="filter-label" for="stateFilter">Estado</label>
