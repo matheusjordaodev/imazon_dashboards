@@ -420,7 +420,7 @@
       <!-- Gráfico de barras -->
       <div class="col-12 col-md-6 mb-4 mb-md-0">
         <div class="card h-100">
-          <div class="card-header">Área Acumulada de Exploração Madeireira - Top 10 Terras Indígenas</div>
+          <div class="card-header">Área Acumulada de Exploração Madeireira</div>
           <div class="card-body p-0">
             <div id="bar-settlement" style="height:450px;"></div>
           </div>
@@ -433,11 +433,7 @@
           <div class="card-header">Mapa de Terras Indígenas</div>
           <div class="card-body p-0 map-container">
             <div id="map-graph" style="height:100%;"></div>
-            <div id="map-load-btn-container">
-              <button id="load-map-btn" class="btn btn-success custom-button">
-                <i class="fas fa-map me-2"></i>Carregar Mapa
-              </button>
-            </div>
+            
           </div>
         </div>
       </div>
@@ -856,8 +852,8 @@
                 fillOpacity: 0.9
               }).bringToFront();
             },
-            mouseout : e => geoLayer.resetStyle(e.target),
-            click    : e => leafletMap.fitBounds(e.target.getBounds(), { maxZoom: 10 })
+            mouseout : e => geoLayer.resetStyle(e.target)
+            // REMOVIDO: evento de clique que fazia zoom no polígono
           });
         }
       }).addTo(leafletMap);
@@ -951,9 +947,7 @@
         item.dataset.terrai_nom = terrai_nom;
         item.innerHTML = terrai_nom;
         
-        item.addEventListener('click', () => {
-          toggleSettlementSelection(terrai_nom);
-        });
+        
         
         settlementList.appendChild(item);
       });
@@ -1005,13 +999,8 @@
       plotLine();
     });
 
-    // Evento para carregar o mapa
-    loadMapBtn.addEventListener('click', () => {
-      initLeaflet();
-      plotMap();
-      mapBtnContainer.style.display = 'none';
-      document.getElementById('map-graph').style.backgroundColor = '#fff';
-    });
+    
+    
     
     // Evento para busca de assentamentos
     settlementSearch.addEventListener('input', populateSettlementList);
@@ -1053,3 +1042,4 @@
   </script>
 </body>
 </html>
+

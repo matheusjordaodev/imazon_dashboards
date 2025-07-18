@@ -465,7 +465,7 @@
     <div class="row gx-2 mb-4">
       <div class="col-12 col-md-6 mb-4 mb-md-0">
         <div class="card h-100">
-          <div class="card-header">Área Acumulada de Exploração Madeireira - Top 10</div>
+          <div class="card-header">Área Acumulada de Exploração Madeireira </div>
           <div class="card-body p-0">
             <div id="bar-settlement" style="height:450px;"></div>
           </div>
@@ -588,8 +588,8 @@
   <script type="module">
   (async () => {
     /* ----------------- CONSTANTES ----------------- */
-    const GEOJSON_URL = "https://cdn.jsdelivr.net/gh/imazon-cgi/simex@main/datasets/geojson/simex_amazonia_PAMT2007_2023_assentamentos.geojson";
-    const CSV_URL = new URL("/dataset/simex/csv/simex_amazonia_PAMT2007_2023_imoveisrurais.csv", window.location.origin).href;
+    const GEOJSON_URL = new URL("/dataset/simex/geojson/simex_amazonia_PAMT2007_2023_imoveisrurais.geojson", window.location.origin).href;
+    const CSV_URL = new URL("/dataset/simex/csv/simex_imoveisrurais_com_nomes_corrigidos.csv", window.location.origin).href;
 
     /* --------------- ELEMENTOS DOM --------------- */
     const stateSelect     = document.getElementById('state-select');

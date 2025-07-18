@@ -5,161 +5,246 @@
   <title>Dashboard de Desmatamento</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- CSS & LIBS -->
+  <!-- Bibliotecas CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
   
   <style>
     :root {
-      --primary-green: #28a745;
-      --dark-green: #1e7e34;
-      --light-gray: #e9ecef;
-      --medium-gray: #d1d7dc;
-      --dark-gray: #495057;
-      --card-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      --card-shadow-hover: 0 10px 20px rgba(0,0,0,0.1);
+      --primary-color: #008055;
+      --primary-light: #008055;
+      --primary-dark: #003300;
+      --secondary-color: #00796B;
+      --accent-color: #FF6D00;
+      --text-color: #212121;
+      --text-light: #757575;
+      --background-color: #F5F5F5;
+      --card-color: #FFFFFF;
+      --border-radius: 10px;
+      --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
-    
-    body {
-      font-family: system-ui, Helvetica, Arial, sans-serif;
-      background-color: var(--light-gray);
+
+    /* Reset e estilos base */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
       padding: 15px;
     }
-    
+
+    /* Header com gradiente e efeito de profundidade */
     .dashboard-header {
-      background: linear-gradient(120deg, #2c7744, var(--dark-green));
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
       color: white;
-      padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      box-shadow: var(--card-shadow);
+      padding: 25px;
+      border-radius: var(--border-radius);
+      margin-bottom: 30px;
+      box-shadow: var(--box-shadow);
+      text-align: center;
+      position: relative;
     }
-    
+
+    .dashboard-header::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 5px;
+      background-color: var(--accent-color);
+      border-radius: 5px;
+    }
+
     .dashboard-title {
       font-weight: 700;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
+      font-size: 2.5em;
+      letter-spacing: 1px;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
     }
-    
+
     .dashboard-subtitle {
       opacity: 0.9;
-      font-size: 1.1rem;
+      font-size: 1.2em;
+      font-weight: 300;
     }
-    
+
+    /* Container principal */
+    .container-fluid {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Cards com estilo moderno */
     .card {
-      border-radius: 10px;
-      box-shadow: var(--card-shadow);
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
       border: none;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      transition: var(--transition);
       overflow: hidden;
       margin-bottom: 20px;
-      background-color: #fff;
+      background-color: var(--card-color);
     }
-    
+
     .card:hover {
       transform: translateY(-5px);
-      box-shadow: var(--card-shadow-hover);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     }
-    
+
+    /* Títulos dos cards */
     .card-header {
-      background-color: white !important;
-      color: var(--dark-gray) !important;
+      background-color: var(--card-color) !important;
+      color: var(--primary-dark) !important;
       font-weight: 700 !important;
-      border-bottom: 1px solid var(--medium-gray) !important;
-      padding: 12px 20px;
-      font-size: 1.1rem;
+      border-bottom: 1px solid var(--accent-color) !important;
+      padding: 20px;
+      font-size: 1.2em;
+      position: relative;
     }
-    
+
+    .card-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 20px;
+      width: 50px;
+      height: 3px;
+      background-color: var(--accent-color);
+      border-radius: 3px;
+    }
+
+    /* Controles superiores */
     .controls-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 15px;
       align-items: center;
-      margin-bottom: 20px;
-      background: white;
-      padding: 12px 15px;
-      border-radius: 10px;
-      box-shadow: var(--card-shadow);
-    }
-    
-    .filter-label {
-      font-weight: 500;
-      color: var(--dark-gray);
-    }
-    
-    .map-container {
+      margin-bottom: 30px;
+      background: var(--card-color);
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
       position: relative;
-      width: 100%;
-      height: 60vh;
-      border-radius: 0 0 10px 10px;
+      z-index: 10;
+    }
+
+    /* Botões com estilo moderno */
+    .custom-button {
+      background: linear-gradient(120deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-weight: 600;
+      transition: var(--transition);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-family: 'Montserrat', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .custom-button:hover {
+      background: linear-gradient(120deg, var(--primary-dark), var(--primary-color));
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+      color: white;
+    }
+
+    .custom-button:active {
+      transform: translateY(0);
+    }
+
+    /* Selects com estilo moderno */
+    select {
+      font-family: 'Montserrat', sans-serif;
+      padding: 12px 15px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      background-color: #fff;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 16px;
+      padding-right: 40px;
+      transition: var(--transition);
+    }
+
+    select:hover {
+      border-color: var(--primary-light);
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(0, 128, 85, 0.2);
+    }
+
+    /* Container do mapa */
+    .map-container {
+      border-radius: 0 0 var(--border-radius) var(--border-radius);
       overflow: hidden;
+      background: #f0f8ff;
+      height: 450px;
     }
-    
+
     #map {
-      width: 100%;
       height: 100%;
+      min-height: 450px;
       background: #e6f7ff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
     }
-    
-    #overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(255,255,255,0.7);
-      pointer-events: none;
-      z-index: 500;
-    }
-    
-    #load-btn {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--primary-green);
-      color: #fff;
-      padding: 10px 20px;
-      border: 0;
-      border-radius: 30px;
-      font-size: 1rem;
-      cursor: pointer;
+
+    /* Legenda em formato de barra vertical */
+    .heat-legend {
+      background: var(--card-color);
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: var(--box-shadow);
+      line-height: 1.4;
       z-index: 1000;
-      transition: background-color .3s ease, transform .2s ease;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    #load-btn:hover {
-      background-color: var(--dark-green);
-      transform: translate(-50%, -52%);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-    }
-    
-    #legend-container {
       position: absolute;
-      bottom: 10px;
-      right: 10px;
-      z-index: 1000;
-      background: white;
-      padding: 8px;
-      border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      bottom: 20px;
+      right: 20px;
       font-size: 0.8rem;
+      width: 110px;
     }
-    
+
     .legend-title {
       font-weight: 600;
       text-align: center;
       margin-bottom: 5px;
-      color: var(--dark-gray);
+      color: var(--primary-dark);
     }
-    
+
     .legend-gradient {
       height: 150px;
       width: 25px;
       margin: 0 auto;
       border-radius: 3px;
     }
-    
+
     .legend-labels {
       display: flex;
       flex-direction: column;
@@ -170,27 +255,93 @@
       top: 35px;
       font-size: 0.75rem;
     }
-    
-    .custom-button {
-      background: linear-gradient(120deg, var(--primary-green), var(--dark-green));
-      color: white;
-      border: none;
-      border-radius: 30px;
-      padding: 8px 18px;
-      font-weight: 500;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+
+    /* Remover linhas de fundo dos gráficos */
+    .gridlayer, .cartesianlayer > .grid {
+      display: none !important;
     }
-    
-    .custom-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+
+    .js-plotly-plot .plotly .main-svg {
+      background-color: transparent !important;
     }
-    
-    .loading-overlay {
-      position: relative;
+
+    /* Animações */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out forwards;
+    }
+
+    .fade-in-1 { animation-delay: 0.1s; }
+    .fade-in-2 { animation-delay: 0.2s; }
+    .fade-in-3 { animation-delay: 0.3s; }
+
+    /* Estilo para a tabela DataTables */
+    .dash-table-container {
+      overflow-x: auto;
+      padding: 0 10px;
+    }
+
+    .dataTables_wrapper {
+      width: 100% !important;
+    }
+
+    .dt-buttons {
+      margin-bottom: 10px;
+    }
+
+    .btn-dt {
+      background: linear-gradient(120deg, var(--primary-color), var(--primary-dark)) !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 30px !important;
+      padding: 5px 15px !important;
+      font-weight: 500 !important;
+      transition: all 0.3s ease !important;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+    }
+
+    .btn-dt:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.15) !important;
+    }
+
+    /* Melhorias na responsividade */
+    @media (max-width: 992px) {
+      .dashboard-title {
+        font-size: 2em;
+      }
+      
+      .dashboard-subtitle {
+        font-size: 1em;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .controls-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .dashboard-title {
+        font-size: 1.8em;
+      }
+      
+      #map {
+        min-height: 350px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .dashboard-title {
+        font-size: 1.5em;
+      }
+    }
+
+    /* Loading spinner */
     .loading-spinner {
       position: absolute;
       inset: 0;
@@ -200,119 +351,56 @@
       justify-content: center;
       z-index: 60;
     }
-    
-    .dash-table-container {
-      overflow-x: auto;
-      padding: 0 10px;
-    }
-    
-    .dataTables_wrapper {
-      width: 100% !important;
-    }
-    
-    .dt-buttons {
-      margin-bottom: 10px;
-    }
-    
-    .btn-dt {
-      background: linear-gradient(120deg, var(--primary-green), var(--dark-green)) !important;
-      color: white !important;
-      border: none !important;
-      border-radius: 30px !important;
-      padding: 5px 15px !important;
-      font-weight: 500 !important;
-      transition: all 0.3s ease !important;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
-    }
-    
-    .btn-dt:hover {
-      transform: translateY(-2px) !important;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.15) !important;
-    }
-    
-    /* ajustes mobile */
-    @media (max-width:768px) {
-      .map-container {
-        height: 50vh;
-      }
-      #bar-chart, #pie1, #pie2 {
-        height: 300px !important;
-      }
-      #pie1, #pie2 {
-        height: 280px !important;
-      }
-      #reset-btn, #download-btn {
-        width: 100%;
-        margin-top: .25rem;
-      }
-      .filter-label {
-        margin-top: 10px;
-      }
-      .legend-labels {
-        font-size: 0.65rem;
-      }
-    }
   </style>
 </head>
+
 <body>
+    <div class="container-fluid" id="app-root">
+    <!-- Header com gradiente -->
+    <div class="dashboard-header fade-in fade-in-1">
+      <img src="../../img/ameaca_e_pressao.png" alt="Logo SAD" style="max-width: 150px; height: auto; display: block; margin: 0 auto;">
+    </div>
 
-  
-  <div class="container-fluid">
-    <!-- Filtros -->
-    <div class="card mb-4 shadow-sm">
-      <div class="card-body">
-        <div class="row g-2 align-items-center">
-          <div class="col-12 col-md-auto">
-            <label class="filter-label fw-bold">MODALIDADE</label>
-          </div>
-          <div class="col-12 col-md-3">
-            <select id="modalidade-filter" class="form-select w-100">
-              <option value="">Todas</option>
-            </select>
-          </div>
 
-          <div class="col-12 col-md-auto">
-            <label class="filter-label fw-bold">USO</label>
-          </div>
-          <div class="col-12 col-md-3">
-            <select id="uso-filter" class="form-select w-100">
-              <option value="">Todos</option>
-            </select>
-          </div>
+    <!-- Linha de controles superior -->
+    <div class="controls-row fade-in fade-in-2">
+      <button id="reset-btn" class="btn btn-success btn-sm custom-button">
+        <i class="fa fa-filter me-1 fw-bold"></i>Remover Filtros
+      </button>
+      <button id="download-btn" class="btn btn-success btn-sm custom-button">
+        <i class="fa fa-download me-1 fw-bold"></i>Baixar CSV
+      </button>
+      
+      <div class="filter-label">
+        <label for="modalidade-filter" class="me-1 fw-bold">Modalidade:</label>
+        <select id="modalidade-filter" class="form-select form-select-sm">
+          <option value="">Todas</option>
+        </select>
+      </div>
 
-          <div class="col-12 col-md-auto">
-            <label class="filter-label fw-bold">UF</label>
-          </div>
-          <div class="col-12 col-md-2">
-            <select id="uf-filter" class="form-select w-100">
-              <option value="">Todas</option>
-            </select>
-          </div>
+      <div class="filter-label">
+        <label for="uso-filter" class="me-1 fw-bold">Uso:</label>
+        <select id="uso-filter" class="form-select form-select-sm">
+          <option value="">Todos</option>
+        </select>
+      </div>
 
-          <div class="col-6 col-md-auto mt-3 mt-md-0">
-            <button id="reset-btn" class="btn custom-button w-100 w-md-auto">
-              <i class="fa fa-filter me-1"></i>Remover Filtros
-            </button>
-          </div>
-
-          <div class="col-6 col-md-auto mt-3 mt-md-0">
-            <button id="download-btn" class="btn custom-button w-100 w-md-auto">
-              <i class="fa fa-download me-1"></i>Baixar CSV
-            </button>
-          </div>
-        </div>
+      <div class="filter-label">
+        <label for="uf-filter" class="me-1 fw-bold">UF:</label>
+        <select id="uf-filter" class="form-select form-select-sm">
+          <option value="">Todas</option>
+        </select>
       </div>
     </div>
 
     <!-- Mapa + Gráfico de Barras -->
-    <div class="row gx-2 mb-4">
+    <div class="row gx-2 mb-4 fade-in fade-in-3">
       <div class="col-12 col-md-6 mb-4 mb-md-0">
-        <div class="card h-100 shadow-sm">
+        <div class="card h-100">
           <div class="card-header">Mapa de Áreas Protegidas</div>
           <div class="card-body p-0">
             <div class="map-container">
               <div id="map" class="w-100 h-100"></div>
-              <div id="overlay"></div>
               <div id="legend-container"></div>
               <div class="loading-spinner">
                 <div class="spinner-border text-success" role="status">
@@ -325,11 +413,11 @@
       </div>
 
       <div class="col-12 col-md-6">
-        <div class="card h-100 shadow-sm">
-          <div class="card-header">TOP 10 Desmatamento</div>
+        <div class="card h-100">
+          <div class="card-header">Áreas com Maior Desmatamento</div>
           <div class="card-body p-0">
             <div class="loading-overlay">
-              <div id="bar-chart" style="width:100%; height:100%"></div>
+              <div id="bar-chart" style="height:450px"></div>
               <div class="loading-spinner">
                 <div class="spinner-border text-success" role="status">
                   <span class="visually-hidden">Carregando…</span>
@@ -344,11 +432,11 @@
     <!-- Gráficos de Pizza -->
     <div class="row gx-2 mb-4">
       <div class="col-12 col-md-6 mb-4 mb-md-0">
-        <div class="card h-100 shadow-sm">
+        <div class="card h-100">
           <div class="card-header">Ameaça de Desmatamento por Estado e Modalidade</div>
           <div class="card-body p-0">
             <div class="loading-overlay">
-              <div id="pie1" style="width:100%; height:100%"></div>
+              <div id="pie1" style="height:450px"></div>
               <div class="loading-spinner">
                 <div class="spinner-border text-success" role="status">
                   <span class="visually-hidden">Carregando…</span>
@@ -360,11 +448,11 @@
       </div>
 
       <div class="col-12 col-md-6">
-        <div class="card h-100 shadow-sm">
+        <div class="card h-100">
           <div class="card-header">Ameaça por Área de Proteção</div>
           <div class="card-body p-0">
             <div class="loading-overlay">
-              <div id="pie2" style="width:100%; height:100%"></div>
+              <div id="pie2" style="height:450px"></div>
               <div class="loading-spinner">
                 <div class="spinner-border text-success" role="status">
                   <span class="visually-hidden">Carregando…</span>
@@ -379,7 +467,7 @@
     <!-- Tabela com TOP 20 -->
     <div class="row gx-2 mb-5">
       <div class="col">
-        <div class="card h-100 shadow-sm">
+        <div class="card h-100">
           <div class="card-header">Áreas Protegidas Mais Afetadas</div>
           <div class="card-body">
             <div class="dash-table-container">
@@ -409,7 +497,7 @@
     </div>
   </div>
 
-  <!-- JS LIBS -->
+  <!-- Bibliotecas JavaScript -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -419,7 +507,6 @@
   <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-  <!-- JS PRINCIPAL -->
   <script>
   if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     (async () => {
@@ -450,6 +537,13 @@
         for (const a of ARTICLES) if (t.toUpperCase().startsWith(a)) { t = t.slice(a.length); break; }
         return t.trim();
       };
+
+      // Função para obter os filtros atuais
+      const currentFilters = () => [
+        document.getElementById("modalidade-filter").value || null,
+        document.getElementById("uso-filter").value       || null,
+        document.getElementById("uf-filter").value        || null
+      ];
 
       /* -------------- CARREGA GEOJSON ----------------------------- */
       const GEO_URL = "https://raw.githubusercontent.com/imazon-cgi/ap/main/dataset/geojson/AMEACA_GERAL_Area_de_Protecao.geojson";
@@ -549,18 +643,10 @@
         });
       };
 
-      /* filtros & interações */
-      const currentFilters = () => [
-        document.getElementById("modalidade-filter").value || null,
-        document.getElementById("uso-filter").value       || null,
-        document.getElementById("uf-filter").value        || null
-      ];
-
       /* Carregar mapa automaticamente */
       const mapSpinner = document.querySelector(".map-container .loading-spinner");
       if (mapSpinner) mapSpinner.style.display = "flex";
       makePolygons(filter(...currentFilters()));
-      document.getElementById("overlay").style.display = "none";
       legendDiv.innerHTML = buildClassLegend();
       if (mapSpinner) mapSpinner.style.display = "none";
 
@@ -615,11 +701,8 @@
           }],
           {
             template : "plotly_white",
-            height   : isMobile() ? 300 : 450,
-            title: {
-              text: "Áreas com Maior Desmatamento (TOP 10)",
-              font: { size: 16 }
-            },
+            height   : 450,
+            
             bargap   : 0.30,              
             margin   : { l: 100, r: 80, t: 60, b: 20 },
             xaxis    : {
@@ -659,7 +742,7 @@
           }], {
             template: "plotly_white",
             title: { text: title, font: { size: mob ? 16 : 19 } },
-            height: mob ? 280 : 400,
+            height: 450,
             legend: mob ? {
                       orientation: "h", x: .5, y: - .25, xanchor: "center", font: { size: 9 }
                     } : {
@@ -721,7 +804,7 @@
             buttons: [
               {
                 extend: "copy",
-                text: "<i class=\"fas fa-copy me-1\"></i>Copiar",
+                text: "<i class=\"fas fa-copy me-1 fw-bold\"></i>Copiar",
                 className: "btn-dt",
                 exportOptions: {
                   columns: ":visible"
@@ -729,7 +812,7 @@
               },
               {
                 extend: "excel",
-                text: "<i class=\"fas fa-file-excel me-1\"></i>Excel",
+                text: "<i class=\"fas fa-file-excel me-1 fw-bold\"></i>Excel",
                 className: "btn-dt",
                 title: "Top_20_Areas_Protegidas",
                 exportOptions: {
@@ -738,7 +821,7 @@
               },
               {
                 extend: "csv",
-                text: "<i class=\"fas fa-file-csv me-1\"></i>CSV",
+                text: "<i class=\"fas fa-file-csv me-1 fw-bold\"></i>CSV",
                 className: "btn-dt",
                 title: "Top_20_Areas_Protegidas",
                 exportOptions: {
@@ -794,18 +877,10 @@
       });
 
       /* chamada inicial */
-      // refreshAll();   // executa tudo já mostrando os carregadores
-
-      // Chamar refreshAll() após o carregamento do GeoJSON
-      if (geojson) {
-        refreshAll();
-      } else {
-        console.error("GeoJSON não carregado. Não foi possível inicializar o dashboard.");
-      }
+      refreshAll();
 
     })().catch(err => console.error("[Dashboard Error]", err));
   }
   </script>
 </body>
 </html>
-
