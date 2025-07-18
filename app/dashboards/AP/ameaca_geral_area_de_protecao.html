@@ -771,7 +771,7 @@
           makePie(pie1Div, Object.keys(aggUF), Object.values(aggUF),
                   "Distribuição por Estado"),
           makePie(pie2Div, top10.map(t => t[0]), top10.map(t => t[1]),
-                  "TOP 10 Áreas Protegidas")
+                  )
         ]).then(() => { hideLoading("pie1"); hideLoading("pie2"); });
       };
 
