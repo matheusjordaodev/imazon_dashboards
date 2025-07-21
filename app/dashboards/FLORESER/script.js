@@ -714,3 +714,5 @@ window.addEventListener('DOMContentLoaded', () => {
   loadMunicipioChartByMunicipio();
 });
 
+
+
