@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
   <style>
-    /* ESTILOS DO assentamentos.html */
+    /* ESTILOS DO FLORESER.CSS */
     :root {
       --primary-color: #008055;
       --primary-light: #008055;
@@ -89,45 +89,7 @@
       margin: 0 auto;
     }
 
-    /* Cards com estilo moderno */
-    .card {
-      border-radius: var(--border-radius);
-      box-shadow: var(--box-shadow);
-      border: none;
-      transition: var(--transition);
-      overflow: hidden;
-      margin-bottom: 20px;
-      background-color: var(--card-color);
-    }
-
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    }
-
-    /* Títulos dos cards */
-    .card-header {
-      background-color: var(--card-color) !important;
-      color: var(--primary-dark) !important;
-      font-weight: 700 !important;
-      border-bottom: 1px solid var(--accent-color) !important;
-      padding: 20px;
-      font-size: 1.2em;
-      position: relative;
-    }
-
-    .card-header::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 20px;
-      width: 50px;
-      height: 3px;
-      background-color: var(--accent-color);
-      border-radius: 3px;
-    }
-
-    /* Controles superiores */
+    /* Filtros com design moderno */
     .controls-row {
       display: flex;
       flex-wrap: wrap;
@@ -214,11 +176,50 @@
       box-shadow: 0 0 0 3px rgba(0, 128, 85, 0.2);
     }
 
+    /* Cards com estilo moderno */
+    .card {
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      border: none;
+      transition: var(--transition);
+      overflow: hidden;
+      margin-bottom: 20px;
+      background-color: var(--card-color);
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Títulos dos cards */
+    .card-header {
+      background-color: var(--card-color) !important;
+      color: var(--primary-dark) !important;
+      font-weight: 700 !important;
+      border-bottom: 1px solid var(--accent-color) !important;
+      padding: 20px;
+      font-size: 1.2em;
+      position: relative;
+    }
+
+    .card-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 20px;
+      width: 50px;
+      height: 3px;
+      background-color: var(--accent-color);
+      border-radius: 3px;
+    }
+
     /* Container do mapa */
     .map-container {
       border-radius: 0 0 var(--border-radius) var(--border-radius);
       overflow: hidden;
       background: #f0f8ff;
+      height: 450px;
     }
 
     #map-graph {
@@ -400,6 +401,9 @@
         padding-left: 10px;
         padding-right: 10px;
       }
+      .map-container {
+        height: 280px;
+      }
     }
 
     @media (max-width: 767.98px) {
@@ -415,6 +419,9 @@
       }
       #bar-settlement, #line-graph, #yearly-graph {
         height: 320px !important;
+      }
+      .map-container {
+        height: 320px;
       }
     }
 
@@ -442,20 +449,6 @@
       height: 100% !important;
     }
 
-    .map-container {
-      height: 450px;
-    }
-    @media (max-width: 767.98px) {
-      .map-container {
-        height: 320px;
-      }
-    }
-    @media (max-width: 575.98px) {
-      .map-container {
-        height: 280px;
-      }
-    }
-
     /* Estilos para melhor legibilidade em dispositivos móveis */
     @media (max-width: 767.98px) {
       .fw-bold {
@@ -474,7 +467,6 @@
     <!-- Header com gradiente -->
     <div class="dashboard-header fade-in fade-in-1">
       <img src="../../img/sad.png" alt="Logo SAD" style="max-width: 150px; height: auto; display: block; margin: 0 auto;">
-      
     </div>
 
     <!-- Linha de controles superior -->
