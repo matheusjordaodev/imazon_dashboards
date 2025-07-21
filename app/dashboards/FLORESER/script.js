@@ -50,7 +50,7 @@ function destroyChart(chartInstance) {
 
 // Função para obter os valores dos filtros de ano
 function getYearFilters() {
-  const startYear = parseInt(document.getElementById('startYear').value) || 2008;
+  const startYear = parseInt(document.getElementById('startYear').value) || 1986;
   const endYear = parseInt(document.getElementById('endYear').value) || 2023;
   return { startYear, endYear };
 }
@@ -297,7 +297,7 @@ function formatCompactNumber(value) {
 }
 
 // Função para carregar o gráfico por estado
-async function loadChartByState(state = '', municipio = '', startYear = 2008, endYear = 2023) {
+async function loadChartByState(state = '', municipio = '', startYear = 1986, endYear = 2023) {
   try {
     const response = await fetch('/area-data');
     const data = await response.json();
@@ -517,7 +517,7 @@ async function loadChartByState(state = '', municipio = '', startYear = 2008, en
 }
 
 // Função para carregar o gráfico por município
-async function loadMunicipioChartByMunicipio(state = '', startYear = 2008, endYear = 2023) {
+async function loadMunicipioChartByMunicipio(state = '', startYear = 1986, endYear = 2023) {
   try {
     const response = await fetch(`/municipios-area-data?startYear=${startYear}&endYear=${endYear}`);
     const data = await response.json();

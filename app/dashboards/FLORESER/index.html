@@ -510,7 +510,7 @@
         <label class="filter-label" for="startYear">Ano Inicial</label>
         <select id="startYear">
           <script>
-            for (let year = 1986; year <= 2023; year++) {
+            for (let year = 1986; year <= 2024; year++) {
               document.write(`<option value="${year}">${year}</option>`);
             }
           </script>
@@ -520,8 +520,8 @@
         <label class="filter-label" for="endYear">Ano Final</label>
         <select id="endYear">
           <script>
-            for (let year = 1986; year <= 2023; year++) {
-              if (year === 2023) {
+            for (let year = 1986; year <= 2024; year++) {
+              if (year === 2024) {
                 document.write(`<option value="${year}" selected>${year}</option>`);
               } else {
                 document.write(`<option value="${year}">${year}</option>`);
@@ -639,4 +639,5 @@
   </script>
 </body>
 </html>
+
 
