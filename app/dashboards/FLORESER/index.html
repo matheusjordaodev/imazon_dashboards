@@ -476,6 +476,40 @@
       font-size: 1.2em;
       font-weight: 300;
     }
+    .info {
+  padding: 6px 8px;
+  font: 14px/16px Montserrat, sans-serif;
+  background: white;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+}
+
+.info h4 {
+  margin: 0 0 5px;
+  color: #333;
+  font-weight: bold;
+}
+
+.legend {
+  line-height: 18px;
+  color: #555;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin: 5px 0;
+}
+
+.legend-item span {
+  display: inline-block;
+  width: 18px;
+  height: 12px;
+  margin-right: 8px;
+  border: 1px solid #ddd;
+  border-radius: 2px;
+}
 
   </style>
 </head>
@@ -541,13 +575,13 @@
     <!-- Gráficos lado a lado -->
     <div class="charts-section fade-in fade-in-2">
       <div class="chart-card" id="areaChartCard">
-        <div class="chart-title">Área Acumulada por Ano</div>
+        <div class="chart-title">Vegetação Secundária no Bioma Amazônia</div>
         <div class="canvas-container">
           <canvas id="areaChart"></canvas>
         </div>
       </div>
       <div class="chart-card" id="municipioChartCard">
-        <div class="chart-title">Top 10 Municípios por Área</div>
+        <div class="chart-title">Ranking de Municípios com Maior Área de Vegetação Secundária</div>
         <div class="canvas-container">
           <canvas id="municipioChart"></canvas>
         </div>

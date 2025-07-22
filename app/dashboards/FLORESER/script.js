@@ -196,13 +196,14 @@ async function loadMap() {
 
     const baseMaps = { 'OpenStreetMap': osm, 'Dark': dark, 'Satellite': satellite };
     const overlayMaps = {
-      'SerFlor 2023': srtmLayer,
+      'FloreSer 2023': srtmLayer,
       'Municípios da Amazônia Legal': municipiosLayer
     };
     
     // Adicionar controles com estilo personalizado
     L.control.layers(baseMaps, overlayMaps, {
       collapsed: false,
+      
       position: 'topright'
     }).addTo(map);
     
@@ -397,7 +398,7 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
           }
         },
         title: {
-          display: true,
+          display: false,
           text: municipio ?
             `Área Acumulada (${startYear}-${endYear}) - ${municipio}` :
             state ?
@@ -540,7 +541,7 @@ async function loadMunicipioChartByMunicipio(state = '', startYear = 1986, endYe
           display: false
         },
         title: { 
-          display: true, 
+          display: false, 
           text: state ? 
             `Top 10 Municípios (${startYear}-${endYear}) - ${state}` : 
             `Top 10 Municípios (${startYear}-${endYear}) - Geral`,
