@@ -51,7 +51,7 @@ function destroyChart(chartInstance) {
 // Função para obter os valores dos filtros de ano
 function getYearFilters() {
   const startYear = parseInt(document.getElementById('startYear').value) || 1986;
-  const endYear = parseInt(document.getElementById('endYear').value) || 2023;
+  const endYear = new Date().getFullYear(); // Define o ano final como o ano atual
   return { startYear, endYear };
 }
 
@@ -74,7 +74,7 @@ async function loadMap() {
   
       dark.addTo(map);
   
-      // Camada SRTM
+      // Camada SRTM - Alterada para a nova imagem do Google Earth Engine
       const srtmLayer = L.tileLayer(srtmData.url, { attribution: 'Earth Engine', opacity: 0.9 });
       srtmLayer.addTo(map);
   
@@ -196,13 +196,13 @@ async function loadMap() {
 
     const baseMaps = { 'OpenStreetMap': osm, 'Dark': dark, 'Satellite': satellite };
     const overlayMaps = {
-      'FloreSer 2023': srtmLayer,
+      'FLORESER 2024': srtmLayer,
       'Municípios da Amazônia Legal': municipiosLayer
     };
     
     // Adicionar controles com estilo personalizado
     L.control.layers(baseMaps, overlayMaps, {
-      collapsed: false,
+      collapsed: true,
       
       position: 'topright'
     }).addTo(map);
@@ -297,8 +297,8 @@ function formatCompactNumber(value) {
   }).format(value);
 }
 
-// Função para carregar o gráfico por estado
-async function loadChartByState(state = '', municipio = '', startYear = 1986, endYear = 2023) {
+// Função para carregar o gráfico por estado (MODIFICADA PARA SÉRIE TEMPORAL)
+async function loadChartByState(state = '', municipio = '', startYear = 1986, endYear = 2025) {
   try {
     const response = await fetch('/area-data');
     const data = await response.json();
@@ -340,9 +340,11 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
         }),
         backgroundColor: chartColors[0],
         borderColor: chartBorders[0],
-        borderWidth: 1,
-        borderRadius: 4,
-        maxBarThickness: 50
+        borderWidth: 2,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 4,
+        pointHoverRadius: 6
       }];
     } else if (state) {
       // Série acumulada para o estado
@@ -356,31 +358,37 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
         }),
         backgroundColor: chartColors[0],
         borderColor: chartBorders[0],
-        borderWidth: 1,
-        borderRadius: 4,
-        maxBarThickness: 50
+        borderWidth: 2,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 4,
+        pointHoverRadius: 6
       }];
     } else {
       // Série acumulada para todos os estados
-      labels = [...new Set(filteredData.map(item => item.state))];
-      datasets = labels.map((label, index) => {
-        const stateData = filteredData.filter(item => item.state === label);
+      const states = [...new Set(filteredData.map(item => item.state))];
+      labels = years;
+      datasets = states.map((stateLabel, index) => {
+        const stateData = filteredData.filter(item => item.state === stateLabel);
         return {
-          label: label,
+          label: stateLabel,
           data: years.map(year => {
-            const entry = stateData.find(item => item.year === year);
-            return entry ? entry.area : 0;
+            const yearData = stateData.filter(item => item.year === year);
+            const totalArea = yearData.reduce((sum, item) => sum + item.area, 0);
+            return totalArea;
           }),
           backgroundColor: chartColors[index % chartColors.length],
           borderColor: chartBorders[index % chartBorders.length],
-          borderWidth: 1,
-          borderRadius: 4,
-          maxBarThickness: 50
+          borderWidth: 2,
+          fill: false,
+          tension: 0.1,
+          pointRadius: 3,
+          pointHoverRadius: 5
         };
       });
     }
 
-    // Configurações comuns para os gráficos
+    // Configurações comuns para os gráficos de série temporal
     const chartOptions = {
       responsive: true,
       maintainAspectRatio: false,
@@ -400,10 +408,10 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
         title: {
           display: false,
           text: municipio ?
-            `Área Acumulada (${startYear}-${endYear}) - ${municipio}` :
+            `Série Temporal (${startYear}-${endYear}) - ${municipio}` :
             state ?
-              `Área Acumulada (${startYear}-${endYear}) - ${state}` :
-              `Área Acumulada por Estado (${startYear}-${endYear})`,
+              `Série Temporal (${startYear}-${endYear}) - ${state}` :
+              `Série Temporal por Estado (${startYear}-${endYear})`,
           font: {
             family: "'Montserrat', sans-serif",
             size: 16,
@@ -451,13 +459,29 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
       },
       scales: {
         x: {
+          type: 'linear',
+          position: 'bottom',
           grid: {
-            display: false
+            display: true,
+            color: 'rgba(0, 0, 0, 0.05)'
           },
           ticks: {
             font: {
               family: "'Montserrat', sans-serif",
               size: 12
+            },
+            stepSize: 1,
+            callback: function(value) {
+              return Math.floor(value);
+            }
+          },
+          title: {
+            display: true,
+            text: 'Ano',
+            font: {
+              family: "'Montserrat', sans-serif",
+              size: 14,
+              weight: 'bold'
             }
           }
         },
@@ -474,6 +498,15 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
             callback: function(value) {
               return formatCompactNumber(value);
             }
+          },
+          title: {
+            display: true,
+            text: 'Área (ha)',
+            font: {
+              family: "'Montserrat', sans-serif",
+              size: 14,
+              weight: 'bold'
+            }
           }
         }
       },
@@ -484,6 +517,10 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
       hover: {
         mode: 'index',
         intersect: false
+      },
+      interaction: {
+        mode: 'index',
+        intersect: false
       }
     };
 
@@ -491,15 +528,15 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
     destroyChart(areaChartInstance);
     destroyChart(areaChartLargeInstance);
 
-    // Criar os novos gráficos
+    // Criar os novos gráficos como série temporal (line chart)
     areaChartInstance = new Chart(document.getElementById('areaChart'), {
-      type: 'bar',
+      type: 'line',
       data: { labels: years, datasets: datasets },
       options: chartOptions
     });
 
     areaChartLargeInstance = new Chart(document.getElementById('areaChartLarge'), {
-      type: 'bar',
+      type: 'line',
       data: { labels: years, datasets: datasets },
       options: {
         ...chartOptions,
@@ -518,7 +555,10 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
 }
 
 // Função para carregar o gráfico por município
-async function loadMunicipioChartByMunicipio(state = '', startYear = 1986, endYear = 2023) {
+// ... (código anterior permanece inalterado)
+
+// Função para carregar o gráfico por município
+async function loadMunicipioChartByMunicipio(state = '', startYear = 1986, endYear = 2025) {
   try {
     const response = await fetch(`/municipios-area-data?startYear=${startYear}&endYear=${endYear}`);
     const data = await response.json();
@@ -530,6 +570,24 @@ async function loadMunicipioChartByMunicipio(state = '', startYear = 1986, endYe
     const top10 = filteredData
       .sort((a, b) => b.area - a.area)
       .slice(0, 10);
+
+    // Gerar tons de verde para as barras com variação mais perceptível
+    const greenBase = [27, 94, 32]; // RGB do verde base (#1B5E20)
+    const greenColors = [];
+    const borderColors = [];
+    
+    for (let i = 0; i < top10.length; i++) {
+      // Aumentar a variação de 5% a 100% para melhor distinção
+      const intensity = 0.5 + (i * 0.05);
+      
+      // Aplicar variação diferente em cada canal RGB para mais contraste
+      const r = Math.min(255, Math.round(greenBase[0] * intensity));
+      const g = Math.min(255, Math.round(greenBase[1] * intensity * 1.1)); // Verde mais intenso
+      const b = Math.min(255, Math.round(greenBase[2] * intensity * 0.9)); // Azul menos intenso
+      
+      greenColors.push(`rgba(${r}, ${g}, ${b}, 0.8)`);
+      borderColors.push(`rgba(${r}, ${g}, ${b}, 1)`);
+    }
 
     // Configurações para o gráfico
     const chartOptions = {
@@ -543,8 +601,8 @@ async function loadMunicipioChartByMunicipio(state = '', startYear = 1986, endYe
         title: { 
           display: false, 
           text: state ? 
-            `Top 10 Municípios (${startYear}-${endYear}) - ${state}` : 
-            `Top 10 Municípios (${startYear}-${endYear}) - Geral`,
+            `Ranking de Municípios com Maior Área de Vegetação Secundária (${startYear}-${endYear}) - ${state}` : 
+            `Ranking de Municípios com Maior Área de Vegetação Secundária (${startYear}-${endYear}) - Geral`,
           font: {
             family: "'Montserrat', sans-serif",
             size: 16,
@@ -580,6 +638,11 @@ async function loadMunicipioChartByMunicipio(state = '', startYear = 1986, endYe
                 label += formatNumber(context.parsed.x) + ' ha';
               }
               return label;
+            },
+            afterLabel: function(context) {
+              const index = context.dataIndex;
+              const rank = index + 1;
+              return `Posição: ${rank}º`;
             }
           }
         }
@@ -598,6 +661,15 @@ async function loadMunicipioChartByMunicipio(state = '', startYear = 1986, endYe
             callback: function(value) {
               return formatCompactNumber(value);
             }
+          },
+          title: {
+            display: true,
+            text: 'Área de Vegetação Secundária (ha)',
+            font: {
+              family: "'Montserrat', sans-serif",
+              size: 14,
+              weight: 'bold'
+            }
           }
         },
         y: {
@@ -608,6 +680,22 @@ async function loadMunicipioChartByMunicipio(state = '', startYear = 1986, endYe
             font: {
               family: "'Montserrat', sans-serif",
               size: 12
+            },
+            callback: function(value, index) {
+              // Limitar o nome do município a 30 caracteres
+              const municipio = this.getLabelForValue(value);
+              return municipio.length > 30 
+                ? municipio.substring(0, 27) + '...' 
+                : municipio;
+            }
+          },
+          title: {
+            display: true,
+            text: 'Municípios',
+            font: {
+              family: "'Montserrat', sans-serif",
+              size: 14,
+              weight: 'bold'
             }
           }
         }
@@ -622,7 +710,7 @@ async function loadMunicipioChartByMunicipio(state = '', startYear = 1986, endYe
     destroyChart(municipioChartInstance);
     destroyChart(municipioChartLargeInstance);
 
-    // Criar os novos gráficos
+    // Criar os novos gráficos com tons de verde
     municipioChartInstance = new Chart(document.getElementById('municipioChart'), {
       type: 'bar',
       data: {
@@ -630,8 +718,8 @@ async function loadMunicipioChartByMunicipio(state = '', startYear = 1986, endYe
         datasets: [{
           label: 'Área Acumulada',
           data: top10.map(item => item.area),
-          backgroundColor: top10.map((_, index) => chartColors[index % chartColors.length]),
-          borderColor: top10.map((_, index) => chartBorders[index % chartBorders.length]),
+          backgroundColor: greenColors,
+          borderColor: borderColors,
           borderWidth: 1,
           borderRadius: 4
         }]
@@ -646,8 +734,8 @@ async function loadMunicipioChartByMunicipio(state = '', startYear = 1986, endYe
         datasets: [{
           label: 'Área Acumulada',
           data: top10.map(item => item.area),
-          backgroundColor: top10.map((_, index) => chartColors[index % chartColors.length]),
-          borderColor: top10.map((_, index) => chartBorders[index % chartBorders.length]),
+          backgroundColor: greenColors,
+          borderColor: borderColors,
           borderWidth: 1,
           borderRadius: 4
         }]
@@ -667,6 +755,8 @@ async function loadMunicipioChartByMunicipio(state = '', startYear = 1986, endYe
     hideLoader();
   }
 }
+
+
 
 // Evento para carregar municípios ao selecionar estado
 document.getElementById('stateFilter').addEventListener('change', async function() {
