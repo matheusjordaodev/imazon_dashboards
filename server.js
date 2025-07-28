@@ -63,6 +63,16 @@ async function getSRTMMapUrl() {
   return urlFormat;
 }
 
+async function getFloreserTileUrl() {
+  await initializeEE();
+  const fc  = ee.FeatureCollection('projects/imazon-simex/FLORESER/floreser-collection-10-v12-sv-ages-sf');
+  const img = ee.Image().paint(fc, 1, 1); // color=1, width=1 px
+  const vis = { palette: ['008055'], opacity: 0.8 };
+  const visImg = img.visualize(vis);
+  const { urlFormat } = visImg.getMap({});
+  return urlFormat;
+}
+
 console.log('🌍 Inicializando Earth Engine...');
 console.log(initializeEE());
 // ─── EXPRESS APP --------------------------------------------
@@ -78,6 +88,15 @@ app.use('/img',     express.static(path.join(ROOT_DIR, 'img')));
 // ------------------------------------------------------------
 //                       ROTAS API
 // ------------------------------------------------------------
+app.get('/floreser-url', async (_req, res) => {
+  try {
+    const url = await getFloreserTileUrl();
+    res.json({ url }); // apenas UMA vez
+  } catch (err) {
+    console.error('[/floreser-url] erro:', err);
+    res.status(500).json({ error: String(err) });
+  }
+});
 
 // 1) URL do layer FLORESER (tiles EE)
 app.get('/srtm-url', async (_req, res) => {
@@ -143,7 +162,7 @@ app.get('/area-data', (_req, res) => {
 // 6) Dados de municípios agregados (filtro ano)
 app.get('/municipios-area-data', (req, res) => {
   const startYear = parseInt(req.query.startYear) || 2008;
-  const endYear   = parseInt(req.query.endYear)   || 2023;
+  const endYear   = parseInt(req.query.endYear)   || 2024;
 
   const linhas = [];
   fs.createReadStream(path.join(DATASET_DIR, 'floreser-9-22-1-ages-sf.csv'))

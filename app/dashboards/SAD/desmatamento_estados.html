@@ -270,15 +270,6 @@
     font-size: 0.75rem;
   }
 
-  /* Remover linhas de fundo dos gráficos */
-  .gridlayer, .cartesianlayer > .grid {
-    display: none !important;
-  }
-
-  .js-plotly-plot .plotly .main-svg {
-    background-color: transparent !important;
-  }
-
   /* Itens de assentamento */
   .settlement-item {
     padding: 8px 12px;
@@ -503,7 +494,7 @@
     <div class="row gx-2 mb-4 fade-in fade-in-3">
       <div class="col-12 col-md-6 mb-4 mb-md-0">
         <div class="card h-100">
-          <div class="card-header">Alerta de Desmatamento  Acumulado</div>
+          <div class="card-header">Ranking dos Estados Mais Desmatados</div>
           <div class="card-body p-0">
             <div id="bar-settlement" style="height:450px"></div>
           </div>
@@ -511,7 +502,7 @@
       </div>
       <div class="col-12 col-md-6">
         <div class="card h-100">
-          <div class="card-header" id="map-title">Mapa de Desmatamento  (km²)</div>
+          <div class="card-header" id="map-title">Mapa de Alertas de Desmatamento</div>
           <div class="card-body p-0 map-container">
             <div id="map-graph" style="height:100%"></div>
           </div>
@@ -524,7 +515,7 @@
       <div class="col-12 col-md-6 mb-4 mb-md-0">
         <div class="card h-100">
           <div class="card-header">
-             Alertas de Desmatamento  Acumulado – Estados
+             Série Histórica de Desmtamentos por Estados
           </div>
           <div class="card-body p-0">
             <div id="line-graph" style="height:450px"></div>
@@ -533,7 +524,7 @@
       </div>
       <div class="col-12 col-md-6">
         <div class="card h-100">
-          <div class="card-header">Área Total de Desmatamento por Ano (km²)</div>
+          <div class="card-header">Série Histórica de Desmatamento da Amazônia Legal</div>
           <div class="card-body p-0">
             <div id="yearly-graph" style="height:450px"></div>
           </div>
@@ -662,6 +653,23 @@
     const decSepSelector  = 'input[name="dec-sep"]:checked';
     const removeAccentsChk= document.getElementById('remove-accents');
 
+    // Paleta de cores para os estados (mesma do gráfico da esquerda)
+    const stateColors = d3.schemeTableau10;
+    const getStateColor = (state, index) => stateColors[index % stateColors.length];
+
+    // Função para formatar números no padrão brasileiro
+    const formatNumber = (value) => {
+      return value.toLocaleString('pt-BR', { 
+        minimumFractionDigits: 0, 
+        maximumFractionDigits: 4 
+      });
+    };
+
+    // Função para formatar tooltip no padrão solicitado
+    const formatTooltip = (state, year, value) => {
+      return `<b>${state}</b><br>${year}<br>${formatNumber(value)} km²`;
+    };
+
     // carregar dados
     async function loadGeo(){
       try {
@@ -728,68 +736,158 @@
       return out;
     }
 
-    // gráfico de barras
+    // gráfico de barras empilhadas
     function plotBar(){
-      const data = base();
-      const agg = d3.rollup(data, v=>d3.sum(v,d=>d.AREAKM2), d=>d[CSV_UF_KEY]);
-      let arr = [...agg].map(([e,a])=>({Estado:e, area:a})).sort((a,b)=>b.area-a.area);
-      if(selSet.length) {
-        arr = arr.filter(d=>selSet.includes(d.Estado));
+      // Se um único estado for selecionado, mostrar apenas ele
+      const selectedStates = selSet.length ? selSet : (selUF.length === 1 ? selUF : []);
+      
+      if (selectedStates.length === 1) {
+        // Mostrar apenas um estado com todos os anos
+        const state = selectedStates[0];
+        const stateData = df.filter(d => d[CSV_UF_KEY] === state);
+        const yearlyData = d3.rollup(stateData, v => d3.sum(v, d => d.AREAKM2), d => d.ANO);
+        const sortedYears = [...yearlyData.keys()].sort((a, b) => a - b);
+        const values = sortedYears.map(year => yearlyData.get(year) || 0);
+
+        const plotData = [{
+          x: sortedYears,
+          y: values,
+          type: 'bar',
+          name: state,
+          marker: {
+            color: getStateColor(state, 0),
+            opacity: 0.8,
+            line: { color: '#1e7e34', width: 1 }
+          },
+          text: values.map(v => formatNumber(v)),
+          textposition: 'auto',
+          hovertemplate: `<b>${state}</b><br>%{x}<br>%{y:,.4f} km²<extra></extra>`
+        }];
+
+        const layout = {
+          margin: { l: 60, r: 20, t: 50, b: 60 },
+          height: 450,
+          xaxis: { 
+            title: 'Ano',
+            showgrid: true,
+            gridcolor: 'rgba(128,128,128,0.2)',
+            showline: true,
+            linecolor: 'rgba(0,0,0,0.3)',
+            linewidth: 1
+          },
+          yaxis: { 
+            title: 'Área (km²)',
+            showgrid: true,
+            gridcolor: 'rgba(128,128,128,0.2)',
+            showline: true,
+            linecolor: 'rgba(0,0,0,0.3)',
+            linewidth: 1,
+            tickformat: '.0f'
+          },
+          plot_bgcolor: 'rgba(0,0,0,0)',
+          paper_bgcolor: 'rgba(0,0,0,0)',
+          showlegend: false
+        };
+
+        Plotly.newPlot('bar-settlement', plotData, layout, { displayModeBar: false, responsive: true });
+        
       } else {
-        arr = arr.slice(0,10);
-      }
-      barSet = arr.map(d=>d.Estado);
+        // Mostrar barras empilhadas com todos os estados
+        const data = base();
+        const agg = d3.rollup(data, v => d3.sum(v, d => d.AREAKM2), d => d[CSV_UF_KEY]);
+        let arr = [...agg].map(([e, a]) => ({ Estado: e, area: a })).sort((a, b) => b.area - a.area);
+        
+        if (selSet.length) {
+          arr = arr.filter(d => selSet.includes(d.Estado));
+        } else {
+          arr = arr.slice(0, 10);
+        }
+        
+        barSet = arr.map(d => d.Estado);
 
-      // ajusta margem esquerda para comportar rótulos do eixo Y
-      const leftMargin = Math.min(300, 40 + Math.max(...arr.map(d=>d.Estado.length)) * 6);
-
-      // prepara os textos formatados, usando locale pt-BR e 2 casas decimais
-      const textValues = arr.map(d =>
-        d.area.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
-      );
-
-      const plotData = [{
-        x: arr.map(d=>d.area),
-        y: arr.map(d=>d.Estado),
-        type: 'bar',
-        orientation: 'h',
-        marker: {
-          color: arr.map(d => selectedState === d.Estado ? '#FF6D00' : '#28a745'),
-          opacity: .8,
-          line: { color: '#1e7e34', width: 1 }
-        },
-        text: textValues,
-        textposition: 'auto',
-        insidetextfont: { color: '#ffffff' },
-        outsidetextfont: { color: '#000000' }
-      }];
-
-      const layout = {
-        title: { text: `Área - Ano(${yearSelect.value})`, x: 0.5 },
-        margin: { l: leftMargin, r: 10, t: 50, b: 30 },
-        height: 450,
-        yaxis: { automargin: true },
-        xaxis: { title: 'Área (km²)' },
-        plot_bgcolor: 'rgba(0,0,0,0)',
-        paper_bgcolor: 'rgba(0,0,0,0)'
-      };
-
-      const config = {
-        displayModeBar: false,
-        responsive: true
-      };
-
-      Plotly.newPlot('bar-settlement', plotData, layout, config)
-        .then(gd => {
-          gd.on('plotly_click', data => {
-            if (data.points.length) {
-              const stateName = data.points[0].y;
-              selectedState = stateName;
-              plotBar();
-              focusOnState(stateName);
-            }
+        // Criar barras empilhadas por ano
+        const yearData = years.map(year => {
+          const yearValues = arr.map(state => {
+            const stateYearData = df.filter(d => d.ANO === year && d[CSV_UF_KEY] === state.Estado);
+            return d3.sum(stateYearData, d => d.AREAKM2);
           });
+          return {
+            x: [year],
+            y: yearValues,
+            type: 'bar',
+            name: year.toString(),
+            marker: {
+              color: arr.map((state, i) => getStateColor(state.Estado, i)),
+              opacity: 0.8,
+              line: { color: '#1e7e34', width: 1 }
+            },
+            text: yearValues.map(v => formatNumber(v)),
+            textposition: 'auto',
+            hovertemplate: arr.map((state, i) => 
+              `<b>${state.Estado}</b><br>${year}<br>%{y[${i}]:,.2f} km²<extra></extra>`
+            )
+          };
         });
+
+        // Empilhar os dados por estado
+        const plotData = arr.map((state, i) => ({
+          x: years,
+          y: years.map(year => {
+            const stateYearData = df.filter(d => d.ANO === year && d[CSV_UF_KEY] === state.Estado);
+            return d3.sum(stateYearData, d => d.AREAKM2);
+          }),
+          type: 'bar',
+          name: state.Estado,
+          marker: {
+            color: getStateColor(state.Estado, i),
+            opacity: 0.8,
+            line: { color: '#1e7e34', width: 1 }
+          },
+          hovertemplate: `<b>${state.Estado}</b><br>%{x}<br>%{y:,.4f} km²<extra></extra>`
+        }));
+
+        const layout = {
+          margin: { l: 60, r: 20, t: 50, b: 60 },
+          height: 450,
+          barmode: 'stack',
+          xaxis: { 
+            title: 'Ano',
+            showgrid: true,
+            gridcolor: 'rgba(128,128,128,0.2)',
+            showline: true,
+            linecolor: 'rgba(0,0,0,0.3)',
+            linewidth: 1
+          },
+          yaxis: { 
+            title: 'Área (km²)',
+            showgrid: true,
+            gridcolor: 'rgba(128,128,128,0.2)',
+            showline: true,
+            linecolor: 'rgba(0,0,0,0.3)',
+            linewidth: 1,
+            tickformat: '.0f'
+          },
+          plot_bgcolor: 'rgba(0,0,0,0)',
+          paper_bgcolor: 'rgba(0,0,0,0)',
+          legend: {
+            orientation: 'h',
+            x: 0.5,
+            xanchor: 'center',
+            y: -0.2
+          }
+        };
+
+        Plotly.newPlot('bar-settlement', plotData, layout, { displayModeBar: false, responsive: true })
+          .then(gd => {
+            gd.on('plotly_click', data => {
+              if (data.points.length) {
+                const stateName = data.points[0].data.name;
+                selectedState = stateName;
+                focusOnState(stateName);
+              }
+            });
+          });
+      }
     }
 
     // inicializa o mapa IMEDIATAMENTE
@@ -809,9 +907,9 @@
         <div class="legend-title">Área (km²)</div>
         <div class="legend-gradient" style="background:linear-gradient(to top, ${scale(min)} 0%, ${scale((min+max)/2)} 50%, ${scale(max)} 100%)"></div>
         <div class="legend-labels">
-          <div>${max.toLocaleString()}</div>
-          <div>${((max+min)/2).toLocaleString()}</div>
-          <div>${min.toLocaleString()}</div>
+          <div>${formatNumber(max)}</div>
+          <div>${formatNumber((max+min)/2)}</div>
+          <div>${formatNumber(min)}</div>
         </div>`;
       legend.style.display='block';
     }
@@ -843,7 +941,7 @@
     }
     
     function plotMap(){
-      document.getElementById('map-title').textContent = `Mapa de Desmatamento  (km²) ${yearSelect.value}`;
+      document.getElementById('map-title').textContent = `Mapa de Alertas de Desmatamento por Estado ${yearSelect.value}`;
       if(!mapInit) initMap();
       const data = base();
       const agg  = d3.rollup(data, v=>d3.sum(v,d=>d.AREAKM2), d=>d[CSV_UF_KEY]);
@@ -863,7 +961,7 @@
         }),
         onEachFeature:(f,layer)=>{
           const est=f.properties.Estado, km2=agg.get(est)||0;
-          layer.bindTooltip(`<strong>${est}</strong><br>${km2.toLocaleString('pt-BR',{maximumFractionDigits:2})} km²`,{sticky:true});
+          layer.bindTooltip(`<strong>${est}</strong><br>${formatNumber(km2)} km²`,{sticky:true});
           layer.on({
             mouseover:e=>e.target.setStyle({weight:2,color:'#000'}).bringToFront(),
             mouseout:e=>geoLayer.resetStyle(e.target),
@@ -881,21 +979,24 @@
       }
     }
 
-    // série histórica
+    // série histórica melhorada
     function plotLine(){
       const sel = selSet.length? selSet : barSet;
       const by  = d3.rollup(df,v=>d3.sum(v,d=>d.AREAKM2), d=>d[CSV_UF_KEY], d=>d.ANO);
-      const pal = d3.schemeTableau10;
+      
       const series = sel.map((e,i)=>{
         const mp = by.get(e); if(!mp) return null;
-        const anos = [...mp.keys()].sort((a,b)=>a-b);
+        const allYears = years; // Usar todos os anos disponíveis
+        const values = allYears.map(y => mp.get(y) || 0);
+        
         return { 
-          name:e, 
-          x:anos, 
-          y:anos.map(y=>mp.get(y)), 
-          mode:'lines+markers',
-          line:{width:2,color:pal[i%pal.length]}, 
-          marker:{size:6,color:pal[i%pal.length]}
+          name: e, 
+          x: allYears, 
+          y: values, 
+          mode: 'lines+markers',
+          line: { width: 2, color: getStateColor(e, i) }, 
+          marker: { size: 6, color: getStateColor(e, i) },
+          hovertemplate: `<b>${e}</b><br>%{x}<br>%{y:,.4f} km²<extra></extra>`
         };
       }).filter(Boolean);
       
@@ -905,20 +1006,35 @@
       };
       
       const layout = {
-        title:{text:'Série Histórica por Estado',x:0.5},
-        xaxis:{title:'Ano'}, 
-        yaxis:{title:'Área (km²)'},
-        legend:{orientation:'h',x:0.5,xanchor:'center',y:-0.2},
-        margin:{l:50,r:20,t:50,b:50},
-        height:450,
-        plot_bgcolor:'rgba(0,0,0,0)',
-        paper_bgcolor:'rgba(0,0,0,0)'
+        xaxis: { 
+          title: 'Ano',
+          showgrid: true,
+          gridcolor: 'rgba(128,128,128,0.2)',
+          showline: true,
+          linecolor: 'rgba(0,0,0,0.3)',
+          linewidth: 1,
+          dtick: 1 // Mostrar todos os anos
+        }, 
+        yaxis: { 
+          title: 'Área (km²)',
+          showgrid: true,
+          gridcolor: 'rgba(128,128,128,0.2)',
+          showline: true,
+          linecolor: 'rgba(0,0,0,0.3)',
+          linewidth: 1,
+          tickformat: '.0f'
+        },
+        legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.2 },
+        margin: { l: 60, r: 20, t: 50, b: 80 },
+        height: 450,
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        paper_bgcolor: 'rgba(0,0,0,0)'
       };
       
       Plotly.newPlot('line-graph',series,layout,config);
     }
 
-    // gráfico anual
+    // gráfico anual melhorado
     function plotYearly(){
       const agg = d3.rollup(df,v=>d3.sum(v,d=>d.AREAKM2), d=>d.ANO);
       const anos = [...agg.keys()].sort((a,b)=>a-b);
@@ -930,26 +1046,42 @@
       };
       
       const layout = {
-        title:{text:'Área Total por Ano',x:0.5},
-        xaxis:{title:'Ano'},
-        yaxis:{title:'Área (km²)'},
-        margin:{l:50,r:10,t:50,b:40},
-        height:450,
-        plot_bgcolor:'rgba(0,0,0,0)',
-        paper_bgcolor:'rgba(0,0,0,0)'
+        xaxis: { 
+          title: 'Ano',
+          showgrid: true,
+          gridcolor: 'rgba(128,128,128,0.2)',
+          showline: true,
+          linecolor: 'rgba(0,0,0,0.3)',
+          linewidth: 1,
+          dtick: 1 // Mostrar todos os anos
+        },
+        yaxis: { 
+          title: 'Área (km²)',
+          showgrid: true,
+          gridcolor: 'rgba(128,128,128,0.2)',
+          showline: true,
+          linecolor: 'rgba(0,0,0,0.3)',
+          linewidth: 1,
+          tickformat: '.0f'
+        },
+        margin: { l: 60, r: 20, t: 50, b: 60 },
+        height: 450,
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        paper_bgcolor: 'rgba(0,0,0,0)'
       };
       
       Plotly.newPlot('yearly-graph',[{
-        x:anos,
-        y:val,
-        type:'bar',
-        marker:{
-          color:'rgba(40,167,69,0.7)',
-          line:{width:1,color:'#1e7e34'}
+        x: anos,
+        y: val,
+        type: 'bar',
+        marker: {
+          color: 'rgba(40,167,69,0.7)',
+          line: { width: 1, color: '#1e7e34' }
         },
-        text:val.map(v=>v.toFixed(2)),
-        textposition:'outside'
-      }],layout,config);
+        text: val.map(v => formatNumber(v)),
+        textposition: 'outside',
+        hovertemplate: `%{x}<br>%{y:,.4f} km²<extra></extra>`
+      }], layout, config);
     }
 
     // lista de interesse
@@ -1066,3 +1198,4 @@
   </script>
 </body>
 </html>
+

@@ -479,7 +479,7 @@
     <!-- Header com gradiente -->
     <div class="dashboard-header fade-in fade-in-1">
       <img src="../../img/sad.png" alt="Logo SAD" style="max-width: 150px; height: auto; display: block; margin: 0 auto;">
-      <div class="dashboard-subtitle">Sistema de Alerta de Degradação Florestal</div>
+      
     </div>
 
     <!-- Linha de controles superior -->
@@ -508,7 +508,7 @@
     <div class="row gx-2 mb-4 fade-in fade-in-3">
       <div class="col-12 col-md-6 mb-4 mb-md-0">
         <div class="card h-100">
-          <div class="card-header">Alerta de Degradação Florestal Acumulado </div>
+          <div class="card-header">Ranking dos Municípios com Mais Degradação </div>
           <div class="card-body p-0">
             <div id="bar-settlement" style="height:450px"></div>
           </div>
@@ -516,7 +516,7 @@
       </div>
       <div class="col-12 col-md-6">
         <div class="card h-100">
-          <div class="card-header" id="map-title">Mapa de Degradação Ambiental (km²)</div>
+          <div class="card-header" id="map-title">Mapa dos 10 Municípios Mais Desmatados</div>
           <div class="card-body p-0 map-container">
             <div id="map-graph" style="height:100%"></div>
           </div>
@@ -529,7 +529,7 @@
       <div class="col-12 col-md-6 mb-4 mb-md-0">
         <div class="card h-100">
           <div class="card-header">
-             Alertas de Degradação Florestal Acumulado – Municípios por Estado
+             Série Histórica de Degradação por Município
           </div>
           <div class="card-body p-0">
             <div id="line-graph" style="height:450px"></div>
@@ -812,7 +812,7 @@
           zeroline: false
         },
         xaxis: {
-          title: 'Área (ha)',
+          title: 'Área (km²)',
           tickformat: ',.0f',
           separatethousands: true,
           showgrid: false,
@@ -896,7 +896,7 @@
 
     // Plota o mapa com os dados
     function plotMap(){
-      document.getElementById('map-title').textContent = `Mapa de Degradação Ambiental (km²) ${yearSelect.value}`;
+      document.getElementById('map-title').textContent = `Mapa dos 10 Municípios com Mais Degradação ${yearSelect.value}`;
       if(!mapInit) initMap();
       const data = base();
       const agg  = d3.rollup(data, v=>d3.sum(v,d=>d.AREAKM2), d => d.MUNICIPIO);

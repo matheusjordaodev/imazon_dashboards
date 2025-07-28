@@ -503,7 +503,7 @@
     <div class="row gx-2 mb-4 fade-in fade-in-3">
       <div class="col-12 col-md-6 mb-4 mb-md-0">
         <div class="card h-100">
-          <div class="card-header">Alerta de Degradação Florestal Acumulado</div>
+          <div class="card-header">Ranking dos Estados Com maior Índice de Degradação</div>
           <div class="card-body p-0">
             <div id="bar-settlement" style="height:450px"></div>
           </div>
@@ -511,7 +511,7 @@
       </div>
       <div class="col-12 col-md-6">
         <div class="card h-100">
-          <div class="card-header" id="map-title">Mapa de Degradação Ambiental (km²)</div>
+          <div class="card-header" id="map-title">Mapa de Alertas de Degradação por Estado(km²)</div>
           <div class="card-body p-0 map-container">
             <div id="map-graph" style="height:100%"></div>
           </div>
@@ -524,7 +524,7 @@
       <div class="col-12 col-md-6 mb-4 mb-md-0">
         <div class="card h-100">
           <div class="card-header">
-             Alertas de Degradação Florestal Acumulado – Estados
+             Série Histórica de Degradação por Estado
           </div>
           <div class="card-body p-0">
             <div id="line-graph" style="height:450px"></div>
@@ -765,11 +765,11 @@
       }];
 
       const layout = {
-        title: { text: `Área - Ano(${yearSelect.value})`, x: 0.5 },
+        
         margin: { l: leftMargin, r: 10, t: 50, b: 30 },
         height: 450,
         yaxis: { automargin: true },
-        xaxis: { title: 'Área (km²)' },
+        
         plot_bgcolor: 'rgba(0,0,0,0)',
         paper_bgcolor: 'rgba(0,0,0,0)'
       };
@@ -905,7 +905,7 @@
       };
       
       const layout = {
-        title:{text:'Série Histórica por Estado',x:0.5},
+        
         xaxis:{title:'Ano'}, 
         yaxis:{title:'Área (km²)'},
         legend:{orientation:'h',x:0.5,xanchor:'center',y:-0.2},
@@ -930,7 +930,7 @@
       };
       
       const layout = {
-        title:{text:'Área Total por Ano',x:0.5},
+        
         xaxis:{title:'Ano'},
         yaxis:{title:'Área (km²)'},
         margin:{l:50,r:10,t:50,b:40},
