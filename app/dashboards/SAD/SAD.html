@@ -985,34 +985,16 @@
 
         // Função para atualizar o gráfico de linha (série histórica)
        function updateLineChart(csvData, territoryType) {
-        
     const ctx = document.getElementById('lineChart').getContext('2d');
     if (lineChart) {
         lineChart.destroy();
     }
 
-    const dataType = getSelectedDataType(); // ✅ Declarado antes do uso
+    const dataType = getSelectedDataType();
     const years = Array.from(new Set(csvData.map(d => d.ANO))).sort();
 
     const nameKey = territoryNameMapping[territoryType];
     const groupedData = {};
-    const datasets = [];
-    let colorIndex = 0;
-
-    // Paleta baseada no tipo de dado
-    const pal = dataType === 'desmatamento' 
-        ? [
-            'rgba(183, 28, 28, 0.8)', 'rgba(211, 47, 47, 0.8)', 'rgba(229, 57, 53, 0.8)',
-            'rgba(244, 67, 54, 0.8)', 'rgba(239, 83, 80, 0.8)', 'rgba(229, 115, 115, 0.8)',
-            'rgba(239, 154, 154, 0.8)', 'rgba(255, 205, 210, 0.8)', 'rgba(255, 235, 238, 0.8)',
-            'rgba(255, 255, 255, 0.8)'
-        ]
-        : [
-            'rgba(1, 87, 155, 0.8)', 'rgba(2, 119, 189, 0.8)', 'rgba(3, 155, 229, 0.8)',
-            'rgba(41, 182, 246, 0.8)', 'rgba(79, 195, 247, 0.8)', 'rgba(129, 212, 250, 0.8)',
-            'rgba(179, 229, 252, 0.8)', 'rgba(225, 245, 254, 0.8)', 'rgba(240, 248, 255, 0.8)',
-            'rgba(255, 255, 255, 0.8)'
-        ];
 
     // Agrupamento dos dados
     csvData.forEach(d => {
@@ -1025,32 +1007,39 @@
         groupedData[key][ano] += area;
     });
 
-    // Geração dos datasets
-    Object.entries(groupedData).forEach(([territorio, anos]) => {
+    // Paleta de cores fixa (10 tons)
+    const pal = dataType === 'desmatamento'
+        ? [
+            '#b71c1c', '#c62828', '#d32f2f', '#e53935', '#f44336',
+            '#ef5350', '#e57373', '#ef9a9a', '#ffcdd2', '#ffebee'
+        ]
+        : [
+            '#e65100', '#ef6c00', '#f57c00', '#fb8c00', '#ff9800',
+            '#ffa726', '#ffb74d', '#ffcc80', '#ffe0b2', '#fff3e0'
+        ];
+
+    const datasets = [];
+
+    currentTopTerritories.slice(0, 10).forEach((territorio, index) => {
+        const anos = groupedData[territorio] || {};
         const data = years.map(year => anos[year] || 0);
-        const cor = pal[colorIndex % pal.length];
+        const cor = pal[index % pal.length];
 
         datasets.push({
-            label: territorio,
+            label: (estadoNomes[territorio] || territorio),
             data: data,
             borderColor: cor,
             backgroundColor: cor + '20',
             fill: false,
             tension: 0.4
         });
-
-        colorIndex++;
     });
 
-    // Limita a 10 territórios
-    const limitedDatasets = datasets.slice(0, 10);
-
-    // Criação do gráfico
     lineChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: years,
-            datasets: limitedDatasets
+            datasets: datasets
         },
         options: {
             responsive: true,
@@ -1105,6 +1094,7 @@
         }
     });
 }
+
 
 
 
