@@ -1481,7 +1481,7 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
             const preposicao = dataTypeFrase[dataKey].preposicao;
 
             lineChartTitle.innerHTML = `<i class="fas fa-chart-line me-2"></i>Série histórica ${fraseArtigo} ${dataKey} ${preposicao} ${nome} (2008 - 2024)`;
-            yearlyChartTitle.innerHTML = `<i class="fas fa-chart-area me-2"></i>Série histórica anual na Amazônia Legal ${fraseArtigo} ${dataKey} ${preposicao} ${nome} (2008 - 2024)`;
+            yearlyChartTitle.innerHTML = `<i class="fas fa-chart-area me-2"></i>Série histórica anual na Amazônia Legal ${fraseArtigo} - ${preposicao} ${nome} (2008 - 2024)`;
         }
 
         // Event Listeners para botões de filtro
@@ -1580,9 +1580,9 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
                                 <option value="RO">Rondônia</option>
                                 <option value="RR">Roraima</option>
                                 <option value="TO">Tocantins</option>
-                                <option value="RO/AM">RO/AM</option>
-                                <option value="RO/AC">RO/AC</option>
-                                <option value="AC/AM">AC/AM</option>
+                                <option value="RO/AM">Rondônia/Amazonas</option>
+                                <option value="RO/AC">Rondônia/Acre</option>
+                                <option value="AC/AM">Acre/Amazonas</option>
                             </select>
                         </div>`;
                     specificFiltersContainer.style.display = 'block';
