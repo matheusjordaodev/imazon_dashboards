@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard SAD - Desmatamento</title>
+    
+    <!-- Bibliotecas CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.0.1/css/buttons.dataTables.min.css">
+
+    <style>
+        /* ===============================
+           Alinhamento de colunas por classes
+           =============================== */
+        .text-left   { text-align: left  !important; padding-left: 15px !important; }
+        .text-center { text-align: center!important; }
+        .text-right  { text-align: right !important; padding-right: 15px !important; }
+
+        /* Removemos alinhamentos conflitantes baseados em nth-child para evitar inconsistências */
+
+        :root {
+            --primary-color: #008055;
+            --primary-dark: #003300;
+            --accent-color: #FF6D00;
+            --text-color: #212121;
+            --background-color: #F5F5F5;
+            --card-color: #FFFFFF;
+            --border-radius: 12px;
+            --box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Garantir fonte Montserrat em todos os elementos */
+        body, .btn, .form-select, .form-control, .stat-card, .card-header, .filter-btn, .filter-label, 
+        #info-panel, #data-table, .donut-total, .donut-label, .filter-group-title, .filter-group-title {
+            font-family: 'Montserrat', sans-serif !important;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif !important;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            padding: 1rem;
+            margin: 0;
+            min-width: 320px;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: var(--card-color);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .card {
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border: none;
+            height: 100%;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover { transform: translateY(-5px); }
+
+        .card-header {
+            background-color: var(--card-color) !important;
+            color: var(--primary-dark) !important;
+            font-weight: 700 !important;
+            border-bottom: 2px solid var(--accent-color) !important;
+            padding: 1.25rem;
+            font-size: 1.1em;
+        }
+
+        .filter-section {
+            background: var(--card-color);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+
+        .form-select, .form-control {
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            transition: all 0.3s ease;
+        }
+        .form-select:focus, .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 128, 85, 0.2);
+        }
+
+        #map { height: 500px; width: 100%; border-radius: var(--border-radius); box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
+
+        .chart-container { position: relative; height: 450px; width: 100%; }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            padding: 10px 20px;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* Botões de filtro */
+        .filter-buttons-container { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+        .filter-group { flex: 1; min-width: 300px; }
+        .filter-group-title { font-weight: 600; margin-bottom: 8px; color: var(--primary-dark); font-size: 0.95rem; }
+        .filter-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+        .filter-btn {
+            flex: 1; min-width: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 15px 10px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: center;
+        }
+        .filter-btn:hover { background: #e9f7f0; border-color: var(--primary-color); }
+        .filter-btn.active { background: var(--primary-color); border-color: var(--primary-color); color: white; }
+        .filter-icon { font-size: 1.8rem; margin-bottom: 8px; color: var(--primary-color); transition: all 0.3s ease; }
+        .filter-btn.active .filter-icon { transform: scale(1.1); color: white; }
+        .filter-label { font-size: 0.9rem; font-weight: 500; }
+
+        /* Filtros específicos */
+        .specific-filters { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-top: 1rem; border: 1px solid #e9ecef; }
+
+        /* Painel de informações */
+        .info-panel {
+            position: absolute; top: 20px; right: 20px; z-index: 1000; background: white; padding: 15px;
+            border-radius: 8px; box-shadow: var(--box-shadow); font-size: 0.9rem; max-width: 300px;
+        }
+
+        .stat-card { background: var(--primary-color); color: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .stat-value { font-size: 1.8rem; font-weight: bold; margin: 5px 0; }
+        .stat-label { font-size: 0.9rem; opacity: 0.9; }
+
+        .loading-spinner {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8);
+            display: flex; align-items: center; justify-content: center; z-index: 1000;
+        }
+        .spinner-border { width: 3rem; height: 3rem; color: var(--primary-color); }
+
+        /* Donuts */
+        .donut-chart-container { position: relative; height: 400px; width: 100%; }
+        .donut-center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
+        .donut-total { font-size: 1.5rem; font-weight: bold; color: var(--primary-dark); }
+        .donut-label { font-size: 0.9rem; color: var(--text-color); }
+
+        /* Tabela */
+        .data-table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--border-radius); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        #data-table { width: 100%; border-collapse: separate; border-spacing: 0; border-radius: var(--border-radius); overflow: hidden; min-width: 600px; }
+        #data-table th { background-color: var(--primary-dark); color: white; font-weight: 600; padding: 15px 12px; white-space: nowrap; position: sticky; top: 0; z-index: 10; }
+        #data-table td { padding: 12px 15px; border-bottom: 1px solid #eee; }
+        #data-table tr:nth-child(even) { background-color: #f9f9f9; }
+        #data-table tr:hover { background-color: #f0faf7; }
+
+        /* Responsividade (resumo) */
+        @media (max-width: 1024px) { #map{height:400px} .chart-container,.donut-chart-container{height:400px} }
+        @media (max-width: 768px)  { #map{height:350px} .chart-container,.donut-chart-container{height:350px} #data-table{min-width:600px} }
+        @media (max-width: 576px)  { #map{height:300px} .chart-container,.donut-chart-container{height:300px} #data-table{min-width:500px;font-size:.8rem} }
+        @media (min-width: 1025px){ .container-fluid{max-width:1400px;margin:0 auto;} }
+        
+        /* Ajuste para gráfico de barras */
+        .chart-container canvas { max-height: 400px; }
+        
+        /* Melhorias para layout ao trocar escala territorial */
+        .card-header {
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+        }
+        .filter-buttons {
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="dashboard-header">
+        <img src="/../../img/ameaca_e_pressao.png" alt="Logo SAD" style="max-width: 150px; display: block; margin: 0 auto;">
+        
+    </div>
+    
+    <!-- Seção de Filtros com Botões -->
+    <div class="filter-section">
+        <div class="filter-buttons-container">
+            <!-- Grupo: Tipo de Dado -->
+            <div class="filter-group">
+                <div class="filter-group-title">Tipo de Dado</div>
+                <div class="filter-buttons">
+                    <div class="filter-btn active" data-type="ameaca">
+                        <div class="filter-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="filter-label">Ameaça</div>
+                    </div>
+                    <div class="filter-btn" data-type="pressao">
+                        <div class="filter-icon"><i class="fa-solid fa-mountain"></i></div>
+                        <div class="filter-label">Pressão</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Grupo: Escala Territorial -->
+            <div class="filter-group">
+                <div class="filter-group-title">Escala Territorial</div>
+                <div class="filter-buttons">
+                    <div class="filter-btn active" data-type="area_de_protecao">
+                        <div class="filter-icon"><i class="fas fa-map-marked-alt"></i></div>
+                        <div class="filter-label">Áreas de Proteção</div>
+                    </div>
+                    <div class="filter-btn" data-type="terra_indigena">
+                        <div class="filter-icon"><i class="fas fa-city"></i></div>
+                        <div class="filter-label">Terras Indígenas</div>
+                    </div>
+                    <div class="filter-btn" data-type="unidadesConservacao">
+                        <div class="filter-icon"><i class="fas fa-campground"></i></div>
+                        <div class="filter-label">Unidades de Conservação</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros Específicos -->
+        <div id="specific-filters" class="specific-filters">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label id="modalidade-label" class="form-label fw-bold">Filtrar por Modalidade:</label>
+                    <select id="modalidadeFilterGlobal" class="form-select">
+                        <option value="all">Todas</option>
+                        <option value="Estadual">Estadual</option>
+                        <option value="Federal">Federal</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="ufFilterGlobal" class="form-label fw-bold">Filtrar por UF:</label>
+                    <select id="ufFilterGlobal" class="form-select">
+                        <option value="all">Todos</option>
+                        <option value="AC">Acre</option>
+                        <option value="AP">Amapá</option>
+                        <option value="AM">Amazonas</option>
+                        <option value="MA">Maranhão</option>
+                        <option value="MT">Mato Grosso</option>
+                        <option value="PA">Pará</option>
+                        <option value="RO">Rondônia</option>
+                        <option value="RR">Roraima</option>
+                        <option value="TO">Tocantins</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botões de Aplicar/Limpar Filtros -->
+        <div class="row g-3 align-items-end mt-3">
+            <div class="col-md-2 d-grid">
+                <button id="apply-filters" class="btn btn-primary">
+                    <i class="fas fa-filter me-2"></i>Aplicar Filtros
+                </button>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button id="clear-filters" class="btn btn-primary">
+                    <i class="fas fa-eraser me-2"></i>Remover Filtros
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">Área Total</div>
+                <div class="stat-value" id="total-area">0 km²</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background-color: #e65100;">
+                <div class="stat-label">Área Média</div>
+                <div class="stat-value" id="avg-area">0 km²</div>
+                <div>por área protegida</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background-color: #006064;">
+                <div class="stat-label">Áreas Afetadas</div>
+                <div class="stat-value" id="affected-territories">0</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background-color: #37474f;">
+                <div class="stat-label">Área Máxima</div>
+                <div class="stat-value" id="max-area">0 km²</div>
+                <div>área mais afetada</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráfico de Barras e Mapa -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header" id="bar-chart-title">
+                    <i class="fas fa-chart-bar me-2"></i>Top 10 Áreas Mais Afetadas
+                </div>
+                <div class="card-body position-relative">
+                    <div class="chart-container">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                    <div class="loading-spinner" id="bar-chart-spinner" style="display: none;">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header" id="map-title">
+                    <i class="fas fa-map me-2"></i>Mapa de Áreas Protegidas
+                </div>
+                <div class="card-body p-2 position-relative">
+                    <div id="map"></div>
+                    <div id="info-panel" class="info-panel" style="display: none;">
+                        <h6 id="selected-territory">Território</h6>
+                        <div><strong>Área:</strong> <span id="selected-area">0</span> km²</div>
+                        <div><strong>UF:</strong> <span id="selected-state">-</span></div>
+                    </div>
+                    <div class="loading-spinner" id="map-spinner" style="display: none;">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráficos de Donut -->
+    <div class="row g-4 mt-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-2"></i>Distribuição por Estado
+                </div>
+                <div class="card-body position-relative">
+                    <div class="donut-chart-container">
+                        <canvas id="donutChart1"></canvas>
+                        <div class="donut-center-text">
+                            <div class="donut-total" id="donut-total1">0</div>
+                            <div class="donut-label">Área Total</div>
+                        </div>
+                    </div>
+                    <div class="loading-spinner" id="donut1-spinner" style="display: none;">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-2"></i>Distribuição por Modalidade
+                </div>
+                <div class="card-body position-relative">
+                    <div class="donut-chart-container">
+                        <canvas id="donutChart2"></canvas>
+                        <div class="donut-center-text">
+                            <div class="donut-total" id="donut-total2">0</div>
+                            <div class="donut-label">Área Total</div>
+                        </div>
+                    </div>
+                    <div class="loading-spinner" id="donut2-spinner" style="display: none;">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabela de Dados -->
+    <div class="row g-4 mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-table me-2"></i>Dados Detalhados
+                </div>
+                <div class="card-body position-relative">
+                    <div class="data-table-container">
+                        <table id="data-table" class="table table-striped">
+                            <thead>
+                                <tr></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="loading-spinner" id="table-spinner" style="display: none;">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bibliotecas JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.3/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.0.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.0.1/js/buttons.html5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<script>
+    // Registrar plugin de datalabels
+    Chart.register(ChartDataLabels);
+
+    // Mapeamento de estados
+    const estadoNomes = {
+        AC: "Acre", AL: "Alagoas", AM: "Amazonas", AP: "Amapá",
+        BA: "Bahia", CE: "Ceará", DF: "Distrito Federal", ES: "Espírito Santo",
+        GO: "Goiás", MA: "Maranhão", MG: "Minas Gerais", MS: "Mato Grosso do Sul",
+        MT: "Mato Grosso", PA: "Pará", PB: "Paraíba", PE: "Pernambuco",
+        PI: "Piauí", PR: "Paraná", RJ: "Rio de Janeiro", RN: "Rio Grande do Norte",
+        RO: "Rondônia", RR: "Roraima", RS: "Rio Grande do Sul", SC: "Santa Catarina",
+        SE: "Sergipe", SP: "São Paulo", TO: "Tocantins"
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Elementos
+        const applyFiltersButton = document.getElementById('apply-filters');
+        const clearFiltersButton = document.getElementById('clear-filters');
+        const modalidadeFilter = document.getElementById('modalidadeFilterGlobal');
+        const ufFilter = document.getElementById('ufFilterGlobal');
+        const modalidadeLabel = document.getElementById('modalidade-label');
+        const dataTypeButtons = document.querySelectorAll('[data-type="ameaca"], [data-type="pressao"]');
+        const territoryTypeButtons = document.querySelectorAll('[data-type="area_de_protecao"], [data-type="terra_indigena"], [data-type="unidadesConservacao"]');
+        const totalAreaEl = document.getElementById('total-area');
+        const avgAreaEl = document.getElementById('avg-area');
+        const affectedTerritoriesEl = document.getElementById('affected-territories');
+        const maxAreaEl = document.getElementById('max-area');
+        const selectedTerritoryEl = document.getElementById('selected-territory');
+        const selectedAreaEl = document.getElementById('selected-area');
+        const selectedStateEl = document.getElementById('selected-state');
+        let barChart, map, geoJsonLayer, donutChart1, donutChart2;
+        let dataTable = null; // controle da instância do DataTables
+        let top10Features = []; // Guardar os top 10 para zoom
+
+        // Fontes de dados
+        const dataSources = {
+            ameaca: {
+                area_de_protecao: { geojson: "/dataset/ap/geojson/AMEACA_GERAL_Area_de_Protecao.geojson" },
+                terra_indigena:   { geojson: "/dataset/ap/geojson/AMEACA_GERAL_Terra_indigena.geojson" },
+                unidadesConservacao:{geojson: "/dataset/ap/geojson/AMEACA_GERAL_UCs.geojson"}
+            },
+            pressao:{
+                area_de_protecao: { geojson: "https://raw.githubusercontent.com/imazon-cgi/ap/main/dataset/geojson/PRESSAO_GERAL_Area_de_Protecao.geojson" },
+                terra_indigena:   { geojson: "https://raw.githubusercontent.com/imazon-cgi/ap/main/dataset/geojson/PRESSAO_GERAL_Terra_indigena.geojson" },
+                unidadesConservacao:{geojson: "https://raw.githubusercontent.com/imazon-cgi/ap/main/dataset/geojson/PRESSAO_GERAL_UCs.geojson"}
+            }
+        };
+
+        // Inicia o mapa
+        function initMap() {
+            map = L.map('map').setView([-5, -55], 4);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+            L.control.zoom({ position: 'bottomright' }).addTo(map);
+        }
+
+        function showLoading(id) { const el = document.getElementById(id); if (el) el.style.display = 'flex'; }
+        function hideLoading(id) { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
+
+        function getSelectedDataType() {
+            const el = document.querySelector('.filter-btn.active[data-type="ameaca"], .filter-btn.active[data-type="pressao"]');
+            return el ? el.getAttribute('data-type') : 'ameaca';
+        }
+        function getSelectedTerritoryType() {
+            const el = document.querySelector('.filter-btn.active[data-type="area_de_protecao"], .filter-btn.active[data-type="terra_indigena"], .filter-btn.active[data-type="unidadesConservacao"]');
+            return el ? el.getAttribute('data-type') : 'area_de_protecao';
+        }
+        function updateActiveButtons() {
+            const dt = getSelectedDataType(), tt = getSelectedTerritoryType();
+            dataTypeButtons.forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-type')===dt));
+            territoryTypeButtons.forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-type')===tt));
+        }
+
+        // Atualiza o filtro específico baseado no território selecionado
+        function updateSpecificFilter() {
+            const tt = getSelectedTerritoryType();
+            if (tt === 'terra_indigena') {
+                modalidadeLabel.innerHTML = 'Filtrar por Fase:';
+                modalidadeFilter.innerHTML = `
+                    <option value="all">Todas</option>
+                    <option value="Regularizada">Regularizada</option>
+                    <option value="Em estudo">Em estudo</option>
+                    <option value="Declarada">Declarada</option>
+                    <option value="Homologada">Homologada</option>
+                `;
+            } else {
+                modalidadeLabel.innerHTML = 'Filtrar por Modalidade:';
+                modalidadeFilter.innerHTML = `
+                    <option value="all">Todas</option>
+                    <option value="Estadual">Estadual</option>
+                    <option value="Federal">Federal</option>
+                `;
+            }
+        }
+
+        async function loadData() {
+            const dt = getSelectedDataType(), tt = getSelectedTerritoryType();
+            const src = dataSources[dt][tt];
+            const res = await fetch(src.geojson);
+            return await res.json();
+        }
+
+        function filterFeatures(features) {
+            const tt = getSelectedTerritoryType();
+            const mod = modalidadeFilter.value, uf = ufFilter.value;
+            return features.filter(f => {
+                const p = f.properties || {};
+                if (mod !== 'all') {
+                    // Para terras indígenas, usamos FASE, para outros JURISDICAO/MODALIDADE
+                    if (tt === 'terra_indigena') {
+                        if (p.FASE !== mod) return false;
+                    } else {
+                        if ((p.JURISDICAO || p.MODALIDADE) !== mod) return false;
+                    }
+                }
+                const ufProp = p.UF || p.ESTADO || '';
+                if (uf !== 'all' && ufProp !== uf) return false;
+                return true;
+            });
+        }
+
+        function updateBarChart(features) {
+            const ctx = document.getElementById('barChart').getContext('2d');
+            if (barChart) barChart.destroy();
+            const data = features.map(f => ({
+                feature: f, // Guardar a feature para referência
+                name: f.properties.NOME,
+                value: f.properties.DESMATAM_1 || f.properties.DESMATAMEN || 0,
+                uf: f.properties.UF || f.properties.ESTADO || ''
+            }));
+            // Guardar os top 10 para zoom
+            top10Features = data.sort((a,b)=>b.value-a.value).slice(0,10);
+            const labels = top10Features.map(i=>`${i.name ? i.name.substring(0,30) : 'N/A'}${i.name && i.name.length>30?'...':''} (${i.uf})`);
+            const values = top10Features.map(i=>i.value);
+            const maxV = Math.max(...values, 0);
+            const colorScale = d3.scaleSequential().domain([0,maxV]).interpolator(d3.interpolateReds);
+            const colors = values.map(v=>colorScale(v));
+
+            barChart = new Chart(ctx,{
+                type:'bar',
+                data:{
+                    labels, 
+                    datasets:[{
+                        data: values,
+                        backgroundColor: colors,
+                        borderColor: colors,
+                        borderWidth:1,
+                        borderRadius:4
+                    }]
+                },
+                options:{
+                    indexAxis:'y',
+                    responsive:true,
+                    maintainAspectRatio:false,
+                    plugins:{
+                        legend:{ display:false },
+                        tooltip:{
+                            callbacks:{ label:ctx=>`Área: ${Number(ctx.parsed.x).toFixed(2)} km²` }
+                        },
+                        datalabels:{
+                            anchor:'end',
+                            align:'right',
+                            formatter: v=>Number(v).toFixed(2),
+                            font:{ weight:'bold' }
+                        }
+                    },
+                    scales:{
+                        x:{ 
+                            beginAtZero:true, 
+                            title:{ display:true, text:'Área (km²)', font:{ weight:'bold' } }, 
+                            grid:{ display:false },
+                            // Ajuste para garantir que todo o gráfico seja visível
+                            max: maxV * 1.1
+                        },
+                        y:{ 
+                            grid:{ display:false }, 
+                            ticks:{ 
+                                font:{ size:11 },
+                                // Ajuste para garantir que os rótulos cabem
+                                callback: function(value, index) {
+                                    return this.getLabelForValue(value).substring(0, 35) + (this.getLabelForValue(value).length > 35 ? '...' : '');
+                                }
+                            } 
+                        }
+                    },
+                    // Layout ajustado para garantir espaço
+                    layout: {
+                        padding: {
+                            right: 40
+                        }
+                    },
+                    // Evento de clique para zoom no mapa
+                    onClick: (evt, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const feature = top10Features[index].feature;
+                            if (geoJsonLayer) {
+                                const layer = geoJsonLayer.getLayers().find(l => l.feature === feature);
+                                if (layer) {
+                                    map.fitBounds(layer.getBounds(), { padding: [50, 50], animate: true });
+                                    layer.openPopup();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateMap(features) {
+            if (geoJsonLayer) map.removeLayer(geoJsonLayer);
+            const max = Math.max(...features.map(f => (f.properties.DESMATAM_1||f.properties.DESMATAMEN||0)), 0);
+            const scale = d3.scaleSequential().domain([0,max]).interpolator(d3.interpolateReds);
+            geoJsonLayer = L.geoJSON({ type:'FeatureCollection', features },{
+                style: f=>{
+                    const v = f.properties.DESMATAM_1||f.properties.DESMATAMEN||0;
+                    return { fillColor:scale(v), weight:1.2, color:'#555', fillOpacity:0.7 };
+                },
+                onEachFeature:(f,layer)=>{
+                    const p=f.properties||{};
+                    layer.bindPopup(`<div style="font-family:'Montserrat',sans-serif">
+                        <h6 style="color:#008055;font-weight:bold">${p.NOME||'N/A'}</h6>
+                        <p><strong>UF:</strong> ${p.UF||p.ESTADO||''}<br><strong>Área:</strong> ${(p.DESMATAM_1||p.DESMATAMEN||0).toFixed(2)} km²</p>
+                    </div>`);
+                    layer.on({
+                        mouseover:e=>{
+                            e.target.setStyle({ weight:3,color:'#000',fillOpacity:0.9 });
+                            selectedTerritoryEl.textContent=p.NOME||'N/A';
+                            selectedAreaEl.textContent=(p.DESMATAM_1||p.DESMATAMEN||0).toFixed(2);
+                            selectedStateEl.textContent=p.UF||p.ESTADO||'';
+                            document.getElementById('info-panel').style.display='block';
+                        },
+                        mouseout:e=>{
+                            geoJsonLayer.resetStyle(e.target);
+                            document.getElementById('info-panel').style.display='none';
+                        },
+                        click:e=>map.fitBounds(e.target.getBounds(),{padding:[20,20],animate:true})
+                    });
+                }
+            }).addTo(map);
+            if (geoJsonLayer.getBounds().isValid()) {
+                map.fitBounds(geoJsonLayer.getBounds(),{padding:[20,20]});
+            }
+        }
+
+        function updateStatistics(features) {
+            const vals = features.map(f=>f.properties.DESMATAM_1||f.properties.DESMATAMEN||0);
+            const total = vals.reduce((a,b)=>a+b,0);
+            totalAreaEl.textContent = total.toFixed(2)+' km²';
+            affectedTerritoriesEl.textContent = features.length;
+            avgAreaEl.textContent = (features.length?total/features.length:0).toFixed(2)+' km²';
+            maxAreaEl.textContent = (vals.length?Math.max(...vals):0).toFixed(2)+' km²';
+        }
+
+        function updateDonutCharts(features) {
+            if (donutChart1) donutChart1.destroy();
+            if (donutChart2) donutChart2.destroy();
+            
+            // Gráfico 1: Distribuição por Estado
+            const ctx1 = document.getElementById('donutChart1').getContext('2d');
+            const stateData = {};
+            features.forEach(f => {
+                const p = f.properties || {};
+                const state = p.UF || p.ESTADO || 'Desconhecido';
+                stateData[state] = (stateData[state] || 0) + (p.DESMATAM_1 || p.DESMATAMEN || 0);
+            });
+            const stateLabels = Object.keys(stateData);
+            const stateValues = Object.values(stateData);
+            const stateTotal = stateValues.reduce((a, b) => a + b, 0);
+            document.getElementById('donut-total1').textContent = stateTotal.toFixed(2) + ' km²';
+            const stateColors = d3.scaleSequential().domain([0, stateLabels.length]).interpolator(d3.interpolateRainbow);
+            donutChart1 = new Chart(ctx1, {
+                type: 'doughnut',
+                data: { labels: stateLabels, datasets: [{ data: stateValues, backgroundColor: stateLabels.map((_, i) => stateColors(i)), borderWidth: 1 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '65%',
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, padding: 15, font: { size: 11 } } },
+                        tooltip: { 
+                            callbacks: { 
+                                label: function(context){ 
+                                    const value=context.raw||0; 
+                                    const pct = stateTotal? Math.round((value/stateTotal)*100):0; 
+                                    return `${context.label}: ${Number(value).toFixed(2)} km² (${pct}%)`; 
+                                } 
+                            } 
+                        },
+                        datalabels: {
+                            formatter: (value, ctx) => {
+                                return value > 0 ? value.toFixed(2) : '';
+                            },
+                            color: '#333',
+                            font: {
+                                weight: 'bold',
+                                size: 10
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Gráfico 2: Distribuição por Modalidade
+            const ctx2 = document.getElementById('donutChart2').getContext('2d');
+            const modData = {};
+            features.forEach(f => {
+                const p = f.properties || {};
+                // Para terras indígenas, usamos FASE, para outros JURISDICAO/MODALIDADE
+                const tt = getSelectedTerritoryType();
+                const mod = tt === 'terra_indigena' 
+                    ? (p.FASE || 'Desconhecido') 
+                    : (p.JURISDICAO || p.MODALIDADE || 'Desconhecido');
+                modData[mod] = (modData[mod] || 0) + (p.DESMATAM_1 || p.DESMATAMEN || 0);
+            });
+            const modLabels = Object.keys(modData);
+            const modValues = Object.values(modData);
+            const modTotal = modValues.reduce((a, b) => a + b, 0);
+            document.getElementById('donut-total2').textContent = modTotal.toFixed(2) + ' km²';
+            const modColors = d3.scaleSequential().domain([0, modLabels.length]).interpolator(d3.interpolateRainbow);
+            donutChart2 = new Chart(ctx2, {
+                type: 'doughnut',
+                data: { labels: modLabels, datasets: [{ data: modValues, backgroundColor: modLabels.map((_, i) => modColors(i)), borderWidth: 1 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '65%',
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, padding: 15, font: { size: 11 } } },
+                        tooltip: { 
+                            callbacks: { 
+                                label: function(context){ 
+                                    const value=context.raw||0; 
+                                    const pct = modTotal? Math.round((value/modTotal)*100):0; 
+                                    return `${context.label}: ${Number(value).toFixed(2)} km² (${pct}%)`; 
+                                } 
+                            } 
+                        },
+                        datalabels: {
+                            formatter: (value, ctx) => {
+                                return value > 0 ? value.toFixed(2) : '';
+                            },
+                            color: '#333',
+                            font: {
+                                weight: 'bold',
+                                size: 10
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTable(features) {
+            const territoryType = getSelectedTerritoryType();
+            const columnsConfig = {
+                area_de_protecao: [
+                    { title: 'Nome', keys: ['NOME','Nome','nome','NAME','name','DENOMINACAO','denominacao'], align: 'left' },
+                    { title: 'UF', keys: ['UF','ESTADO','estado'], align: 'center' },
+                    { title: 'Modalidade', keys: ['JURISDICAO','MODALIDADE','modalidade','CATEGORIA','categoria'], align: 'center' },
+                    { title: 'Área (km²)', keys: ['DESMATAM_1','DESMATAMEN','desmatamento','area','AREA_KM2','area_km2'], align: 'right', format: v => Number(v||0).toFixed(2) },
+                    { title: 'Focos de Calor', keys: ['FOCOS_DE_C','FOCOS DE C','focos_calor','focos'], align: 'right' },
+                    { title: 'Número de CAR', keys: ['N_DE_CAR','N DE CAR','num_car','car'], align: 'right' }
+                ],
+                terra_indigena: [
+                    { title: 'Nome', keys: ['NOME','Nome','nome'], align: 'left' },
+                    { title: 'UF', keys: ['UF','ESTADO','estado'], align: 'center' },
+                    { title: 'Fase', keys: ['FASE','fase','SITUACAO','situacao'], align: 'center' },
+                    { title: 'Área (km²)', keys: ['DESMATAM_1','DESMATAMEN','desmatamento','area','AREA_KM2','area_km2'], align: 'right', format: v => Number(v||0).toFixed(2) },
+                    { title: 'Focos de Calor', keys: ['FOCOS_DE_C','FOCOS DE C','focos_calor','focos'], align: 'right' }
+                ],
+                unidadesConservacao: [
+                    { title: 'Nome', keys: ['NOME','Nome','nome'], align: 'left' },
+                    { title: 'UF', keys: ['UF','ESTADO','estado'], align: 'center' },
+                    { title: 'Categoria', keys: ['CATEGORIA','categoria','MODALIDADE','modalidade'], align: 'center' },
+                    { title: 'Área (km²)', keys: ['DESMATAM_1','DESMATAMEN','desmatamento','area','AREA_KM2','area_km2'], align: 'right', format: v => Number(v||0).toFixed(2) },
+                    { title: 'Focos de Calor', keys: ['FOCOS_DE_C','FOCOS DE C','focos_calor','focos'], align: 'right' }
+                ]
+            };
+            const config = columnsConfig[territoryType] || columnsConfig['area_de_protecao'];
+
+            // Destrói DataTable anterior (se houver) e limpa a tabela
+            if (dataTable) {
+                dataTable.destroy();
+                dataTable = null;
+            }
+            const table = document.getElementById('data-table');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            thead.innerHTML = '<tr>' + config.map(col => `<th class="text-${col.align}">${col.title}</th>`).join('') + '</tr>';
+            tbody.innerHTML = '';
+
+            const pickProp = (props, keys) => {
+                for (let k of keys) {
+                    if (Object.prototype.hasOwnProperty.call(props, k) && props[k] !== undefined && props[k] !== null) {
+                        return props[k];
+                    }
+                }
+                return 'N/A';
+            };
+
+            features.forEach(f => {
+                const p = f.properties || {};
+                const row = document.createElement('tr');
+                row.innerHTML = config.map(col => {
+                    let val = pickProp(p, col.keys);
+                    if (typeof val === 'number' && col.format) {
+                        val = col.format(val);
+                    } else if (typeof val === 'number') {
+                        val = Number(val).toFixed(2);
+                    }
+                    return `<td class="text-${col.align}">${val}</td>`;
+                }).join('');
+                tbody.appendChild(row);
+            });
+
+            // Define índices para alinhamento nas colunas do DataTables
+            const leftIdx    = config.findIndex(c => c.align === 'left');
+            const rightIdxs  = config.map((c,i) => c.align === 'right'  ? i : null).filter(i => i !== null);
+            const centerIdxs = config.map((c,i) => c.align === 'center' ? i : null).filter(i => i !== null);
+
+            // Inicializa DataTable com 10 linhas fixas
+            dataTable = new DataTable('#data-table', {
+                paging: true,
+                pagingType: 'full_numbers',
+                pageLength: 10,        // 10 linhas por página
+                lengthChange: false,   // desabilita troca de quantidade
+                searching: true,
+                info: false,
+                ordering: true,
+                order: [[ rightIdxs.length ? rightIdxs[0] : 0, 'desc' ]],
+                scrollX: true,
+                scrollCollapse: true,
+                responsive: {
+                    details: { type: 'column', target: 'tr' }
+                },
+                // Layout moderno do DataTables 2 para botões
+                layout: {
+                    topStart: {
+                        buttons: [
+                            { extend: 'copyHtml5', text: 'Copiar' },
+                            { extend: 'excelHtml5', text: 'Excel' },
+                            { extend: 'csvHtml5', text: 'CSV' }
+                        ]
+                    }
+                },
+                columnDefs: [
+                    { targets: leftIdx,  className: 'text-left',   responsivePriority: 1 },
+                    ...centerIdxs.map(i => ({ targets: i, className: 'text-center', responsivePriority: 3 })),
+                    ...rightIdxs.map(i  => ({ targets: i, className: 'text-right',  responsivePriority: 2 }))
+                ],
+                language: { url: 'https://cdn.datatables.net/plug-ins/2.0.3/i18n/pt-BR.json' }
+            });
+        }
+
+        function updateTitles() {
+            const dt = getSelectedDataType(), tt = getSelectedTerritoryType();
+            let tBar = '', tMap = '';
+            if (tt==='area_de_protecao') {
+                tBar='Top 10 Áreas de Proteção Mais Afetadas';
+                tMap='Mapa de Áreas de Proteção';
+            } else if (tt==='terra_indigena') {
+                tBar='Top 10 Terras Indígenas Mais Afetadas';
+                tMap='Mapa de Terras Indígenas';
+            } else {
+                tBar='Top 10 Unidades de Conservação Mais Afetadas';
+                tMap='Mapa de Unidades de Conservação';
+            }
+            if (dt==='pressao') {
+                tBar=tBar.replace('Afetadas','Sob Pressão');
+                tMap=tMap.replace('Mapa','Mapa de Pressão');
+            }
+            document.getElementById('bar-chart-title').innerHTML=`<i class="fas fa-chart-bar me-2"></i>${tBar}`;
+            document.getElementById('map-title').innerHTML=`<i class="fas fa-map me-2"></i>${tMap}`;
+        }
+
+        async function updateDashboard() {
+            showLoading('bar-chart-spinner'); 
+            showLoading('map-spinner');
+            showLoading('donut1-spinner');
+            showLoading('donut2-spinner');
+            showLoading('table-spinner');
+            
+            try {
+                const raw = await loadData();
+                let feats = filterFeatures(raw.features || []);
+                
+                // Ordenar e pegar apenas os top 10 para todas as visualizações
+                feats.sort((a, b) => {
+                    const aVal = a.properties.DESMATAM_1 || a.properties.DESMATAMEN || 0;
+                    const bVal = b.properties.DESMATAM_1 || b.properties.DESMATAMEN || 0;
+                    return bVal - aVal;
+                });
+                feats = feats.slice(0, 10); // Apenas top 10
+                
+                updateBarChart(feats);
+                updateMap(feats);
+                updateStatistics(feats);
+                updateTitles();
+                updateDonutCharts(feats);
+                updateTable(feats);
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao carregar dados');
+            } finally {
+                hideLoading('bar-chart-spinner'); 
+                hideLoading('map-spinner');
+                hideLoading('donut1-spinner');
+                hideLoading('donut2-spinner');
+                hideLoading('table-spinner');
+            }
+        }
+
+        // Event Listeners
+        dataTypeButtons.forEach(btn=>{
+            btn.addEventListener('click',()=>{
+                dataTypeButtons.forEach(b=>b.classList.remove('active'));
+                btn.classList.add('active');
+                updateDashboard();
+            });
+        });
+        territoryTypeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                territoryTypeButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                updateSpecificFilter(); // Atualiza o filtro específico
+                if (dataTable) { dataTable.destroy(); dataTable = null; }
+                updateDashboard();
+            });
+        });
+        applyFiltersButton.addEventListener('click', updateDashboard);
+        clearFiltersButton.addEventListener('click', ()=>{
+            modalidadeFilter.value='all';
+            ufFilter.value='all';
+            updateDashboard();
+        });
+
+        // Inicialização
+        initMap();
+        updateActiveButtons();
+        updateSpecificFilter(); // Configura o filtro inicial
+        updateDashboard();
+    });
+</script>
+
+</body>
+</html>
