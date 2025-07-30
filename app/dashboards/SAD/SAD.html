@@ -10,8 +10,29 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <style>
+        .select2-container--default .select2-selection--multiple {
+    border-radius: 8px;
+    border-color: #ddd;
+    padding: 4px;
+    min-height: 38px;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: var(--primary-color);
+    border: none;
+    color: white;
+    font-weight: 500;
+    padding: 3px 8px;
+    margin: 2px;
+    border-radius: 6px;
+}
+
         /* ESTILOS PRINCIPAIS */
         :root {
             --primary-color: #008055;
@@ -367,7 +388,7 @@
         <div class="filter-buttons-container">
             <!-- Grupo de Botões: Tipo de Dado -->
             <div class="filter-group">
-                <div class="filter-group-title">Desmatamento / Degradação:</div>
+                
                 <div class="filter-buttons">
                     <div class="filter-btn active" data-type="desmatamento">
                         <div class="filter-icon">
@@ -386,7 +407,7 @@
             
             <!-- Grupo de Botões: Escala Territorial -->
             <div class="filter-group">
-                <div class="filter-group-title">Filtros por escala Territorial:</div>
+                
                 <div class="filter-buttons">
                     <div class="filter-btn active" data-type="estados">
                         <div class="filter-icon">
@@ -424,14 +445,16 @@
         
         <div class="row g-3 align-items-end">
             <!-- Filtro de Período -->
-            <div class="col-md-3">
-                <label for="startPeriod" class="form-label fw-bold">Período Inicial:</label>
-                <input type="month" id="startPeriod" class="form-control" value="2024-01" readonly>
-            </div>
-            <div class="col-md-3">
-                <label for="endPeriod" class="form-label fw-bold">Período Final:</label>
-                <input type="month" id="endPeriod" class="form-control" value="2024-12" readonly>
-            </div>
+            <div class="col-md-4">
+    <label for="startPeriod" class="form-label fw-bold">Selecione o período de análise:</label>
+    <div class="input-group">
+<input type="month" id="startPeriod" class="form-control" value="2024-01" min="2008-01" max="2024-12">
+
+<input type="month" id="endPeriod" class="form-control" value="2024-12" min="2008-01" max="2024-12">
+
+    </div>
+</div>
+
             
             <div class="col-md-2 d-grid">
                 <button id="apply-filters" class="btn btn-primary">
@@ -547,8 +570,12 @@
 </div>
 
 <!-- Bibliotecas JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3-fetch@3"></script>
@@ -818,27 +845,50 @@
         }
 
         // Atualizar estatísticas
-        function updateStatistics(aggregatedData, filteredData, territoryType) {
-            // Área total
-            const totalArea = Object.values(aggregatedData).reduce((sum, area) => sum + area, 0);
-            totalAreaEl.textContent = totalArea.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
-            
-            // Área média mensal em 2024
-            const currentYearData = filteredData.filter(d => d.ANO === 2024);
-            const monthsCount = new Set(currentYearData.map(d => d.MES)).size;
-            const avgArea = monthsCount > 0 ? 
-                currentYearData.reduce((sum, d) => sum + d.AREAKM2, 0) / monthsCount : 0;
-            avgAreaEl.textContent = avgArea.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
-            
-            // Territórios afetados
-            const affectedTerritories = Object.keys(aggregatedData).length;
-            affectedTerritoriesEl.textContent = affectedTerritories;
-            
-            // Variação anual (simulado)
-            const variation = Math.round((Math.random() * 20) - 10);
-            annualChangeEl.textContent = (variation > 0 ? '+' : '') + variation + '%';
-            annualChangeEl.style.color = variation > 0 ? '#ff5252' : '#4caf50';
-        }
+function updateStatistics(aggregatedData, filteredData, territoryType) {
+    // Área total
+    const totalArea = Object.values(aggregatedData).reduce((sum, area) => sum + area, 0);
+    totalAreaEl.textContent = totalArea.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
+
+    // Detectar o ano mais recente nos dados filtrados
+    const anosPresentes = [...new Set(filteredData.map(d => Number(d.ANO)))].filter(Boolean).sort();
+    const anoAtual = Math.max(...anosPresentes);
+    const anoAnterior = anoAtual - 1;
+
+    // Filtrar dados por ano
+    const dadosAtual = filteredData.filter(d => Number(d.ANO) === anoAtual);
+    const dadosAnterior = filteredData.filter(d => Number(d.ANO) === anoAnterior);
+
+    // Calcular média mensal do ano atual
+    const monthsCount = new Set(dadosAtual.map(d => Number(d.MES))).size;
+    const somaAtual = dadosAtual.reduce((sum, d) => sum + Number(d.AREAKM2), 0);
+    const avgArea = monthsCount > 0 ? somaAtual / monthsCount : 0;
+    avgAreaEl.textContent = avgArea.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
+
+    // Territórios afetados
+    const affectedTerritories = Object.keys(aggregatedData).length;
+    affectedTerritoriesEl.textContent = affectedTerritories;
+
+    // Calcular variação anual real
+    const somaAnterior = dadosAnterior.reduce((sum, d) => sum + Number(d.AREAKM2), 0);
+
+    let variation = 0;
+    if (somaAnterior > 0) {
+        variation = ((somaAtual - somaAnterior) / somaAnterior) * 100;
+    } else if (somaAtual > 0) {
+        variation = 100;
+    }
+
+    //annualChangeEl.textContent = `${variation > 0 ? '+' : ''}${variation.toFixed(1)}% em relação a ${anoAnterior}`;
+    //  annualChangeEl.style.color = variation > 0 ? '#ff5252' : '#4caf50';
+
+    // Debug opcional
+    console.log(`Ano atual: ${anoAtual} | Área: ${somaAtual}`);
+    console.log(`Ano anterior: ${anoAnterior} | Área: ${somaAnterior}`);
+    console.log(`Variação: ${variation.toFixed(1)}%`);
+}
+
+
 
         // Função para aplicar filtros específicos
         function applySpecificFilters(data, territoryType) {
@@ -860,15 +910,29 @@
                 }
                 else if (territoryType === 'municipios') {
                     const stateFilter = document.getElementById('stateFilterMunicipios');
+                    const municipioFilter = document.getElementById('municipioFilter');
+                                
                     if (stateFilter && stateFilter.value !== 'all') {
                         filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
+                    }
+                    if (municipioFilter && municipioFilter.value !== 'all') {
+                        filteredData = filteredData.filter(d => d.MUNICIPIO === municipioFilter.value);
                     }
                 }
+
                 else if (territoryType === 'terrasIndigenas') {
-                    const stateFilter = document.getElementById('stateFilterTerrasIndigenas');
-                    if (stateFilter && stateFilter.value !== 'all') {
-                        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
-                    }
+    const stateFilter = document.getElementById('stateFilterTerrasIndigenas');
+    if (stateFilter && stateFilter.value !== 'all') {
+        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
+    }
+
+    const checkboxes = document.querySelectorAll('.terra-checkbox:checked');
+    if (checkboxes.length > 0) {
+        const selecionadas = Array.from(checkboxes).map(cb => cb.value);
+        filteredData = filteredData.filter(d => selecionadas.includes(d.TERRA_INDI));
+    }
+
+
                 }
                 else if (territoryType === 'unidadesConservacao') {
                     const stateFilter = document.getElementById('stateFilterUC');
@@ -891,97 +955,119 @@
         }
 
         // Função para atualizar o gráfico de barras
-        function updateBarChart(labels, dataValues) {
-            const ctx = document.getElementById('barChart').getContext('2d');
-            if (barChart) {
-                barChart.destroy();
-            }
-            
-            const dataType = getSelectedDataType();
-            const bgColor = dataType === 'desmatamento' ? 'rgba(198, 40, 40, 0.7)' : 'rgba(255, 109, 0, 0.7)';
-            const borderColor = dataType === 'desmatamento' ? 'rgba(127, 0, 0, 1)' : 'rgba(191, 54, 12, 1)';
-            
-            barChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Área (km²)',
-                        data: dataValues,
-                        backgroundColor: bgColor,
-                        borderColor: borderColor,
-                        borderWidth: 1,
-                        borderRadius: 4,
-                        borderSkipped: false,
-                    }]
+       function updateBarChart(labels, dataValues) {
+    const ctx = document.getElementById('barChart').getContext('2d');
+    if (barChart) {
+        barChart.destroy();
+    }
+
+    const dataType = getSelectedDataType();
+    const maxVal = Math.max(...dataValues);
+
+    // Escala de cores gradiente (como no mapa)
+    const colorScale = d3.scaleSequential()
+        .domain([0, maxVal])
+        .interpolator(dataType === 'desmatamento' ? d3.interpolateReds : d3.interpolateOranges);
+
+    const barColors = dataValues.map(v => colorScale(v));
+
+    barChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Área (km²)',
+                data: dataValues,
+                backgroundColor: barColors,
+                borderColor: barColors,
+                borderWidth: 1,
+                borderRadius: 4,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    right: 40  // espaço para texto fora da barra
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
                 },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    onClick: (e, elements) => {
-                        if (elements.length > 0) {
-                            const index = elements[0].index;
-                            const territoryName = labels[index];
-                            if (territoryBounds[territoryName]) {
-                                map.fitBounds(territoryBounds[territoryName], {
-                                    padding: [50, 50],
-                                    animate: true,
-                                    duration: 1.5
-                                });
-                            }
-                        }
+                datalabels: {
+                    anchor: 'end',
+                    align: 'right',
+                    offset: 8,
+                    clamp: true,
+                    clip: false,
+                    color: '#111',
+                    font: {
+                        weight: 'bold',
+                        size: 12
                     },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white',
-                            borderColor: borderColor,
-                            borderWidth: 1,
-                            callbacks: {
-                                label: function(context) {
-                                    return `Área: ${context.parsed.x.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} km²`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Área (km²)',
-                                font: { weight: 'bold' }
-                            },
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    return value.toLocaleString('pt-BR');
-                                }
-                            }
-                        },
-                        y: {
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                font: { size: 11 }
-                            }
-                        }
-                    },
-                    animation: {
-                        duration: 1000,
-                        easing: 'easeInOutQuart'
+                    formatter: value =>
+                        `${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: '#444',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: context =>
+                            `Área: ${context.parsed.x.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} km²`
                     }
                 }
-            });
-        }
+            },
+            onClick: (e, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const territoryName = labels[index];
+                    if (territoryBounds[territoryName]) {
+                        map.fitBounds(territoryBounds[territoryName], {
+                            padding: [50, 50],
+                            animate: true,
+                            duration: 1.5
+                        });
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Área (km²)',
+                        font: { weight: 'bold' }
+                    },
+                    grid: { display: false },
+                    ticks: {
+                        callback: value => value.toLocaleString('pt-BR')
+                    }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { size: 11 }
+                    }
+                }
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeInOutQuart'
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+}
+
+
+
 
         // Função para atualizar o gráfico de linha (série histórica)
        function updateLineChart(csvData, territoryType) {
@@ -1008,15 +1094,8 @@
     });
 
     // Paleta de cores fixa (10 tons)
-    const pal = dataType === 'desmatamento'
-        ? [
-            '#b71c1c', '#c62828', '#d32f2f', '#e53935', '#f44336',
-            '#ef5350', '#e57373', '#ef9a9a', '#ffcdd2', '#ffebee'
-        ]
-        : [
-            '#e65100', '#ef6c00', '#f57c00', '#fb8c00', '#ff9800',
-            '#ffa726', '#ffb74d', '#ffcc80', '#ffe0b2', '#fff3e0'
-        ];
+    const pal = d3.schemeTableau10.concat(d3.schemeSet2); // Mais contraste
+
 
     const datasets = [];
 
@@ -1129,6 +1208,7 @@
             const borderColor = dataType === 'desmatamento' ? 'rgba(198, 40, 40, 1)' : 'rgba(255, 109, 0, 1)';
 
             yearlyChart = new Chart(ctx, {
+                plugins: [ChartDataLabels],
                 type: 'bar',
                 data: {
                     labels: years,
@@ -1146,11 +1226,21 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    legend: {
+        display: false
+    },
+    datalabels: {
+        anchor: 'end',
+        align: 'top',
+        color: '#333',
+        font: {
+            weight: 'bold',
+            size: 11
+        },
+        formatter: value =>
+            `${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`
+    },
+    tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)',
                             titleColor: 'white',
                             bodyColor: 'white',
                             borderColor: borderColor,
@@ -1256,14 +1346,17 @@
                     territoryBounds[name] = layer.getBounds();
                     
                     // Popup com informações detalhadas
+                    const rankPosition = currentTopTerritories.findIndex(t => t === name) + 1;
                     const popupContent = `
                         <div style="font-family: 'Montserrat', sans-serif; min-width: 200px;">
                             <h6 style="margin: 0 0 8px 0; color: #008055; font-weight: bold;">${name || 'Nome não disponível'}</h6>
                             <p style="margin: 0; font-size: 14px;">
+                                <strong>Posição no Ranking:</strong> ${rankPosition}º<br>
                                 <strong>Área:</strong> ${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} km²
                             </p>
                         </div>
                     `;
+
                     
                     layer.bindPopup(popupContent);
                     
@@ -1308,7 +1401,7 @@
             }).addTo(map);
 
             // Adicionar legenda do mapa
-            addMapLegend(maxVal, colorScale);
+            //addMapLegend(maxVal, colorScale);
 
             // Ajustar visualização do mapa
             if (geoJsonLayer.getBounds().isValid()) {
@@ -1317,25 +1410,7 @@
         }
 
         // Função para adicionar legenda ao mapa
-        function addMapLegend(maxVal, colorScale) {
-            legend = L.control({ position: 'bottomright' });
-
-            legend.onAdd = function(map) {
-                const div = L.DomUtil.create('div', 'heat-legend');
-                div.innerHTML = `
-                    <div class="legend-title">Área (km²)</div>
-                    <div class="legend-gradient" style="background:linear-gradient(to top, ${colorScale(0)} 0%, ${colorScale(maxVal/2)} 50%, ${colorScale(maxVal)} 100%)"></div>
-                    <div class="legend-labels">
-                        <div>${maxVal.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</div>
-                        <div>${(maxVal/2).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</div>
-                        <div>0</div>
-                    </div>`;
-                return div;
-            };
-
-            legend.addTo(map);
-        }
-
+        
         const territoryNaming = {
             estados: { artigo: 'dos', nome: 'Estados', genero: 'm' },
             municipios: { artigo: 'dos', nome: 'Municípios', genero: 'm' },
@@ -1406,7 +1481,7 @@
             const preposicao = dataTypeFrase[dataKey].preposicao;
 
             lineChartTitle.innerHTML = `<i class="fas fa-chart-line me-2"></i>Série histórica ${fraseArtigo} ${dataKey} ${preposicao} ${nome} (2008 - 2024)`;
-            yearlyChartTitle.innerHTML = `<i class="fas fa-chart-area me-2"></i>Série histórica anual ${fraseArtigo} ${dataKey} ${preposicao} ${nome} (2008 - 2024)`;
+            yearlyChartTitle.innerHTML = `<i class="fas fa-chart-area me-2"></i>Série histórica anual na Amazônia Legal ${fraseArtigo} ${dataKey} ${preposicao} ${nome} (2008 - 2024)`;
         }
 
         // Event Listeners para botões de filtro
@@ -1440,16 +1515,28 @@
 
         applyFiltersButton.addEventListener('click', updateDashboard);
         const clearFiltersButton = document.getElementById('clear-filters');
-clearFiltersButton.addEventListener('click', () => {
-    // Limpar todos os filtros específicos, se existirem
-    const selects = specificFiltersContent.querySelectorAll('select');
-    selects.forEach(select => {
-        if (select) select.value = 'all';
-    });
-
-    // Atualizar dashboard com filtros limpos
-    updateDashboard();
+            clearFiltersButton.addEventListener('click', () => {
+            // Limpar todos os filtros específicos, se existirem
+            const selects = specificFiltersContent.querySelectorAll('select');
+            selects.forEach(select => {
+                if (select) select.value = 'all';
+            });
+        
+            // Atualiza checkboxes do modal (se existirem)
+            const checkboxes = document.querySelectorAll('.terra-checkbox');
+            checkboxes.forEach(cb => cb.checked = false);
+        
+            // Atualiza resumo e contagem, se existirem
+            const resumo = document.getElementById('terraSelecionadasResumo');
+            const contagem = document.getElementById('contagemSelecionados');
+            if (resumo) resumo.textContent = 'Nenhuma selecionada.';
+            if (contagem) contagem.textContent = '0 selecionadas';
+        
+            // Atualizar dashboard com filtros limpos
+            updateDashboard();
 });
+
+
 
 
         // Função para atualizar os filtros específicos
@@ -1501,43 +1588,222 @@ clearFiltersButton.addEventListener('click', () => {
                     specificFiltersContainer.style.display = 'block';
                 }
                 else if (territoryType === 'municipios') {
-                    specificFiltersContent.innerHTML = `
-                        <div class="col-md-4">
-                            <label for="stateFilterMunicipios" class="form-label fw-bold">Filtrar por Estado:</label>
-                            <select id="stateFilterMunicipios" class="form-select">
-                                <option value="all">Todos os Estados</option>
-                                <option value="AC">Acre</option>
-                                <option value="AP">Amapá</option>
-                                <option value="AM">Amazonas</option>
-                                <option value="MA">Maranhão</option>
-                                <option value="MT">Mato Grosso</option>
-                                <option value="PA">Pará</option>
-                                <option value="RO">Rondônia</option>
-                                <option value="RR">Roraima</option>
-                                <option value="TO">Tocantins</option>
-                            </select>
-                        </div>`;
-                    specificFiltersContainer.style.display = 'block';
+    specificFiltersContent.innerHTML = `
+        <div class="col-md-4">
+            <label for="stateFilterMunicipios" class="form-label fw-bold">Filtrar por Estado:</label>
+            <select id="stateFilterMunicipios" class="form-select">
+                <option value="all">Todos os Estados</option>
+                <option value="AC">Acre</option>
+                <option value="AP">Amapá</option>
+                <option value="AM">Amazonas</option>
+                <option value="MA">Maranhão</option>
+                <option value="MT">Mato Grosso</option>
+                <option value="PA">Pará</option>
+                <option value="RO">Rondônia</option>
+                <option value="RR">Roraima</option>
+                <option value="TO">Tocantins</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="municipioFilter" class="form-label fw-bold">Filtrar por Município:</label>
+            <select id="municipioFilter" class="form-select">
+                <option value="all">Todos os Municípios</option>
+            </select>
+        </div>`;
+
+    specificFiltersContainer.style.display = 'block';
+
+    // Espera o CSV estar carregado para popular dinamicamente
+    setTimeout(async () => {
+        const estadoSelect = document.getElementById('stateFilterMunicipios');
+        const municipioSelect = document.getElementById('municipioFilter');
+
+        const dataType = getSelectedDataType();
+        const territoryType = 'municipios';
+        const csvPath = dataSources[dataType][territoryType].csv;
+        const csvData = await d3.csv(csvPath);
+
+        estadoSelect.addEventListener('change', () => {
+            const estadoSelecionado = estadoSelect.value;
+            const municipiosFiltrados = new Set();
+
+            csvData.forEach(d => {
+                if (estadoSelecionado === 'all' || d.ESTADO === estadoSelecionado) {
+                    municipiosFiltrados.add(d.MUNICIPIO);
                 }
-                else if (territoryType === 'terrasIndigenas') {
-                    specificFiltersContent.innerHTML = `
-                        <div class="col-md-4">
-                            <label for="stateFilterTerrasIndigenas" class="form-label fw-bold">Filtrar por Estado:</label>
-                            <select id="stateFilterTerrasIndigenas" class="form-select">
-                                <option value="all">Todos os Estados</option>
-                                <option value="AC">Acre</option>
-                                <option value="AP">Amapá</option>
-                                <option value="AM">Amazonas</option>
-                                <option value="MA">Maranhão</option>
-                                <option value="MT">Mato Grosso</option>
-                                <option value="PA">Pará</option>
-                                <option value="RO">Rondônia</option>
-                                <option value="RR">Roraima</option>
-                                <option value="TO">Tocantins</option>
-                            </select>
-                        </div>`;
-                    specificFiltersContainer.style.display = 'block';
+            });
+
+            municipioSelect.innerHTML = '<option value="all">Todos os Municípios</option>';
+            Array.from(municipiosFiltrados).sort().forEach(mun => {
+                const opt = document.createElement('option');
+                opt.value = mun;
+                opt.textContent = mun;
+                municipioSelect.appendChild(opt);
+            });
+        });
+
+        // Disparar evento para preencher ao abrir
+        estadoSelect.dispatchEvent(new Event('change'));
+    }, 0);
+}
+
+               else if (territoryType === 'terrasIndigenas') {
+    specificFiltersContent.innerHTML = `
+        <div class="col-md-6">
+            <label for="stateFilterTerrasIndigenas" class="form-label fw-bold">Filtrar por Estado:</label>
+            <select id="stateFilterTerrasIndigenas" class="form-select">
+                <option value="all">Todos os Estados</option>
+                <option value="AC">Acre</option>
+                <option value="AP">Amapá</option>
+                <option value="AM">Amazonas</option>
+                <option value="MA">Maranhão</option>
+                <option value="MT">Mato Grosso</option>
+                <option value="PA">Pará</option>
+                <option value="RO">Rondônia</option>
+                <option value="RR">Roraima</option>
+                <option value="TO">Tocantins</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Selecionar Terras Indígenas:</label><br>
+            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#terraModal">Selecionar Terras</button>
+            <div id="terraSelecionadasResumo" class="mt-2 small text-muted">Nenhuma selecionada.</div>
+        </div>
+
+        <!-- Modal -->
+<div class="modal fade" id="terraModal" tabindex="-1" aria-labelledby="terraModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="terraModalLabel">Selecione até 10 Terras Indígenas</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="terraSearchInput" class="form-control mb-3" placeholder="Pesquisar por nome da terra...">
+        <div id="checkboxContainer" class="row"></div>
+      </div>
+      <div class="modal-footer">
+        <small class="text-muted me-auto" id="contagemSelecionados">0 selecionadas</small>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+    `;
+    specificFiltersContainer.style.display = 'block';
+
+    // Aguarda para carregar terras
+    setTimeout(async () => {
+        const estadoSelect = document.getElementById('stateFilterTerrasIndigenas');
+        const container = document.getElementById('checkboxContainer');
+        const resumoSelecionadas = document.getElementById('terraSelecionadasResumo');
+        const contagemEl = document.getElementById('contagemSelecionados');
+
+        const csvPath = dataSources[getSelectedDataType()].terrasIndigenas.csv;
+        const csvData = await d3.csv(csvPath);
+
+        
+        let terrasDisponiveis = [];
+        let terrasFiltradas = [];
+        function drawCheckboxes(lista) {
+    container.innerHTML = '';
+    lista.forEach(nome => {
+        const col = document.createElement('div');
+        col.className = 'col-md-4 mb-2';
+        col.innerHTML = `
+            <div class="form-check">
+                <input class="form-check-input terra-checkbox" type="checkbox" value="${nome}" id="${nome}">
+                <label class="form-check-label" for="${nome}">${nome}</label>
+            </div>`;
+        container.appendChild(col);
+    });
+
+    // Lógica de limite
+    const checkboxes = container.querySelectorAll('.terra-checkbox');
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            const selecionados = container.querySelectorAll('.terra-checkbox:checked');
+            if (selecionados.length > 10) {
+                cb.checked = false;
+                alert('Você só pode selecionar até 10 terras.');
+            }
+            updateContagem();
+        });
+    });
+
+    updateContagem();
+}
+
+        function renderCheckboxes(estadoSelecionado = 'all') {
+            
+
+            const nomes = new Set();
+            container.innerHTML = '';
+            csvData.forEach(d => {
+                if (estadoSelecionado === 'all' || d.ESTADO === estadoSelecionado) {
+                    nomes.add(d.TERRA_INDI);
                 }
+            });
+
+            terrasDisponiveis = Array.from(nomes).sort();
+            terrasFiltradas = [...terrasDisponiveis]; // inicia com todas
+
+            drawCheckboxes(terrasFiltradas);
+
+            terrasDisponiveis.forEach(nome => {
+                const col = document.createElement('div');
+                col.className = 'col-md-4 mb-2';
+                col.innerHTML = `
+                    <div class="form-check">
+                        <input class="form-check-input terra-checkbox" type="checkbox" value="${nome}" id="${nome}">
+                        <label class="form-check-label" for="${nome}">${nome}</label>
+                    </div>`;
+                container.appendChild(col);
+            });
+
+            // Limitar seleção
+            const checkboxes = container.querySelectorAll('.terra-checkbox');
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const selecionados = container.querySelectorAll('.terra-checkbox:checked');
+                    if (selecionados.length > 10) {
+                        cb.checked = false;
+                        alert('Você só pode selecionar até 10 terras.');
+                    }
+                    updateContagem();
+                });
+            });
+
+            updateContagem();
+        }
+
+        function updateContagem() {
+            const selecionados = container.querySelectorAll('.terra-checkbox:checked');
+            contagemEl.textContent = `${selecionados.length} selecionadas`;
+            resumoSelecionadas.textContent = selecionados.length
+                ? Array.from(selecionados).map(el => el.value).join(', ')
+                : 'Nenhuma selecionada.';
+        }
+
+        estadoSelect.addEventListener('change', () => {
+            renderCheckboxes(estadoSelect.value);
+        });
+
+        renderCheckboxes('all');
+        const searchInput = document.getElementById('terraSearchInput');
+searchInput.addEventListener('input', () => {
+    const termo = searchInput.value.trim().toLowerCase();
+    const filtradas = terrasDisponiveis.filter(nome =>
+        nome.toLowerCase().includes(termo)
+    );
+    drawCheckboxes(filtradas);
+});
+
+    }, 0);
+}
+
+
                 else if (territoryType === 'unidadesConservacao') {
                     specificFiltersContent.innerHTML = `
                         <div class="col-md-3">

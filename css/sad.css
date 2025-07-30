@@ -1,0 +1,357 @@
+.select2-container--default .select2-selection--multiple {
+    border-radius: 8px;
+    border-color: #ddd;
+    padding: 4px;
+    min-height: 38px;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: var(--primary-color);
+    border: none;
+    color: white;
+    font-weight: 500;
+    padding: 3px 8px;
+    margin: 2px;
+    border-radius: 6px;
+}
+
+        /* ESTILOS PRINCIPAIS */
+        :root {
+            --primary-color: #008055;
+            --primary-dark: #003300;
+            --accent-color: #FF6D00;
+            --text-color: #212121;
+            --background-color: #F5F5F5;
+            --card-color: #FFFFFF;
+            --border-radius: 12px;
+            --box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            padding: 1.5rem;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, var(--card-color), var(--card-color));
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .card {
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border: none;
+            height: 100%;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            background-color: var(--card-color) !important;
+            color: var(--primary-dark) !important;
+            font-weight: 700 !important;
+            border-bottom: 2px solid var(--accent-color) !important;
+            padding: 1.25rem;
+            font-size: 1.1em;
+        }
+
+        .filter-section {
+            background: var(--card-color);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+
+        .form-select, .form-control {
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            transition: all 0.3s ease;
+        }
+
+        .form-select:focus, .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 128, 85, 0.2);
+        }
+
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: var(--border-radius);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 450px;
+            width: 100%;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            padding: 10px 20px;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* Botões de filtro */
+        .filter-buttons-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .filter-group-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary-dark);
+            font-size: 0.95rem;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .filter-btn {
+            flex: 1;
+            min-width: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 10px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .filter-btn:hover {
+            background: #e9f7f0;
+            border-color: var(--primary-color);
+        }
+        
+        .filter-btn.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+        
+        .filter-btn.active .filter-icon {
+            color: white;
+        }
+        
+        .filter-icon {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        
+        .filter-btn.active .filter-icon {
+            transform: scale(1.1);
+        }
+        
+        .filter-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Filtros específicos */
+        .specific-filters {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            border: 1px solid #e9ecef;
+        }
+
+        /* Legenda do mapa */
+        .heat-legend {
+            background: var(--card-color);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: var(--box-shadow);
+            line-height: 1.4;
+            z-index: 1000;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 0.8rem;
+            width: 110px;
+        }
+
+        .legend-title {
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 5px;
+            color: var(--primary-dark);
+        }
+
+        .legend-gradient {
+            height: 150px;
+            width: 25px;
+            margin: 0 auto;
+            border-radius: 3px;
+        }
+
+        .legend-labels {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 150px;
+            position: absolute;
+            left: 40px;
+            top: 35px;
+            font-size: 0.75rem;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: var(--box-shadow);
+            font-size: 0.9rem;
+            max-width: 300px;
+        }
+
+        .stat-card {
+            background: var(--primary-color);
+            color: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .data-type-label {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-left: 10px;
+        }
+
+        .desmatamento-label {
+            background-color: #e6f7f2;
+            color: var(--primary-dark);
+        }
+
+        .degradacao-label {
+            background-color: #fff3e6;
+            color: #e65100;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .dashboard-header {
+                padding: 1.5rem;
+            }
+            
+            #map {
+                height: 350px;
+            }
+            
+            .chart-container {
+                height: 350px;
+            }
+            
+            .heat-legend {
+                bottom: 10px;
+                right: 10px;
+                font-size: 0.7rem;
+                width: 90px;
+            }
+            
+            .info-panel {
+                top: 10px;
+                right: 10px;
+                max-width: 200px;
+                padding: 10px;
+            }
+            
+            .filter-buttons-container {
+                flex-direction: column;
+            }
+            
+            .filter-group {
+                min-width: 100%;
+            }
+            
+            .filter-btn {
+                min-width: 100px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .chart-container {
+                height: 300px;
+            }
+            
+            #map {
+                height: 300px;
+            }
+            
+            .stat-card {
+                padding: 10px;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
+            }
+            
+            .filter-btn {
+                min-width: 80px;
+                padding: 10px 5px;
+            }
+            
+            .filter-icon {
+                font-size: 1.4rem;
+            }
+        }
