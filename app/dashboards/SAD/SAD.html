@@ -448,9 +448,9 @@
             <div class="col-md-4">
     <label for="startPeriod" class="form-label fw-bold">Selecione o período de análise:</label>
     <div class="input-group">
-<input type="month" id="startPeriod" class="form-control" value="2024-01" min="2008-01" max="2024-12">
+<input type="month" id="startPeriod" class="form-control" value="2024-01" min="2008-01" max="2025-12">
 
-<input type="month" id="endPeriod" class="form-control" value="2024-12" min="2008-01" max="2024-12">
+<input type="month" id="endPeriod" class="form-control" value="2024-12" min="2008-01" max="2025-12">
 
     </div>
 </div>
@@ -610,6 +610,9 @@
         SP: "São Paulo",
         TO: "Tocantins"
     };
+    // lista de UFs que compõem a Amazônia Legal
+    const amazoniaLegalStates = ['AC','AP','AM','MA','MT','PA','RO','RR','TO'];
+
 
     document.addEventListener('DOMContentLoaded', function () {
         // Elementos da UI
@@ -659,45 +662,45 @@
         const dataSources = {
             desmatamento: {
                 assentamentos: { 
-                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_04_2024_assentamentos.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_05_2025_assentamentos.csv",
                     geojson: "/dataset/sad/geojson/AMZ_assentamentos.geojson"
                 },
                 estados: {
-                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_04_2024_municipios.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_05_2025_municipios.csv",
                     geojson: "/dataset/sad/geojson/AMZ_estados.geojson"
                 },
                 municipios: { 
-                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_04_2024_municipios.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_05_2025_municipios.csv",
                     geojson: "/dataset/sad/geojson/AMZ_municipios.geojson"
                 },
                 terrasIndigenas: {  
-                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_04_2024_terraIndigena.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_05_2025_terraIndigena.csv",
                     geojson: "/dataset/sad/geojson/AMZ_terra_indigena.geojson"
                 },
                 unidadesConservacao: {  
-                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_04_2024_unidadeConservacao.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_05_2025_unidadeConservacao.csv",
                     geojson: "/dataset/sad/geojson/AMZ_unidade_conservacao.geojson"
                 }
             },
             degradacao:{
                 assentamentos: { 
-                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_04_2024_assentamento.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_assentamento.csv",
                     geojson: "/dataset/sad/geojson/AMZ_assentamentos.geojson"
                 },
                 estados: {
-                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_04_2024_municipio.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_municipios.csv",
                     geojson: "/dataset/sad/geojson/AMZ_estados.geojson"
                 },
                 municipios: { 
-                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_04_2024_municipio.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_municipios.csv",
                     geojson: "/dataset/sad/geojson/AMZ_municipios.geojson"
                 },
                 terrasIndigenas: {  
-                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_04_2024_terraIndigena.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_terraIndigena.csv",
                     geojson: "/dataset/sad/geojson/AMZ_terra_indigena.geojson"
                 },
                 unidadesConservacao: {  
-                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_04_2024_ucs.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_ucs.csv",
                     geojson: "/dataset/sad/geojson/AMZ_unidade_conservacao.geojson"
                 }
             }
@@ -903,11 +906,25 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
                     }
                 }
                 else if (territoryType === 'estados') {
-                    const stateFilter = document.getElementById('stateFilterEstados');
-                    if (stateFilter && stateFilter.value !== 'all') {
-                        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
-                    }
-                }
+    // pegamos o select de estados (onde já existe a opção “amazonia_legal”)
+    const stateFilter = document.getElementById('stateFilterEstados');
+    if (stateFilter) {
+        if (stateFilter.value === 'amazonia_legal') {
+            // se escolheu Amazônia Legal, filtra pelas UFs definidas
+            filteredData = filteredData.filter(d =>
+                amazoniaLegalStates.includes(d.ESTADO)
+            );
+        }
+        else if (stateFilter.value !== 'all') {
+            // se escolheu um estado específico ou combinação, filtra por ele
+            filteredData = filteredData.filter(d =>
+                d.ESTADO === stateFilter.value
+            );
+        }
+        // se for “all”, não faz nada (mantém todos)
+    }
+}
+
                 else if (territoryType === 'municipios') {
                     const stateFilter = document.getElementById('stateFilterMunicipios');
                     const municipioFilter = document.getElementById('municipioFilter');
@@ -1470,7 +1487,7 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
             }
 
             const singularNome = territorySingular[territoryKey];
-            const dataLabel = dataKey === 'desmatamento' ? 'alertas de desmatamento' : 'alertas de degradação';
+            const dataLabel = dataKey === 'desmatamento' ? 'Alertas de Desmatamento' : 'Alertas de Degradação';
 
             const startLabel = formatarPeriodo(startPeriodInput.value);
             const endLabel = formatarPeriodo(endPeriodInput.value);
@@ -1480,8 +1497,8 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
             const fraseArtigo = dataTypeFrase[dataKey].artigo;
             const preposicao = dataTypeFrase[dataKey].preposicao;
 
-            lineChartTitle.innerHTML = `<i class="fas fa-chart-line me-2"></i>Série histórica ${fraseArtigo} ${dataKey} ${preposicao} ${nome} (2008 - 2024)`;
-            yearlyChartTitle.innerHTML = `<i class="fas fa-chart-area me-2"></i>Série histórica anual na Amazônia Legal ${fraseArtigo} - ${preposicao} ${nome} (2008 - 2024)`;
+            lineChartTitle.innerHTML = `<i class="fas fa-chart-line me-2"></i>Série Histórica ${fraseArtigo} ${dataKey} ${preposicao} ${nome} (2008 - 2025)`;
+            yearlyChartTitle.innerHTML = `<i class="fas fa-chart-area me-2"></i>Série Histórica Anual na Amazônia Legal ${fraseArtigo}  ${nome} (2008 - 2024)`;
         }
 
         // Event Listeners para botões de filtro
@@ -1566,27 +1583,30 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
                     specificFiltersContainer.style.display = 'block';
                 } 
                 else if (dataType === 'desmatamento' && territoryType === 'estados') {
-                    specificFiltersContent.innerHTML = `
-                        <div class="col-md-4">
-                            <label for="stateFilterEstados" class="form-label fw-bold">Filtrar por Estado:</label>
-                            <select id="stateFilterEstados" class="form-select">
-                                <option value="all">Todos os Estados</option>
-                                <option value="AC">Acre</option>
-                                <option value="AP">Amapá</option>
-                                <option value="AM">Amazonas</option>
-                                <option value="MA">Maranhão</option>
-                                <option value="MT">Mato Grosso</option>
-                                <option value="PA">Pará</option>
-                                <option value="RO">Rondônia</option>
-                                <option value="RR">Roraima</option>
-                                <option value="TO">Tocantins</option>
-                                <option value="RO/AM">Rondônia/Amazonas</option>
-                                <option value="RO/AC">Rondônia/Acre</option>
-                                <option value="AC/AM">Acre/Amazonas</option>
-                            </select>
-                        </div>`;
-                    specificFiltersContainer.style.display = 'block';
-                }
+    specificFiltersContent.innerHTML = `
+        <div class="col-md-4">
+            <label for="stateFilterEstados" class="form-label fw-bold">Filtrar por Estado:</label>
+            <select id="stateFilterEstados" class="form-select">
+                <option value="all">Todos os Estados</option>
+                <option value="amazonia_legal">Amazônia Legal</option>  <!-- nova opção -->
+                <option value="AC">Acre</option>
+                <option value="AP">Amapá</option>
+                <option value="AM">Amazonas</option>
+                <option value="MA">Maranhão</option>
+                <option value="MT">Mato Grosso</option>
+                <option value="PA">Pará</option>
+                <option value="RO">Rondônia</option>
+                <option value="RR">Roraima</option>
+                <option value="TO">Tocantins</option>
+                <!-- opções combinadas que você já tinha -->
+                <option value="RO/AM">Rondônia/Amazonas</option>
+                <option value="RO/AC">Rondônia/Acre</option>
+                <option value="AC/AM">Acre/Amazonas</option>
+            </select>
+        </div>`;
+    specificFiltersContainer.style.display = 'block';
+}
+
                 else if (territoryType === 'municipios') {
     specificFiltersContent.innerHTML = `
         <div class="col-md-4">
