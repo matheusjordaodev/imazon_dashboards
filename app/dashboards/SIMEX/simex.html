@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    
+    <!-- Bibliotecas CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #008055;
+            --primary-dark: #003300;
+            --accent-color: #FF6D00;
+            --text-color: #212121;
+            --background-color: #F5F5F5;
+            --card-color: #FFFFFF;
+            --border-radius: 12px;
+            --box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            padding: 1.5rem;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, var(--card-color), var(--card-color));
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            position: relative;
+        }
+
+        .dashboard-header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 5px;
+            background-color: var(--accent-color);
+            border-radius: 5px;
+        }
+
+        .card {
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border: none;
+            height: 100%;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            background-color: var(--card-color) !important;
+            color: var(--primary-dark) !important;
+            font-weight: 700 !important;
+            border-bottom: 2px solid var(--accent-color) !important;
+            padding: 1.25rem;
+            font-size: 1.1em;
+            position: relative;
+        }
+
+        .card-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 20px;
+            width: 50px;
+            height: 3px;
+            background-color: var(--accent-color);
+            border-radius: 3px;
+        }
+
+        .filter-section {
+            background: var(--card-color);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+
+        .form-select, .form-control {
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            transition: all 0.3s ease;
+        }
+
+        .form-select:focus, .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 128, 85, 0.2);
+        }
+
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: var(--border-radius);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 450px;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            padding: 10px 20px;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* Botões de filtro */
+        .filter-buttons-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .filter-group-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary-dark);
+            font-size: 0.95rem;
+        }
+
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            flex: 1;
+            min-width: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 10px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .filter-btn:hover {
+            background: #e9f7f0;
+            border-color: var(--primary-color);
+        }
+
+        .filter-btn.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .filter-btn.active .filter-icon {
+            color: white;
+        }
+
+        .filter-icon {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn.active .filter-icon {
+            transform: scale(1.1);
+        }
+
+        .filter-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Filtros específicos */
+        .specific-filters {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            border: 1px solid #e9ecef;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: var(--box-shadow);
+            font-size: 0.9rem;
+            max-width: 300px;
+        }
+
+        .stat-card {
+            background: var(--primary-color);
+            color: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Modal para seleção de terras indígenas */
+        .settlement-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .settlement-item:hover {
+            background-color: #f0f8ff;
+        }
+
+        .settlement-item.selected {
+            background-color: #e0f7e9;
+            font-weight: 600;
+        }
+
+        .selection-info {
+            padding: 10px 0;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .modal-terras-indigenas .modal-content {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        .modal-terras-indigenas .modal-header {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .modal-terras-indigenas .modal-footer .btn {
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 8px 20px;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .dashboard-header {
+                padding: 1.5rem;
+            }
+
+            #map {
+                height: 350px;
+            }
+
+            .chart-container {
+                height: 350px;
+            }
+
+            .info-panel {
+                top: 10px;
+                right: 10px;
+                max-width: 200px;
+                padding: 10px;
+            }
+
+            .filter-buttons-container {
+                flex-direction: column;
+            }
+
+            .filter-group {
+                min-width: 100%;
+            }
+
+            .filter-btn {
+                min-width: 100px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .chart-container {
+                height: 300px;
+            }
+
+            #map {
+                height: 300px;
+            }
+
+            .stat-card {
+                padding: 10px;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .filter-btn {
+                min-width: 80px;
+                padding: 10px 5px;
+            }
+
+            .filter-icon {
+                font-size: 1.4rem;
+            }
+        }
+
+        /* Novo estilo para fase filter */
+        .fase-filter-group {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="dashboard-header">
+        <img src="/../../img/simex.png" style="max-width:180px;margin:auto" alt="Logo IMAZON">
+        
+    </div>
+
+    <div class="filter-section">
+        <div class="filter-buttons mb-3">
+            <div class="filter-btn active" data-type="assentamentos">
+                <div class="filter-icon"><i class="fas fa-users"></i></div>
+                <div class="filter-label">Assentamentos</div>
+            </div>
+            <div class="filter-btn" data-type="imoveis">
+                <div class="filter-icon"><i class="fas fa-tractor"></i></div>
+                <div class="filter-label">Imóveis Rurais</div>
+            </div>
+            <div class="filter-btn" data-type="municipios">
+                <div class="filter-icon"><i class="fas fa-city"></i></div>
+                <div class="filter-label">Municípios</div>
+            </div>
+            <div class="filter-btn" data-type="terras">
+                <div class="filter-icon"><i class="fas fa-mountain"></i></div>
+                <div class="filter-label">Terras Indígenas</div>
+            </div>
+        </div>
+
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-bold" for="yearFilter">Ano:</label>
+                <select id="yearFilter" class="form-select"></select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold" for="categoryFilter">Categoria:</label>
+                <select id="categoryFilter" class="form-select">
+                    <option value="all">Todas</option>
+                    <option value="federal">Federal</option>
+                    <option value="estadual">Estadual</option>
+                    <option value="municipal">Municipal</option>
+                    <option value="privado">Privado</option>
+                    <option value="não autorizada">Não autorizada</option>
+                    <option value="autorizada">Autorizada</option>
+                    <option value="análise">Análise</option>
+                </select>
+            </div>
+            
+            <!-- Filtro de Fase (apenas para Terras Indígenas) -->
+            <div class="col-md-3 fase-filter-group" id="faseFilterGroup">
+                <label class="form-label fw-bold" for="faseFilter">Fase:</label>
+                <select id="faseFilter" class="form-select">
+                    <option value="all">Todas</option>
+                    <option value="Regularizada">Regularizada</option>
+                    <option value="Em estudo">Em estudo</option>
+                    <option value="Delimitada">Delimitada</option>
+                    <option value="Declarada">Declarada</option>
+                    <option value="Homologada">Homologada</option>
+                </select>
+            </div>
+            
+            <!-- Botão para abrir modal de seleção de terras indígenas -->
+            <div class="col-md-3 fase-filter-group" id="terrasSelectGroup">
+                <button class="btn btn-primary w-100" id="open-terras-modal">
+                    <i class="fas fa-list me-2"></i>Selecionar Terras
+                </button>
+            </div>
+            
+            <div class="col-md-2 d-grid"><button class="btn btn-primary" id="apply-filters"><i class="fas fa-filter me-2"></i>Aplicar Filtro</button></div>
+            <div class="col-md-2 d-grid"><button class="btn btn-primary" id="clear-filters"><i class="fas fa-eraser me-2"></i>Remover Filtros</button></div>
+        </div>
+    </div>
+
+    <!-- Painel de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">Área Total</div>
+                <div class="stat-value" id="total-area">0 km²</div>
+                <div>no período selecionado</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background-color: #e65100;">
+                <div class="stat-label">Área Média Mensal</div>
+                <div class="stat-value" id="avg-area">0 km²</div>
+                <div>em <span id="current-year">2024</span></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background-color: #006064;">
+                <div class="stat-label">Entidades Afetadas</div>
+                <div class="stat-value" id="affected-count">0</div>
+                <div>no período</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background-color: #37474f;">
+                <div class="stat-label">Variação Anual</div>
+                <div class="stat-value" id="annual-change">0%</div>
+                <div>em relação ao ano anterior</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção de Gráficos e Mapa -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card"><div class="card-header"><i class="fas fa-chart-bar me-2"></i>Ranking</div>
+                <div class="card-body"><div class="chart-container"><canvas id="barChart"></canvas></div></div></div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card"><div class="card-header"><i class="fas fa-map me-2"></i>Mapa</div>
+                <div class="card-body position-relative p-2">
+                    <div id="map"></div>
+                    <div class="info-panel" id="info-panel">
+                        <h6 id="selected-name"></h6>
+                        <div><strong>Ranking:</strong> <span id="selected-rank">-</span></div>
+                        <div><strong>Área:</strong> <span id="selected-area">0</span></div>
+                    </div>
+                </div></div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-2">
+        <div class="col-lg-6">
+            <div class="card"><div class="card-header"><i class="fas fa-chart-line me-2"></i>Série Histórica (Top 10)</div>
+                <div class="card-body"><div class="chart-container"><canvas id="lineChart"></canvas></div></div></div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card"><div class="card-header"><i class="fas fa-chart-area me-2"></i>Série Histórica Anual</div>
+                <div class="card-body"><div class="chart-container"><canvas id="yearlyChart"></canvas></div></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Seleção de Terras Indígenas -->
+<div class="modal fade modal-terras-indigenas" id="terrasModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Selecionar Terras Indígenas (máx. 10)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="search-box mb-3">
+                    <input type="text" id="terras-search" class="form-control" placeholder="Buscar terra indígena...">
+                </div>
+                <div class="selection-info">
+                    <span id="selected-terras-count">0</span> de 10 selecionadas
+                </div>
+                <div id="terras-list" class="settlement-list mt-2" style="max-height: 400px; overflow-y: auto;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="apply-terras-selection">Aplicar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bibliotecas JavaScript -->
+ <!-- D3 núcleo -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<!-- Paletas de cores (interpolateReds, schemeTableau10, etc.) -->
+<script src="https://d3js.org/d3-scale-chromatic.v3.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+    // Dataset definitions
+    const DATASETS = {
+        assentamentos: {
+            geo: '/dataset/sad/geojson/AMZ_assentamentos.geojson',
+            csv: '/dataset/sad/csv/alertas_sad_desmatamento_08_2008_04_2024_assentamentos.csv',
+            geoField: 'ASSENTAMEN',
+            parse: d => ({
+                year: +d.ANO || null,
+                month: +d.MES || null,
+                state: d.ESTADO,
+                category: d.CATEGORIA || '',
+                area: +d.AREAKM2 || 0,
+                name: d.ASSENTAMEN
+            })
+        },
+        imoveis: {
+            geo: '/dataset/simex/geojson/simex_amazonia_PAMT2007_2023_imoveisrurais.geojson',
+            csv: '/dataset/simex/csv/simex_imoveisrurais_com_nomes_corrigidos.csv',
+            geoField: 'nome',
+            parse: d => ({
+                year: +d.ano || null,
+                month: null,
+                state: d.sigla_uf,
+                category: d.categoria || '',
+                area: (+d.area_ha || 0) / 100, // ha -> km²
+                name: d.nome
+            })
+        },
+        municipios: {
+            geo: '/dataset/simex/geojson/simex_amazonia_PAMT2007_2023_mun.geojson',
+            csv: '/dataset/simex/csv/simex_amazonia_PAMT2007_2023_municipios.csv',
+            geoField: 'nome',
+            parse: d => ({
+                year: +d.ano || null,
+                month: null,
+                state: d.sigla_uf,
+                category: d.categoria || '',
+                area: (+d.area_ha || 0) / 100, // ha -> km²
+                name: d.nome
+            })
+        },
+        terras: {
+            geo: '/dataset/simex/geojson/simex_amazonia_PAMT2007_2023_TI.geojson',
+            csv: '/dataset/simex/csv/simex_amazonia_PAMT2007_2023_TI.csv',
+            geoField: 'terrai_nom',
+            parse: d => ({
+                year: +d.ano || null,
+                month: null,
+                state: d.sigla_uf,
+                category: d.categoria || '',
+                fase: d.fase || '',
+                area: (+d.area_ha || 0) / 100, // ha -> km²
+                name: d.terrai_nom
+            })
+        }
+    };
+
+    // UI elements
+    const yearFilter = document.getElementById('yearFilter');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const faseFilter = document.getElementById('faseFilter');
+    const faseFilterGroup = document.getElementById('faseFilterGroup');
+    const terrasSelectGroup = document.getElementById('terrasSelectGroup');
+    const applyBtn = document.getElementById('apply-filters');
+    const clearBtn = document.getElementById('clear-filters');
+    const totalAreaEl = document.getElementById('total-area');
+    const avgAreaEl = document.getElementById('avg-area');
+    const affectedCountEl = document.getElementById('affected-count');
+    const annualChangeEl = document.getElementById('annual-change');
+    const infoPanel = document.getElementById('info-panel');
+    const selectedNameEl = document.getElementById('selected-name');
+    const selectedRankEl = document.getElementById('selected-rank');
+    const selectedAreaEl = document.getElementById('selected-area');
+    const openTerrasModalBtn = document.getElementById('open-terras-modal');
+
+    let currentDataset = 'assentamentos';
+    let csvData = [], geojson, featureMap = new Map();
+    let barChart, lineChart, yearlyChart, map, geoLayer;
+    let selectedTerras = []; // Array para armazenar terras indígenas selecionadas
+
+    const mapInit = () => {
+        map = L.map('map').setView([-5, -55], 4);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+    };
+    mapInit();
+
+    // helpers
+    const populateYearFilter = (years) => {
+        yearFilter.innerHTML = '';
+        years.forEach(y => {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            yearFilter.appendChild(opt);
+        });
+        yearFilter.value = Math.max(...years);
+    };
+
+    const loadData = async () => {
+        const spec = DATASETS[currentDataset];
+        
+        // Load geojson
+        const geoResponse = await fetch(spec.geo);
+        geojson = await geoResponse.json();
+        
+        // Build feature map
+        featureMap.clear();
+        geojson.features.forEach(f => {
+            const name = f.properties[spec.geoField];
+            if (name) featureMap.set(name, f);
+        });
+        
+        // Load csv
+        const csvResponse = await fetch(spec.csv);
+        const text = await csvResponse.text();
+        csvData = d3.csvParse(text, spec.parse);
+        
+        // Years list
+        const years = [...new Set(csvData.map(d => d.year))].sort((a, b) => a - b);
+        populateYearFilter(years);
+        
+        // Show/hide specific controls
+        if (currentDataset === 'terras') {
+            faseFilterGroup.style.display = 'block';
+            terrasSelectGroup.style.display = 'block';
+        } else {
+            faseFilterGroup.style.display = 'none';
+            terrasSelectGroup.style.display = 'none';
+        }
+    };
+
+    const updateStats = (aggData, filtered, year) => {
+        const total = Object.values(aggData).reduce((s, a) => s + a, 0);
+        totalAreaEl.textContent = total.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
+
+        const entities = Object.keys(aggData).length;
+        affectedCountEl.textContent = entities;
+
+        const months = new Set(filtered.map(d => d.month !== null ? `${d.year}-${d.month}` : `${d.year}`)).size || 1;
+        const avg = total / months;
+        avgAreaEl.textContent = avg.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
+
+        const prev = csvData.filter(d => d.year === year - 1).reduce((s, d) => s + d.area, 0);
+        const curr = csvData.filter(d => d.year === year).reduce((s, d) => s + d.area, 0);
+        const varPct = prev > 0 ? ((curr - prev) / prev) * 100 : 0;
+
+        annualChangeEl.textContent = varPct.toFixed(1) + '%';
+        annualChangeEl.style.color = varPct > 0 ? '#ff5252' : '#4caf50';
+        document.getElementById('current-year').textContent = year;
+    };
+
+    const updateBarChart = (labels, values) => {
+        const barCanvas = document.getElementById('barChart');
+        const barContainer = barCanvas.parentNode;
+        barContainer.style.height = (labels.length * 45) + 'px'; // Ajusta altura conforme número de itens
+        const ctx = barCanvas.getContext('2d');
+        
+        if (barChart) barChart.destroy();
+        
+        const max = Math.max(...values);
+        const scale = d3.scaleSequential().domain([0, max]).interpolator(d3.interpolateReds);
+        
+        barChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: values.map(scale),
+                    borderColor: values.map(scale),
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    label: 'Área'
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { right: 50 } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => 'Área: ' + ctx.raw.toLocaleString('pt-BR') + ' km²'
+                        }
+                    }
+                },
+                scales: {
+                    x: { beginAtZero: true, grid: { display: false } },
+                    y: { grid: { display: false } }
+                },
+                onClick: (e, els) => {
+                    if (!els.length) return;
+                    const idx = els[0].index;
+                    const label = barChart.data.labels[idx];
+                    const name = label.replace(/^\d+\.\s*/, '');
+                    const feat = featureMap.get(name);
+                    
+                    if (feat) {
+                        const lyr = L.geoJSON(feat);
+                        map.fitBounds(lyr.getBounds(), { padding: [50, 50], animate: true });
+                    }
+                }
+            }
+        });
+    };
+
+    const updateLineChart = (year, topNames) => {
+        const ctx = document.getElementById('lineChart').getContext('2d');
+        if (lineChart) lineChart.destroy();
+        
+        const years = [...new Set(csvData.map(d => d.year))].sort((a, b) => a - b);
+        const colors = d3.schemeTableau10;
+        
+        const datasets = topNames.map((nm, i) => {
+            const data = years.map(y => 
+                csvData.filter(d => d.year === y && d.name === nm)
+                    .reduce((s, d) => s + d.area, 0)
+            );
+            return {
+                label: nm,
+                data,
+                borderColor: colors[i % colors.length],
+                tension: 0.4,
+                fill: false
+            };
+        });
+        
+        lineChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: years, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { display: false }, 
+                        title: { display: true, text: 'Área (km²)' } 
+                    },
+                    x: { 
+                        grid: { display: false }, 
+                        title: { display: true, text: 'Ano' } 
+                    }
+                }
+            }
+        });
+    };
+
+    const updateYearlyChart = () => {
+        const ctx = document.getElementById('yearlyChart').getContext('2d');
+        if (yearlyChart) yearlyChart.destroy();
+        
+        const years = [...new Set(csvData.map(d => d.year))].sort((a, b) => a - b);
+        const data = years.map(y => 
+            csvData.filter(d => d.year === y).reduce((s, d) => s + d.area, 0)
+        );
+        
+        yearlyChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: years,
+                datasets: [{
+                    data,
+                    backgroundColor: 'rgba(198, 40, 40, 0.7)',
+                    borderColor: 'rgba(198, 40, 40, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { display: false }, 
+                        title: { display: true, text: 'Área (km²)' } 
+                    },
+                    x: { 
+                        grid: { display: false }, 
+                        title: { display: true, text: 'Ano' } 
+                    }
+                }
+            }
+        });
+    };
+
+    const updateMap = (aggData) => {
+        if (geoLayer) geoLayer.remove();
+        
+        // Only include polygons that are in the top ranking or selected
+        const features = geojson.features.filter(f => {
+            const name = f.properties[DATASETS[currentDataset].geoField];
+            return Object.keys(aggData).includes(name);
+        });
+        
+        if (!features.length) return;
+        
+        const max = Math.max(...Object.values(aggData));
+        const scale = d3.scaleSequential().domain([0, max]).interpolator(d3.interpolateReds);
+        
+        geoLayer = L.geoJSON(features, {
+            style: f => {
+                const name = f.properties[DATASETS[currentDataset].geoField];
+                const val = aggData[name] || 0;
+                return {
+                    fillColor: scale(val),
+                    weight: 1,
+                    color: '#333',
+                    fillOpacity: 0.7
+                };
+            },
+            onEachFeature: (f, l) => {
+                const name = f.properties[DATASETS[currentDataset].geoField];
+                const val = aggData[name] || 0;
+                const rank = Object.entries(aggData)
+                    .sort(([, a], [, b]) => b - a)
+                    .findIndex(([n]) => n === name) + 1;
+                
+                l.bindPopup(`
+                    <b>${rank}º - ${name}</b><br>
+                    Área: ${val.toLocaleString('pt-BR')} km²
+                `);
+                
+                l.on({
+                    mouseover: e => {
+                        e.target.setStyle({ weight: 3 });
+                        selectedNameEl.textContent = name;
+                        selectedAreaEl.textContent = val.toLocaleString('pt-BR');
+                        selectedRankEl.textContent = rank;
+                        infoPanel.style.display = 'block';
+                    },
+                    mouseout: e => {
+                        e.target.setStyle({ weight: 1 });
+                        infoPanel.style.display = 'none';
+                    },
+                    click: e => {
+                        map.fitBounds(e.target.getBounds(), { padding: [50, 50], animate: true });
+                    }
+                });
+            }
+        }).addTo(map);
+        
+        map.fitBounds(geoLayer.getBounds());
+    };
+
+    const updateDashboard = () => {
+        const year = +yearFilter.value;
+        const category = categoryFilter.value;
+        const fase = currentDataset === 'terras' ? faseFilter.value : 'all';
+        
+        let filtered = csvData.filter(d => d.year === year);
+        
+        if (category !== 'all') {
+            filtered = filtered.filter(d => d.category === category);
+        }
+        
+        if (fase !== 'all' && currentDataset === 'terras') {
+            filtered = filtered.filter(d => d.fase === fase);
+        }
+        
+        // Apply terras indígenas selection if applicable
+        if (currentDataset === 'terras' && selectedTerras.length > 0) {
+            filtered = filtered.filter(d => selectedTerras.includes(d.name));
+        }
+        
+        // Aggregate data by name
+        const agg = {};
+        filtered.forEach(d => {
+            if (d.name) {
+                agg[d.name] = (agg[d.name] || 0) + d.area;
+            }
+        });
+        
+        // Get top 10 or selected terras
+        let sorted;
+        if (currentDataset === 'terras' && selectedTerras.length > 0) {
+            sorted = selectedTerras.map(name => [name, agg[name] || 0]);
+        } else {
+            sorted = Object.entries(agg)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 10);
+        }
+        
+        const labels = sorted.map(([name], i) => `${i+1}. ${name}`);
+        const values = sorted.map(([, val]) => val);
+        
+        updateStats(agg, filtered, year);
+        updateBarChart(labels, values);
+        updateLineChart(year, sorted.map(([name]) => name));
+        updateYearlyChart();
+        updateMap(agg);
+    };
+
+    // Funções para modal de terras indígenas
+    const populateTerrasList = () => {
+        const listEl = document.getElementById('terras-list');
+        const searchTerm = document.getElementById('terras-search').value.toLowerCase();
+        
+        // Obter nomes únicos de terras indígenas
+        const names = [...new Set(csvData.map(d => d.name))].sort();
+        
+        listEl.innerHTML = '';
+        
+        names.filter(name => name.toLowerCase().includes(searchTerm)).forEach(name => {
+            const isSelected = selectedTerras.includes(name);
+            const item = document.createElement('div');
+            item.className = `settlement-item ${isSelected ? 'selected' : ''}`;
+            item.dataset.name = name;
+            item.innerHTML = name;
+            
+            item.addEventListener('click', () => {
+                toggleTerrasSelection(name);
+            });
+            
+            listEl.appendChild(item);
+        });
+        
+        updateTerrasCount();
+    };
+
+    const toggleTerrasSelection = (name) => {
+        const index = selectedTerras.indexOf(name);
+        
+        if (index === -1) {
+            // Verificar se já atingiu o limite
+            if (selectedTerras.length >= 10) {
+                alert('Você pode selecionar no máximo 10 terras indígenas.');
+                return;
+            }
+            selectedTerras.push(name);
+        } else {
+            selectedTerras.splice(index, 1);
+        }
+        
+        // Atualizar UI
+        populateTerrasList();
+    };
+
+    const updateTerrasCount = () => {
+        document.getElementById('selected-terras-count').textContent = selectedTerras.length;
+    };
+
+    const init = async () => {
+        await loadData();
+        updateDashboard();
+    };
+
+    // Eventos
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentDataset = btn.dataset.type;
+            
+            // Resetar seleção de terras ao mudar de dataset
+            selectedTerras = [];
+            
+            await loadData();
+            updateDashboard();
+        });
+    });
+    
+    applyBtn.addEventListener('click', updateDashboard);
+    clearBtn.addEventListener('click', () => {
+        categoryFilter.value = 'all';
+        if (currentDataset === 'terras') {
+            faseFilter.value = 'all';
+            selectedTerras = [];
+            populateTerrasList();
+        }
+        yearFilter.value = Math.max(...[...yearFilter.options].map(o => +o.value));
+        updateDashboard();
+    });
+    
+    // Eventos para modal de terras indígenas
+    openTerrasModalBtn.addEventListener('click', () => {
+        populateTerrasList();
+        new bootstrap.Modal(document.getElementById('terrasModal')).show();
+    });
+    
+    document.getElementById('terras-search').addEventListener('input', populateTerrasList);
+    
+    document.getElementById('apply-terras-selection').addEventListener('click', () => {
+        bootstrap.Modal.getInstance(document.getElementById('terrasModal')).hide();
+        updateDashboard();
+    });
+
+    init();
+})();
+</script>
+</body>
+</html>
