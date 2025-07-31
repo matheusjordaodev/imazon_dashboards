@@ -1,4 +1,4 @@
-ALERTA,MES,ANO,SENSOR,ESTADO,AREAKM2,MUNICIPIO,UC,USO,JURISDICAO
+ALERTA,MES,ANO,SENSOR,ESTADO,AREAKM2,MUNICIPIO,UNID_CONSE,USO,JURISDICAO
 desmatamento,"3","2025",Landsat-8,PA,5.17,Itaituba,APA do Tapajós,Uso Sustentável,Federal
 desmatamento,"3","2025",Landsat-8,PA,1.14,Itaituba,APA do Tapajós,Uso Sustentável,Federal
 desmatamento,"3","2025",Landsat-8,PA,0.75,Novo Repartimento,APA do Lago de Tucuruí,Uso Sustentável,Estadual

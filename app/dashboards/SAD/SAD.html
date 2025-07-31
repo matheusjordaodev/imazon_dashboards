@@ -3,7 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard SAD - Análise Territorial</title>
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+  crossorigin="anonymous">
+</script>
+
+<!-- 2. Depois carregue o Select2 (que depende de jQuery) -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+
+
     
     <!-- Bibliotecas CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
@@ -448,9 +459,22 @@
             <div class="col-md-4">
     <label for="startPeriod" class="form-label fw-bold">Selecione o período de análise:</label>
     <div class="input-group">
-<input type="month" id="startPeriod" class="form-control" value="2024-01" min="2008-01" max="2025-12">
+        <input type="text" 
+       id="startPeriod" 
+       class="form-control" 
+       value="01/2024" 
+       placeholder="MM/YYYY"
+       pattern="^(0[1-9]|1[0-2])\\/(200[8-9]|20(1[0-9]|2[0-5]))$"
+       title="Mês/Ano entre 01/2008 e 12/2025">
 
-<input type="month" id="endPeriod" class="form-control" value="2024-12" min="2008-01" max="2025-12">
+<input type="text" 
+       id="endPeriod"   
+       class="form-control" 
+       value="12/2024" 
+       placeholder="MM/YYYY"
+       pattern="^(0[1-9]|1[0-2])\\/(200[8-9]|20(1[0-9]|2[0-5]))$"
+       title="Mês/Ano entre 01/2008 e 12/2025">
+
 
     </div>
 </div>
@@ -534,6 +558,8 @@
                     <div id="info-panel" class="info-panel" style="display: none;">
                         <h6 id="selected-territory">Território</h6>
                         <div><strong>Área:</strong> <span id="selected-area">0</span> km²</div>
+                         <div><strong>UF:</strong> <span id="selected-state">–</span></div>
+                        <div><strong>%:</strong> <span id="selected-percentage">0</span>%</div>
                     </div>
                 </div>
             </div>
@@ -570,7 +596,6 @@
 </div>
 
 <!-- Bibliotecas JavaScript -->
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
@@ -581,6 +606,7 @@
 <script src="https://cdn.jsdelivr.net/npm/d3-fetch@3"></script>
 
 <script>
+    Chart.register(ChartDataLabels);
     const estadoNomes = {
         AC: "Acre",
         AL: "Alagoas",
@@ -618,9 +644,37 @@
         // Elementos da UI
         const startPeriodInput = document.getElementById('startPeriod');
         const endPeriodInput = document.getElementById('endPeriod');
+        
+function clampPeriodInput(input) {
+  const [mm, yyyy] = input.value.split('/');
+  let month = parseInt(mm, 10);
+  let year  = parseInt(yyyy, 10);
+  if (isNaN(month) || isNaN(year)) return;
+  
+  if (year < 2008 || (year === 2008 && month < 1)) {
+    month = 1; year = 2008;
+  }
+  
+  if (year > 2025 || (year === 2025 && month > 12)) {
+    month = 12; year = 2025;
+  }
+  input.value = `${String(month).padStart(2,'0')}/${year}`;
+}
+
+
+startPeriodInput.addEventListener('blur', () => clampPeriodInput(startPeriodInput));
+endPeriodInput  .addEventListener('blur', () => clampPeriodInput(endPeriodInput));
+const applyFiltersButton = document.getElementById('apply-filters');
+
+applyFiltersButton.addEventListener('click', () => {
+  clampPeriodInput(startPeriodInput);
+  clampPeriodInput(endPeriodInput);
+  updateDashboard();
+});
+
         const specificFiltersContainer = document.getElementById('specific-filters');
         const specificFiltersContent = document.getElementById('specific-filters-content');
-        const applyFiltersButton = document.getElementById('apply-filters');
+        
         
         // Botões de filtro
         const dataTypeButtons = document.querySelectorAll('[data-type="desmatamento"], [data-type="degradacao"]');
@@ -658,7 +712,7 @@
         let currentTopTerritories = [];
         let territoryBounds = {};
 
-        // Dados reais para assentamentos (desmatamento e degradação)
+        
         const dataSources = {
             desmatamento: {
                 assentamentos: { 
@@ -735,7 +789,7 @@
                         d.AREAKM2 = +d.AREAKM2 || 0;
                     });
                     
-                    // Carregar GeoJSON
+                    // Carrega GeoJSON
                     const geojsonResponse = await fetch(dataSources[dataType][territoryType].geojson);
                     const geojsonData = await geojsonResponse.json();
                     
@@ -800,11 +854,14 @@
                 return d.ANO >= startYear && d.ANO <= currentYear-1;
             });
 
-            const start = new Date(startPeriodInput.value + '-01');
-            const end = new Date(endPeriodInput.value + '-01');
+            const [startMonthInput, startYearInput] = startPeriodInput.value.split('/');
+            const [endMonthInput,   endYearInput]   = endPeriodInput.value.split('/');
+            const start = new Date(`${startYearInput}-${startMonthInput.padStart(2,'0')}-01`);
+            const end   = new Date(`${endYearInput}-${endMonthInput.padStart(2,'0')}-01`);
+
 
             let filteredData = csvData.filter(d => {
-                const date = new Date(`${d.ANO}-${String(d.MES).padStart(2, '0')}-01`);
+            const date = new Date(`${d.ANO}-${String(d.MES).padStart(2,'0')}-01`);
                 return date >= start && date <= end;
             });
 
@@ -1392,8 +1449,7 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
 
                             selectedTerritoryEl.textContent = name || 'Território';
                             selectedAreaEl.textContent = value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
-                            selectedStateEl.textContent = state;
-                            selectedPercentageEl.textContent = percentage;
+                            
                             infoPanel.style.display = 'block';
                         },
 
@@ -1424,13 +1480,15 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
 
         // Função para adicionar legenda ao mapa
         
-        const territoryNaming = {
-            estados: { artigo: 'dos', nome: 'Estados', genero: 'm' },
-            municipios: { artigo: 'dos', nome: 'Municípios', genero: 'm' },
-            terrasIndigenas: { artigo: 'das', nome: 'Terras Indígenas', genero: 'f' },
-            unidadesConservacao: { artigo: 'das', nome: 'Unidades de Conservação', genero: 'f' },
-            assentamentos: { artigo: 'dos', nome: 'Assentamentos', genero: 'm' }
-        };
+    const territoryNaming = {
+  estados:             { nome: 'Estados',               preposicao: 'nos', genero: 'm' },
+  municipios:         { nome: 'Municípios',           preposicao: 'nos', genero: 'm' },
+  terrasIndigenas:     { nome: 'Terras Indígenas',     preposicao: 'nas', genero: 'f' },
+  unidadesConservacao: { nome: 'Unidades de Conservação', preposicao: 'nas', genero: 'f' },
+  assentamentos:       { nome: 'Assentamentos',         preposicao: 'nos', genero: 'm' }
+};
+
+
 
         const dataTypeLabel = {
             desmatamento: { m: 'Mais Desmatados', f: 'Mais Desmatadas' },
@@ -1448,54 +1506,62 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
             assentamentos: 'Assentamento'
         };
 
-        function updateTitles() {
-            const selectedYear = new Date(endPeriodInput.value).getFullYear();
+       function updateTitles() {
+  const territoryKey = getSelectedTerritoryType();
+  const dataKey      = getSelectedDataType();
+  const { nome, preposicao, genero } = territoryNaming[territoryKey];
 
-            const dataType = getSelectedDataType();
-            let territoryTypeText = getSelectedTerritoryType();
-            
-            // Traduzir para termos mais amigáveis
-            if (territoryTypeText === 'unidadesConservacao') {
-                territoryTypeText = 'Unidades de Conservação';
-            } else if (territoryTypeText === 'terrasIndigenas') {
-                territoryTypeText = 'Terras Indígenas';
-            }
-            
-            const territoryKey = getSelectedTerritoryType();
-            const dataKey = getSelectedDataType();
+  // 1) Ranking
+  const rankingArticle = genero === 'f' ? 'das' : 'dos';
+  const tipoLabel      = dataTypeLabel[dataKey][genero];
+  if (territoryKey === 'estados') {
+    barChartTitle.innerHTML =
+      `<i class="fas fa-chart-bar me-2"></i>` +
+      `Ranking ${rankingArticle} ${nome} ${tipoLabel}`;
+  } else {
+    barChartTitle.innerHTML =
+      `<i class="fas fa-chart-bar me-2"></i>` +
+      `Ranking ${rankingArticle} 10 ${nome} ${tipoLabel}`;
+  }
 
-            const { artigo, nome, genero } = territoryNaming[territoryKey];
-            const tipoLabel = dataTypeLabel[dataKey][genero];
-            
-            function formatarPeriodo(valor) {
-                const [ano, mes] = valor.split("-");
-                const meses = [
-                    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-                    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-                ];
-                return `${meses[parseInt(mes) - 1]} de ${ano}`;
-            }
+  // 2) Formatação Numérica (MM/AAAA) para os filtros
+  // dentro de updateTitles()
+const formatarPeriodo = valor => valor;  // já vem "MM/YYYY"
 
-            if (territoryKey === 'estados') {
-                barChartTitle.innerHTML = `<i class="fas fa-chart-bar me-2"></i>Ranking ${artigo} ${nome} ${tipoLabel}`;
-            } else {
-                barChartTitle.innerHTML = `<i class="fas fa-chart-bar me-2"></i>Ranking ${artigo} 10 ${nome} ${tipoLabel}`;
-            }
+const startLabel = formatarPeriodo(startPeriodInput.value);
+const endLabel   = formatarPeriodo(endPeriodInput.value);
 
-            const singularNome = territorySingular[territoryKey];
-            const dataLabel = dataKey === 'desmatamento' ? 'Alertas de Desmatamento' : 'Alertas de Degradação';
 
-            const startLabel = formatarPeriodo(startPeriodInput.value);
-            const endLabel = formatarPeriodo(endPeriodInput.value);
+const singular  = territorySingular[territoryKey];
+  const dataLabel = dataKey === 'desmatamento'
+                      ? 'Alertas de Desmatamento'
+                      : 'Alertas de Degradação';
+  
+  // 2) Título do Mapa (já com as variáveis existentes)
+  mapTitle.innerHTML =
+    `<i class="fas fa-map me-2"></i>` +
+    `Mapa de ${dataLabel} por ${singular} (${startLabel} a ${endLabel})`;
 
-            mapTitle.innerHTML = `<i class="fas fa-map me-2"></i>Mapa de ${dataLabel} por ${singularNome.charAt(0).toUpperCase() + singularNome.slice(1)} (${startLabel} a ${endLabel})`;
 
-            const fraseArtigo = dataTypeFrase[dataKey].artigo;
-            const preposicao = dataTypeFrase[dataKey].preposicao;
+  // 4) Série Histórica Mensal (mantém orgânico)
+  const artLine = dataTypeFrase[dataKey].artigo;
+  const preLine = dataTypeFrase[dataKey].preposicao;
+  lineChartTitle.innerHTML =
+    `<i class="fas fa-chart-line me-2"></i>` +
+    `Série Histórica ${artLine} ${dataLabel.toLowerCase()} ${preLine} ${nome} ` +
+    `(2008 – ${new Date().getFullYear() - 1})`;
 
-            lineChartTitle.innerHTML = `<i class="fas fa-chart-line me-2"></i>Série Histórica ${fraseArtigo} ${dataKey} ${preposicao} ${nome} (2008 - 2025)`;
-            yearlyChartTitle.innerHTML = `<i class="fas fa-chart-area me-2"></i>Série Histórica Anual na Amazônia Legal ${fraseArtigo}  ${nome} (2008 - 2024)`;
-        }
+  // 5) Série Histórica Anual
+const firstYear = 2008;
+  const lastYear  = +endPeriodInput.value.split('/')[1];
+  yearlyChartTitle.innerHTML =
+    `<i class="fas fa-chart-area me-2"></i>` +
+    `Série Histórica Anual ${preposicao} ${nome} da Amazônia Legal ` +
+    `(${firstYear} – ${lastYear})`;
+}
+
+
+
 
         // Event Listeners para botões de filtro
         dataTypeButtons.forEach(btn => {
@@ -1866,6 +1932,7 @@ searchInput.addEventListener('input', () => {
         updateDashboard();
     });
 </script>
+
 
 </body>
 </html>

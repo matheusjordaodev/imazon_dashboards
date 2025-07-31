@@ -1,4 +1,4 @@
-ALERTA,MES,ANO,SENSOR,ESTADO,AREAKM2,MUNICIPIO,TI
+ALERTA,MES,ANO,SENSOR,ESTADO,AREAKM2,MUNICIPIO,TERRA_INDI
 desmatamento,"2","2023",Landsat-8/Sentinel-1,AM,0.05,Boca do Acre,TI Apurinã km-124 BR-317
 desmatamento,"2","2023",Sentinel-2,AM,0.34,Manicoré,TI Tenharim Marmelos (Gleba B)
 desmatamento,"2","2023",Sentinel-2,AM,0.33,Manicoré,TI Tenharim Marmelos (Gleba B)
