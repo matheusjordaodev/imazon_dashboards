@@ -393,10 +393,7 @@
                 <label class="form-label fw-bold" for="categoryFilter">Categoria:</label>
                 <select id="categoryFilter" class="form-select">
                     <option value="all">Todas</option>
-                    <option value="federal">Federal</option>
-                    <option value="estadual">Estadual</option>
-                    <option value="municipal">Municipal</option>
-                    <option value="privado">Privado</option>
+                    
                     <option value="não autorizada">Não autorizada</option>
                     <option value="autorizada">Autorizada</option>
                     <option value="análise">Análise</option>
@@ -417,11 +414,30 @@
             </div>
             
             <!-- Botão para abrir modal de seleção de terras indígenas -->
-            <div class="col-md-3 fase-filter-group" id="terrasSelectGroup">
-                <button class="btn btn-primary w-100" id="open-terras-modal">
-                    <i class="fas fa-list me-2"></i>Selecionar Terras
-                </button>
-            </div>
+            <!-- === Botões de seleção === -->
+<div class="col-md-2 dataset-select-group" id="terrasSelectGroup" style="display:none;">
+  <button class="btn btn-primary w-100" id="open-terras-modal">
+    <i class="fas fa-mountain me-2"></i>Selecionar Terras
+  </button>
+</div>
+<div class="col-md-2 dataset-select-group" id="municipiosSelectGroup" style="display:none;">
+  <button class="btn btn-primary w-100" id="open-municipios-modal">
+    <i class="fas fa-city me-2"></i>Selecionar Municípios
+  </button>
+</div>
+<div class="col-md-2 dataset-select-group" id="imoveisSelectGroup" style="display:none;">
+  <button class="btn btn-primary w-100" id="open-imoveis-modal">
+    <i class="fas fa-tractor me-2"></i>Selecionar Imóveis
+  </button>
+  </div>
+<div class="col-md-2 dataset-select-group" id="assentamentosSelectGroup" style="display:none;">
+  <button class="btn btn-primary w-100" id="open-assentamentos-modal">
+    <i class="fas fa-users me-2"></i>Selecionar Assentamentos
+  </button>
+
+
+</div>
+
             
             <div class="col-md-2 d-grid"><button class="btn btn-primary" id="apply-filters"><i class="fas fa-filter me-2"></i>Aplicar Filtro</button></div>
             <div class="col-md-2 d-grid"><button class="btn btn-primary" id="clear-filters"><i class="fas fa-eraser me-2"></i>Remover Filtros</button></div>
@@ -491,6 +507,29 @@
     </div>
 </div>
 
+<!-- Modal para Seleção de Assentamentos -->
+<div class="modal fade" id="assentamentosModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Selecionar Assentamentos (máx. 10)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="assentamentos-search" class="form-control mb-3" placeholder="Buscar assentamento...">
+        <div class="selection-info">
+          <span id="selected-assentamentos-count">0</span> de 10 selecionados
+        </div>
+        <div id="assentamentos-list" style="max-height:400px; overflow-y:auto;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary" id="apply-assentamentos-selection">Aplicar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal para Seleção de Terras Indígenas -->
 <div class="modal fade modal-terras-indigenas" id="terrasModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -515,17 +554,87 @@
         </div>
     </div>
 </div>
+<!-- Modal para Seleção de Municípios -->
+<div class="modal fade" id="municipiosModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Selecionar Municípios (máx. 10)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="municipios-search" class="form-control mb-3" placeholder="Buscar município...">
+        <div class="selection-info"><span id="selected-municipios-count">0</span> de 10 selecionados</div>
+        <div id="municipios-list" style="max-height:400px; overflow-y:auto;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary" id="apply-municipios-selection">Aplicar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Seleção de Imóveis Rurais -->
+<div class="modal fade" id="imoveisModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Selecionar Imóveis Rurais (máx. 10)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="imoveis-search" class="form-control mb-3" placeholder="Buscar imóvel...">
+        <div class="selection-info"><span id="selected-imoveis-count">0</span> de 10 selecionados</div>
+        <div id="imoveis-list" style="max-height:400px; overflow-y:auto;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary" id="apply-imoveis-selection">Aplicar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <!-- Bibliotecas JavaScript -->
  <!-- D3 núcleo -->
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <!-- Paletas de cores (interpolateReds, schemeTableau10, etc.) -->
 <script src="https://d3js.org/d3-scale-chromatic.v3.min.js"></script>
-
+<!-- Chart.js -->
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<!-- Data Labels Plugin -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<!-- Bootstrap + Leaflet etc -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
+  // Agora sim, o ChartDataLabels existe
+  Chart.register(ChartDataLabels);
+
+let selectedTerras = [];
+let selectedMunicipios = [];
+let selectedImoveis = [];
+let selectedAssentamentos = [];
+
+
+
+const terrasSelectGroup     = document.getElementById('terrasSelectGroup');
+const municipiosSelectGroup = document.getElementById('municipiosSelectGroup');
+const imoveisSelectGroup    = document.getElementById('imoveisSelectGroup');
+const assentamentosSelectGroup   = document.getElementById('assentamentosSelectGroup');
+const openTerrasModalBtn     = document.getElementById('open-terras-modal');
+const openMunicipiosModalBtn = document.getElementById('open-municipios-modal');
+const openImoveisModalBtn    = document.getElementById('open-imoveis-modal');
+const openAssentamentosModalBtn  = document.getElementById('open-assentamentos-modal');
+
+
+
+
+
 (function(){
     // Dataset definitions
     const DATASETS = {
@@ -607,6 +716,8 @@
     let barChart, lineChart, yearlyChart, map, geoLayer;
     let selectedTerras = []; // Array para armazenar terras indígenas selecionadas
 
+
+
     const mapInit = () => {
         map = L.map('map').setView([-5, -55], 4);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -652,24 +763,33 @@
         
         // Show/hide specific controls
         if (currentDataset === 'terras') {
-            faseFilterGroup.style.display = 'block';
-            terrasSelectGroup.style.display = 'block';
+            
+            assentamentosSelectGroup.style.display   = currentDataset === 'assentamentos' ? 'block' : 'none';
+municipiosSelectGroup.      style.display = currentDataset === 'municipios'    ? 'block' : 'none';
+imoveisSelectGroup.         style.display = currentDataset === 'imoveis'       ? 'block' : 'none';
+terrasSelectGroup.          style.display = currentDataset === 'terras'        ? 'block' : 'none';
+
         } else {
-            faseFilterGroup.style.display = 'none';
-            terrasSelectGroup.style.display = 'none';
+            
+           assentamentosSelectGroup.style.display   = currentDataset === 'assentamentos' ? 'block' : 'none';
+municipiosSelectGroup.      style.display = currentDataset === 'municipios'    ? 'block' : 'none';
+imoveisSelectGroup.         style.display = currentDataset === 'imoveis'       ? 'block' : 'none';
+terrasSelectGroup.          style.display = currentDataset === 'terras'        ? 'block' : 'none';
+
         }
     };
 
+    
     const updateStats = (aggData, filtered, year) => {
         const total = Object.values(aggData).reduce((s, a) => s + a, 0);
-        totalAreaEl.textContent = total.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
+        totalAreaEl.textContent = total.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 
         const entities = Object.keys(aggData).length;
         affectedCountEl.textContent = entities;
 
         const months = new Set(filtered.map(d => d.month !== null ? `${d.year}-${d.month}` : `${d.year}`)).size || 1;
         const avg = total / months;
-        avgAreaEl.textContent = avg.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
+        avgAreaEl.textContent = avg.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 
         const prev = csvData.filter(d => d.year === year - 1).reduce((s, d) => s + d.area, 0);
         const curr = csvData.filter(d => d.year === year).reduce((s, d) => s + d.area, 0);
@@ -691,94 +811,97 @@
         const max = Math.max(...values);
         const scale = d3.scaleSequential().domain([0, max]).interpolator(d3.interpolateReds);
         
-        barChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: [{
-                    data: values,
-                    backgroundColor: values.map(scale),
-                    borderColor: values.map(scale),
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    label: 'Área'
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: { padding: { right: 50 } },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => 'Área: ' + ctx.raw.toLocaleString('pt-BR') + ' km²'
-                        }
-                    }
-                },
-                scales: {
-                    x: { beginAtZero: true, grid: { display: false } },
-                    y: { grid: { display: false } }
-                },
-                onClick: (e, els) => {
-                    if (!els.length) return;
-                    const idx = els[0].index;
-                    const label = barChart.data.labels[idx];
-                    const name = label.replace(/^\d+\.\s*/, '');
-                    const feat = featureMap.get(name);
-                    
-                    if (feat) {
-                        const lyr = L.geoJSON(feat);
-                        map.fitBounds(lyr.getBounds(), { padding: [50, 50], animate: true });
-                    }
-                }
-            }
-        });
+        // Exemplo para o updateBarChart:
+barChart = new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      data: values,
+      backgroundColor: values.map(scale),
+      borderColor: values.map(scale),
+      borderWidth: 1,
+      borderRadius: 4,
+      label: 'Área'
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: { padding: { right: 50 } },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => 'Área: ' + ctx.raw.toLocaleString('pt-BR')
+        }
+      },
+      // ==== Configuração do Data Labels ====
+      datalabels: {
+        color: '#212121',
+        anchor: 'end',     // posiciona o label no fim da barra
+        align: 'right',    // alinha à direita
+        formatter: v => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 }),
+        font: { weight: '600', size: 12 }
+      }
+    },
+    scales: {
+      x: { beginAtZero: true, grid: { display: false } },
+      y: { grid: { display: false } }
+    },
+    onClick: (e, els) => { /* ... */ }
+  },
+  // registra o plugin na instância
+  plugins: [ ChartDataLabels ]
+});
+
     };
 
     const updateLineChart = (year, topNames) => {
-        const ctx = document.getElementById('lineChart').getContext('2d');
-        if (lineChart) lineChart.destroy();
-        
-        const years = [...new Set(csvData.map(d => d.year))].sort((a, b) => a - b);
-        const colors = d3.schemeTableau10;
-        
-        const datasets = topNames.map((nm, i) => {
-            const data = years.map(y => 
-                csvData.filter(d => d.year === y && d.name === nm)
-                    .reduce((s, d) => s + d.area, 0)
-            );
-            return {
-                label: nm,
-                data,
-                borderColor: colors[i % colors.length],
-                tension: 0.4,
-                fill: false
-            };
-        });
-        
-        lineChart = new Chart(ctx, {
-            type: 'line',
-            data: { labels: years, datasets },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'top' } },
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        grid: { display: false }, 
-                        title: { display: true, text: 'Área (km²)' } 
-                    },
-                    x: { 
-                        grid: { display: false }, 
-                        title: { display: true, text: 'Ano' } 
-                    }
-                }
-            }
-        });
-    };
+  const ctx = document.getElementById('lineChart').getContext('2d');
+  if (lineChart) lineChart.destroy();
+
+  const years = [...new Set(csvData.map(d => d.year))].sort((a, b) => a - b);
+  const colors = d3.schemeTableau10;
+
+  const datasets = topNames.map((nm, i) => ({
+    label: nm,
+    data: years.map(y =>
+      csvData
+        .filter(d => d.year === y && d.name === nm)
+        .reduce((s, d) => s + d.area, 0)
+    ),
+    borderColor: colors[i % colors.length],
+    tension: 0.4,
+    fill: false
+  }));
+
+  lineChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: years, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top' },
+        datalabels: false    // ← desativa os rótulos aqui
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { display: false },
+          title: { display: true, text: 'Área (km²)' }
+        },
+        x: {
+          grid: { display: false },
+          title: { display: true, text: 'Ano' }
+        }
+      }
+    }
+    
+  });
+};
 
     const updateYearlyChart = () => {
         const ctx = document.getElementById('yearlyChart').getContext('2d');
@@ -790,93 +913,88 @@
         );
         
         yearlyChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: years,
-                datasets: [{
-                    data,
-                    backgroundColor: 'rgba(198, 40, 40, 0.7)',
-                    borderColor: 'rgba(198, 40, 40, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        grid: { display: false }, 
-                        title: { display: true, text: 'Área (km²)' } 
-                    },
-                    x: { 
-                        grid: { display: false }, 
-                        title: { display: true, text: 'Ano' } 
-                    }
-                }
-            }
-        });
+  type: 'bar',
+  data: {
+    labels: years,
+    datasets: [{
+      data,
+      // pode manter a cor original
+      backgroundColor: 'rgba(198, 40, 40, 0.7)',
+      borderColor: 'rgba(198, 40, 40, 1)',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        color: '#212121',
+        anchor: 'end',
+        align: 'end',
+        formatter: v => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 }),
+        font: { weight: '600', size: 12 }
+      }
+    },
+    scales: {
+      y: { beginAtZero: true, grid: { display: false }, title: { display: true, text: 'Área (km²)' } },
+      x: { grid: { display: false }, title: { display: true, text: 'Ano' } }
+    }
+  },
+  plugins: [ ChartDataLabels ]
+});
     };
 
-    const updateMap = (aggData) => {
-        if (geoLayer) geoLayer.remove();
-        
-        // Only include polygons that are in the top ranking or selected
-        const features = geojson.features.filter(f => {
-            const name = f.properties[DATASETS[currentDataset].geoField];
-            return Object.keys(aggData).includes(name);
-        });
-        
-        if (!features.length) return;
-        
-        const max = Math.max(...Object.values(aggData));
-        const scale = d3.scaleSequential().domain([0, max]).interpolator(d3.interpolateReds);
-        
-        geoLayer = L.geoJSON(features, {
-            style: f => {
-                const name = f.properties[DATASETS[currentDataset].geoField];
-                const val = aggData[name] || 0;
-                return {
-                    fillColor: scale(val),
-                    weight: 1,
-                    color: '#333',
-                    fillOpacity: 0.7
-                };
-            },
-            onEachFeature: (f, l) => {
-                const name = f.properties[DATASETS[currentDataset].geoField];
-                const val = aggData[name] || 0;
-                const rank = Object.entries(aggData)
-                    .sort(([, a], [, b]) => b - a)
-                    .findIndex(([n]) => n === name) + 1;
-                
-                l.bindPopup(`
-                    <b>${rank}º - ${name}</b><br>
-                    Área: ${val.toLocaleString('pt-BR')} km²
-                `);
-                
-                l.on({
-                    mouseover: e => {
-                        e.target.setStyle({ weight: 3 });
-                        selectedNameEl.textContent = name;
-                        selectedAreaEl.textContent = val.toLocaleString('pt-BR');
-                        selectedRankEl.textContent = rank;
-                        infoPanel.style.display = 'block';
-                    },
-                    mouseout: e => {
-                        e.target.setStyle({ weight: 1 });
-                        infoPanel.style.display = 'none';
-                    },
-                    click: e => {
-                        map.fitBounds(e.target.getBounds(), { padding: [50, 50], animate: true });
-                    }
-                });
-            }
-        }).addTo(map);
-        
-        map.fitBounds(geoLayer.getBounds());
-    };
+    // anteriormente: const updateMap = (aggData) => {
+const updateMap = (aggData, namesToShow) => {
+  if (geoLayer) geoLayer.remove();
+
+  // agora só os features cujos nomes estão em namesToShow
+  const features = geojson.features.filter(f => {
+    const name = f.properties[DATASETS[currentDataset].geoField];
+    return namesToShow.includes(name);
+  });
+  if (!features.length) return;
+
+  const max = Math.max(...namesToShow.map(n => aggData[n] || 0));
+  const scale = d3.scaleSequential().domain([0, max]).interpolator(d3.interpolateReds);
+
+  geoLayer = L.geoJSON(features, {
+    style: f => {
+      const name = f.properties[DATASETS[currentDataset].geoField];
+      const val = aggData[name] || 0;
+      return {
+        fillColor: scale(val),
+        weight: 1,
+        color: '#333',
+        fillOpacity: 0.7
+      };
+    },
+    onEachFeature: (f, l) => {
+      const name = f.properties[DATASETS[currentDataset].geoField];
+      const val = aggData[name] || 0;
+      const rank = namesToShow.indexOf(name) + 1; // posição na lista
+      l.bindPopup(`<b>${rank}º - ${name}</b><br>Área: ${val.toLocaleString('pt-BR')} km²`);
+      l.on({
+        mouseover: e => {
+          e.target.setStyle({ weight: 3 });
+          selectedNameEl.textContent = name;
+          selectedAreaEl.textContent = val.toLocaleString('pt-BR');
+          selectedRankEl.textContent = rank;
+          infoPanel.style.display = 'block';
+        },
+        mouseout: e => {
+          e.target.setStyle({ weight: 1 });
+          infoPanel.style.display = 'none';
+        },
+        click: e => map.fitBounds(e.target.getBounds(), { padding: [50,50], animate: true })
+      });
+    }
+  }).addTo(map);
+
+  map.fitBounds(geoLayer.getBounds());
+};
 
     const updateDashboard = () => {
         const year = +yearFilter.value;
@@ -897,6 +1015,18 @@
         if (currentDataset === 'terras' && selectedTerras.length > 0) {
             filtered = filtered.filter(d => selectedTerras.includes(d.name));
         }
+        if (currentDataset==='municipios' && selectedMunicipios.length>0) {
+  filtered = filtered.filter(d => selectedMunicipios.includes(d.name));
+}
+
+if (currentDataset==='imoveis' && selectedImoveis.length>0) {
+  filtered = filtered.filter(d => selectedImoveis.includes(d.name));
+}
+
+if (currentDataset==='assentamentos' && selectedAssentamentos.length>0) {
+  filtered = filtered.filter(d => selectedAssentamentos.includes(d.name));
+}
+
         
         // Aggregate data by name
         const agg = {};
@@ -908,50 +1038,226 @@
         
         // Get top 10 or selected terras
         let sorted;
-        if (currentDataset === 'terras' && selectedTerras.length > 0) {
-            sorted = selectedTerras.map(name => [name, agg[name] || 0]);
-        } else {
-            sorted = Object.entries(agg)
-                .sort(([, a], [, b]) => b - a)
-                .slice(0, 10);
-        }
-        
-        const labels = sorted.map(([name], i) => `${i+1}. ${name}`);
-        const values = sorted.map(([, val]) => val);
-        
-        updateStats(agg, filtered, year);
-        updateBarChart(labels, values);
-        updateLineChart(year, sorted.map(([name]) => name));
-        updateYearlyChart();
-        updateMap(agg);
+  if (currentDataset === 'terras' && selectedTerras.length > 0) {
+    sorted = selectedTerras.map(name => [name, agg[name] || 0]);
+  } else {
+    sorted = Object.entries(agg)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10);
+  }
+
+  const labels = sorted.map(([name], i) => `${i+1}. ${name}`);
+  const values = sorted.map(([, val]) => val);
+
+  updateStats(agg, filtered, year);
+  updateBarChart(labels, values);
+  updateLineChart(year, sorted.map(([name]) => name));
+  updateYearlyChart();
+
+  // Nova linha: extrai só os nomes sem o “1. ” e passa pro mapa
+  const topNames = sorted.map(([name]) => name);
+  updateMap(agg, topNames);
     };
 
     // Funções para modal de terras indígenas
-    const populateTerrasList = () => {
-        const listEl = document.getElementById('terras-list');
-        const searchTerm = document.getElementById('terras-search').value.toLowerCase();
-        
-        // Obter nomes únicos de terras indígenas
-        const names = [...new Set(csvData.map(d => d.name))].sort();
-        
-        listEl.innerHTML = '';
-        
-        names.filter(name => name.toLowerCase().includes(searchTerm)).forEach(name => {
-            const isSelected = selectedTerras.includes(name);
-            const item = document.createElement('div');
-            item.className = `settlement-item ${isSelected ? 'selected' : ''}`;
-            item.dataset.name = name;
-            item.innerHTML = name;
-            
-            item.addEventListener('click', () => {
-                toggleTerrasSelection(name);
-            });
-            
-            listEl.appendChild(item);
+    // --- Terras Indígenas ---
+const populateTerrasList = () => {
+  const listEl = document.getElementById('terras-list');
+  const term   = document.getElementById('terras-search').value.toLowerCase();
+  const year   = +yearFilter.value;
+
+  // nomes apenas do ano corrente
+  const names = [
+    ...new Set(
+      csvData
+        .filter(d => d.year === year)
+        .map(d => d.name)
+    )
+  ].sort();
+
+  listEl.innerHTML = '';
+  names
+    .filter(n => n.toLowerCase().includes(term))
+    .forEach(name => {
+      const sel = selectedTerras.includes(name);
+      const item = document.createElement('div');
+      item.className = `settlement-item ${sel?'selected':''}`;
+      item.textContent = name;
+      item.onclick = () => {
+        if (!sel && selectedTerras.length >= 10) {
+          alert('Máx. 10 terras indígenas');
+          return;
+        }
+        if (sel) {
+          selectedTerras.splice(selectedTerras.indexOf(name), 1);
+        } else {
+          selectedTerras.push(name);
+        }
+        populateTerrasList();
+      };
+      listEl.appendChild(item);
+    });
+  document.getElementById('selected-terras-count').textContent = selectedTerras.length;
+};
+
+    
+// --- Assentamentos ---
+const populateAssentamentosList = () => {
+  const listEl = document.getElementById('assentamentos-list');
+  const term   = document.getElementById('assentamentos-search').value.toLowerCase();
+  const year   = +yearFilter.value;
+
+  // pega só nomes do ano corrente
+  const names  = [
+    ...new Set(
+      csvData
+        .filter(d => d.year === year)
+        .map(d => d.name)
+    )
+  ].sort();
+
+  listEl.innerHTML = '';
+  names
+    .filter(n => n.toLowerCase().includes(term))
+    .forEach(name => {
+      const isSel = selectedAssentamentos.includes(name);
+      const div   = document.createElement('div');
+      div.className = `settlement-item ${isSel?'selected':''}`;
+      div.textContent = name;
+      div.onclick = () => {
+        if (!isSel && selectedAssentamentos.length>=10) {
+          return alert('Máx. 10 assentamentos');
+        }
+        isSel
+          ? selectedAssentamentos.splice(selectedAssentamentos.indexOf(name), 1)
+          : selectedAssentamentos.push(name);
+        populateAssentamentosList();
+      };
+      listEl.appendChild(div);
+    });
+  document.getElementById('selected-assentamentos-count').textContent = selectedAssentamentos.length;
+};
+
+
+// abrir modal
+openAssentamentosModalBtn.addEventListener('click', () => {
+  populateAssentamentosList();
+  new bootstrap.Modal(document.getElementById('assentamentosModal')).show();
+});
+document.getElementById('assentamentos-search')
+        .addEventListener('input', populateAssentamentosList);
+document.getElementById('apply-assentamentos-selection')
+        .addEventListener('click', () => {
+          bootstrap.Modal.getInstance(document.getElementById('assentamentosModal')).hide();
+          updateDashboard();
         });
-        
-        updateTerrasCount();
-    };
+
+// --- Municípios ---
+const populateMunicipiosList = () => {
+  const listEl = document.getElementById('municipios-list');
+  const term   = document.getElementById('municipios-search').value.toLowerCase();
+  const year   = +yearFilter.value;  
+
+  // nomes apenas do ano corrente
+  const names = [
+    ...new Set(
+      csvData
+        .filter(d => d.year === year)
+        .map(d => d.name)
+    )
+  ].sort();
+
+  listEl.innerHTML = '';
+  names
+    .filter(n => n.toLowerCase().includes(term))
+    .forEach(name => {
+      const sel = selectedMunicipios.includes(name);
+      const div = document.createElement('div');
+      div.className = `settlement-item ${sel?'selected':''}`;
+      div.textContent = name;
+      div.onclick = () => {
+        if (!sel && selectedMunicipios.length >= 10) {
+          alert('Máx. 10 municípios');
+          return;
+        }
+        if (sel) {
+          selectedMunicipios.splice(selectedMunicipios.indexOf(name), 1);
+        } else {
+          selectedMunicipios.push(name);
+        }
+        populateMunicipiosList();
+      };
+      listEl.appendChild(div);
+    });
+  document.getElementById('selected-municipios-count').textContent = selectedMunicipios.length;
+};
+
+
+openMunicipiosModalBtn.addEventListener('click', () => {
+  populateMunicipiosList();
+  new bootstrap.Modal(document.getElementById('municipiosModal')).show();
+});
+document.getElementById('municipios-search')
+        .addEventListener('input', populateMunicipiosList);
+document.getElementById('apply-municipios-selection')
+        .addEventListener('click', () => {
+          bootstrap.Modal.getInstance(document.getElementById('municipiosModal')).hide();
+          updateDashboard();
+        });
+
+
+const populateImoveisList = () => {
+  const listEl = document.getElementById('imoveis-list');
+  const term   = document.getElementById('imoveis-search').value.toLowerCase();
+  const year   = +yearFilter.value;
+
+  // nomes apenas do ano corrente
+  const names = [
+    ...new Set(
+      csvData
+        .filter(d => d.year === year)
+        .map(d => d.name)
+    )
+  ].sort();
+
+  listEl.innerHTML = '';
+  names
+    .filter(n => n.toLowerCase().includes(term))
+    .forEach(name => {
+      const sel = selectedImoveis.includes(name);
+      const div = document.createElement('div');
+      div.className = `settlement-item ${sel?'selected':''}`;
+      div.textContent = name;
+      div.onclick = () => {
+        if (!sel && selectedImoveis.length >= 10) {
+          alert('Máx. 10 imóveis');
+          return;
+        }
+        if (sel) {
+          selectedImoveis.splice(selectedImoveis.indexOf(name), 1);
+        } else {
+          selectedImoveis.push(name);
+        }
+        populateImoveisList();
+      };
+      listEl.appendChild(div);
+    });
+  document.getElementById('selected-imoveis-count').textContent = selectedImoveis.length;
+};
+
+
+openImoveisModalBtn.addEventListener('click', () => {
+  populateImoveisList();
+  new bootstrap.Modal(document.getElementById('imoveisModal')).show();
+});
+document.getElementById('imoveis-search')
+        .addEventListener('input', populateImoveisList);
+document.getElementById('apply-imoveis-selection')
+        .addEventListener('click', () => {
+          bootstrap.Modal.getInstance(document.getElementById('imoveisModal')).hide();
+          updateDashboard();
+        });
+
 
     const toggleTerrasSelection = (name) => {
         const index = selectedTerras.indexOf(name);
@@ -997,15 +1303,31 @@
     
     applyBtn.addEventListener('click', updateDashboard);
     clearBtn.addEventListener('click', () => {
-        categoryFilter.value = 'all';
-        if (currentDataset === 'terras') {
-            faseFilter.value = 'all';
-            selectedTerras = [];
-            populateTerrasList();
-        }
-        yearFilter.value = Math.max(...[...yearFilter.options].map(o => +o.value));
-        updateDashboard();
-    });
+  // reset gerais
+  categoryFilter.value = 'all';
+  yearFilter.value = Math.max(...[...yearFilter.options].map(o => +o.value));
+
+  // limpa todas as seleções
+  selectedTerras = [];
+  selectedMunicipios = [];
+  selectedImoveis = [];
+  selectedAssentamentos = [];
+
+  // reseta fase (só faz sentido em terras)
+  if (currentDataset === 'terras') {
+    faseFilter.value = 'all';
+  }
+
+  // repopula o modal visível, se ele estiver aberto ou para ficar limpo quando reabrir
+  if (currentDataset === 'terras') populateTerrasList();
+  if (currentDataset === 'municipios') populateMunicipiosList();
+  if (currentDataset === 'imoveis') populateImoveisList();
+  if (currentDataset === 'assentamentos') populateAssentamentosList();
+
+  // atualiza tudo
+  updateDashboard();
+});
+
     
     // Eventos para modal de terras indígenas
     openTerrasModalBtn.addEventListener('click', () => {
