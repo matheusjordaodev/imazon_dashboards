@@ -3,35 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard SAD - Análise Territorial</title>
-    
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+            integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+            crossorigin="anonymous">
+    </script>
+
     <!-- Bibliotecas CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
     <!-- Select2 CSS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
-<!-- Select2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <style>
         .select2-container--default .select2-selection--multiple {
-    border-radius: 8px;
-    border-color: #ddd;
-    padding: 4px;
-    min-height: 38px;
-}
-.select2-container--default .select2-selection--multiple .select2-selection__choice {
-    background-color: var(--primary-color);
-    border: none;
-    color: white;
-    font-weight: 500;
-    padding: 3px 8px;
-    margin: 2px;
-    border-radius: 6px;
-}
+            border-radius: 8px;
+            border-color: #ddd;
+            padding: 4px;
+            min-height: 38px;
+        }
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: var(--primary-color);
+            border: none;
+            color: white;
+            font-weight: 500;
+            padding: 3px 8px;
+            margin: 2px;
+            border-radius: 6px;
+        }
 
         /* ESTILOS PRINCIPAIS */
         :root {
@@ -43,6 +47,9 @@
             --card-color: #FFFFFF;
             --border-radius: 12px;
             --box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
         }
 
         body {
@@ -303,6 +310,149 @@
             color: #e65100;
         }
 
+        /* Estilos para o novo date picker */
+        .period-filter-container {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .period-filter-container:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 12px rgba(0, 128, 85, 0.15);
+        }
+
+        .period-label {
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .date-input-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .date-input-wrapper {
+            position: relative;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .date-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            background: white;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .date-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 128, 85, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .date-input:valid {
+            border-color: var(--success-color);
+        }
+
+        .date-input:invalid {
+            border-color: var(--danger-color);
+        }
+
+        .date-separator {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+        }
+
+        .date-label {
+            position: absolute;
+            top: -8px;
+            left: 12px;
+            background: white;
+            padding: 0 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        /* Presets de Período */
+        .period-presets {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .presets-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-color);
+        }
+
+        .preset-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+        }
+
+        /* Indicadores de Status */
+        .status-indicator {
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            font-size: 1rem;
+        }
+
+        .status-valid {
+            color: var(--success-color);
+        }
+
+        .status-invalid {
+            color: var(--danger-color);
+        }
+
         /* Responsividade */
         @media (max-width: 768px) {
             body {
@@ -345,6 +495,25 @@
             
             .filter-btn {
                 min-width: 100px;
+            }
+
+            /* Responsividade para o date picker */
+            .date-input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .date-separator {
+                transform: rotate(90deg);
+                margin: 0.5rem 0;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .preset-buttons {
+                justify-content: center;
             }
         }
 
@@ -443,33 +612,78 @@
             </div>
         </div>
         
-        <div class="row g-3 align-items-end">
-            <!-- Filtro de Período -->
-            <div class="col-md-3">
-    <label for="startPeriod" class="form-label fw-bold">Selecione o período de análise:</label>
-    <div class="input-group">
-<input type="month" id="startPeriod" class="form-control" value="2024-01" min="2008-01" max="2024-12">
-
-
-
-    </div>
-</div>
-
+        <!-- Novo Filtro de Período Melhorado -->
+        <div class="period-filter-container">
+            <div class="period-label">
+                <i class="fas fa-clock"></i>
+                Defina o período de análise
+                <i class="fas fa-info-circle tooltip-custom ms-2" 
+                   data-tooltip="Selecione o período entre 01/2008 e 12/2025"></i>
+            </div>
             
-            <div class="col-md-2 d-grid">
+            <div class="date-input-group">
+                <div class="date-input-wrapper">
+                    <div class="date-label">Data Inicial</div>
+                    <input type="text" 
+                           id="startPeriod" 
+                           class="date-input" 
+                           value="01/2024" 
+                           placeholder="MM/AAAA"
+                           pattern="^(0[1-9]|1[0-2])\/(200[8-9]|20(1[0-9]|2[0-5]))$"
+                           title="Formato: MM/AAAA (ex: 01/2024)">
+                    <div class="status-indicator" id="start-status"></div>
+                </div>
+                
+                <div class="date-separator">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                
+                <div class="date-input-wrapper">
+                    <div class="date-label">Data Final</div>
+                    <input type="text" 
+                           id="endPeriod" 
+                           class="date-input" 
+                           value="12/2024" 
+                           placeholder="MM/AAAA"
+                           pattern="^(0[1-9]|1[0-2])\/(200[8-9]|20(1[0-9]|2[0-5]))$"
+                           title="Formato: MM/AAAA (ex: 12/2024)">
+                    <div class="status-indicator" id="end-status"></div>
+                </div>
+            </div>
+            
+            <!-- Presets de Período -->
+            <div class="period-presets">
+                <div class="presets-label">
+                    <i class="fas fa-magic"></i>
+                    Períodos Rápidos:
+                </div>
+                <div class="preset-buttons">
+                    <button class="preset-btn" data-preset="current-year">Ano Atual</button>
+                    <button class="preset-btn" data-preset="last-year">Ano Anterior</button>
+                    <button class="preset-btn" data-preset="last-6-months">Últimos 6 Meses</button>
+                    <button class="preset-btn" data-preset="last-12-months">Últimos 12 Meses</button>
+                    <button class="preset-btn" data-preset="ytd">Ano até Agora</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4 d-grid">
                 <button id="apply-filters" class="btn btn-primary">
                     <i class="fas fa-filter me-2"></i>Aplicar Filtros
                 </button>
             </div>
-            <div class="col-md-2 d-grid">
-    <button id="clear-filters" class="btn btn-primary">
-        <i class="fas fa-eraser me-2"></i>Remover Filtros
-    </button>
-</div>
+            <div class="col-md-4 d-grid">
+                <button id="clear-filters" class="btn btn-primary">
+                    <i class="fas fa-eraser me-2"></i>Remover Filtros
+                </button>
+            </div>
+            <div class="col-md-4">
+                <div id="period-display" class="alert alert-info mb-0 py-2">
+                    <small><i class="fas fa-calendar-alt me-2"></i>Período: Janeiro 2024 até Dezembro 2024 (12 meses)</small>
+                </div>
+            </div>
         </div>
-        
-
-
         
         <!-- Filtros Específicos (serão exibidos dinamicamente) -->
         <div id="specific-filters" class="specific-filters" style="display: none;">
@@ -477,7 +691,6 @@
         </div>
     </div>
 
-    
     <!-- Painel de Estatísticas -->
     <div class="row mb-4">
         <div class="col-md-3">
@@ -534,6 +747,8 @@
                     <div id="info-panel" class="info-panel" style="display: none;">
                         <h6 id="selected-territory">Território</h6>
                         <div><strong>Área:</strong> <span id="selected-area">0</span> km²</div>
+                         <div><strong>UF:</strong> <span id="selected-state">–</span></div>
+                        <div><strong>%:</strong> <span id="selected-percentage">0</span>%</div>
                     </div>
                 </div>
             </div>
@@ -570,8 +785,6 @@
 </div>
 
 <!-- Bibliotecas JavaScript -->
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
@@ -581,6 +794,7 @@
 <script src="https://cdn.jsdelivr.net/npm/d3-fetch@3"></script>
 
 <script>
+    Chart.register(ChartDataLabels);
     const estadoNomes = {
         AC: "Acre",
         AL: "Alagoas",
@@ -610,13 +824,137 @@
         SP: "São Paulo",
         TO: "Tocantins"
     };
+    // lista de UFs que compõem a Amazônia Legal
+    const amazoniaLegalStates = ['AC','AP','AM','MA','MT','PA','RO','RR','TO'];
 
     document.addEventListener('DOMContentLoaded', function () {
         // Elementos da UI
         const startPeriodInput = document.getElementById('startPeriod');
+        const endPeriodInput = document.getElementById('endPeriod');
+        const periodDisplay = document.getElementById('period-display');
+        
+        // Função para validar o input de data
+        function validateDateInput(input) {
+            const value = input.value;
+            const pattern = /^(0[1-9]|1[0-2])\/(200[8-9]|20(1[0-9]|2[0-5]))$/;
+            const statusElement = document.getElementById(input.id + '-status');
+            
+            if (pattern.test(value)) {
+                input.classList.remove('is-invalid');
+                input.classList.add('is-valid');
+                if (statusElement) {
+                    statusElement.innerHTML = '<i class="fas fa-check-circle status-valid"></i>';
+                }
+                return true;
+            } else {
+                input.classList.remove('is-valid');
+                input.classList.add('is-invalid');
+                if (statusElement) {
+                    statusElement.innerHTML = '<i class="fas fa-exclamation-circle status-invalid"></i>';
+                }
+                return false;
+            }
+        }
+
+        // Formatação automática durante a digitação
+        function formatDateInput(input) {
+            let value = input.value.replace(/\D/g, '');
+            
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 6);
+            }
+            
+            input.value = value;
+        }
+
+        // Atualizar display do período
+        function updatePeriodDisplay() {
+            if (validateDateInput(startPeriodInput) && validateDateInput(endPeriodInput)) {
+                const [startMonth, startYear] = startPeriodInput.value.split('/');
+                const [endMonth, endYear] = endPeriodInput.value.split('/');
+                
+                const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                              'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                
+                const startMonthName = months[parseInt(startMonth) - 1];
+                const endMonthName = months[parseInt(endMonth) - 1];
+                
+                // Calcular duração
+                const startDate = new Date(parseInt(startYear), parseInt(startMonth) - 1);
+                const endDate = new Date(parseInt(endYear), parseInt(endMonth) - 1);
+                const monthsDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
+                                 (endDate.getMonth() - startDate.getMonth()) + 1;
+                
+                periodDisplay.innerHTML = `<small><i class="fas fa-calendar-alt me-2"></i>Período: ${startMonthName} ${startYear} até ${endMonthName} ${endYear} (${monthsDiff} ${monthsDiff === 1 ? 'mês' : 'meses'})</small>`;
+            }
+        }
+
+        // Presets de período
+        function applyPreset(preset) {
+            const now = new Date();
+            const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+            const currentYear = now.getFullYear();
+            
+            let startPeriod, endPeriod;
+            
+            switch (preset) {
+                case 'current-year':
+                    startPeriod = `01/${currentYear}`;
+                    endPeriod = `12/${currentYear}`;
+                    break;
+                case 'last-year':
+                    startPeriod = `01/${currentYear - 1}`;
+                    endPeriod = `12/${currentYear - 1}`;
+                    break;
+                case 'last-6-months':
+                    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+                    startPeriod = `${String(sixMonthsAgo.getMonth() + 1).padStart(2, '0')}/${sixMonthsAgo.getFullYear()}`;
+                    endPeriod = `${currentMonth}/${currentYear}`;
+                    break;
+                case 'last-12-months':
+                    const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+                    startPeriod = `${String(twelveMonthsAgo.getMonth() + 1).padStart(2, '0')}/${twelveMonthsAgo.getFullYear()}`;
+                    endPeriod = `${currentMonth}/${currentYear}`;
+                    break;
+                case 'ytd':
+                    startPeriod = `01/${currentYear}`;
+                    endPeriod = `${currentMonth}/${currentYear}`;
+                    break;
+            }
+            
+            document.getElementById('startPeriod').value = startPeriod;
+            document.getElementById('endPeriod').value = endPeriod;
+            
+            validateDateInput(document.getElementById('startPeriod'));
+            validateDateInput(document.getElementById('endPeriod'));
+            updatePeriodDisplay();
+        }
+
+        // Event listeners para o date picker
+        [startPeriodInput, endPeriodInput].forEach(input => {
+            input.addEventListener('input', function() {
+                formatDateInput(this);
+                validateDateInput(this);
+                updatePeriodDisplay();
+            });
+            
+            input.addEventListener('blur', function() {
+                validateDateInput(this);
+                updatePeriodDisplay();
+            });
+        });
+        
+        // Event listeners para presets
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                applyPreset(this.dataset.preset);
+            });
+        });
+
+        // Resto do seu código JavaScript existente...
+        const applyFiltersButton = document.getElementById('apply-filters');
         const specificFiltersContainer = document.getElementById('specific-filters');
         const specificFiltersContent = document.getElementById('specific-filters-content');
-        const applyFiltersButton = document.getElementById('apply-filters');
         
         // Botões de filtro
         const dataTypeButtons = document.querySelectorAll('[data-type="desmatamento"], [data-type="degradacao"]');
@@ -654,49 +992,48 @@
         let currentTopTerritories = [];
         let territoryBounds = {};
 
-        // Dados reais para assentamentos (desmatamento e degradação)
         const dataSources = {
             desmatamento: {
                 assentamentos: { 
-                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_04_2024_assentamentos.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_05_2025_assentamentos.csv",
                     geojson: "/dataset/sad/geojson/AMZ_assentamentos.geojson"
                 },
                 estados: {
-                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_04_2024_municipios.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_05_2025_municipios.csv",
                     geojson: "/dataset/sad/geojson/AMZ_estados.geojson"
                 },
                 municipios: { 
-                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_04_2024_municipios.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_05_2025_municipios.csv",
                     geojson: "/dataset/sad/geojson/AMZ_municipios.geojson"
                 },
                 terrasIndigenas: {  
-                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_04_2024_terraIndigena.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_05_2025_terraIndigena.csv",
                     geojson: "/dataset/sad/geojson/AMZ_terra_indigena.geojson"
                 },
                 unidadesConservacao: {  
-                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_04_2024_unidadeConservacao.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_desmatamento_08_2008_05_2025_unidadeConservacao.csv",
                     geojson: "/dataset/sad/geojson/AMZ_unidade_conservacao.geojson"
                 }
             },
             degradacao:{
                 assentamentos: { 
-                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_04_2024_assentamento.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_assentamento.csv",
                     geojson: "/dataset/sad/geojson/AMZ_assentamentos.geojson"
                 },
                 estados: {
-                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_04_2024_municipio.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_municipios.csv",
                     geojson: "/dataset/sad/geojson/AMZ_estados.geojson"
                 },
                 municipios: { 
-                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_04_2024_municipio.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_municipios.csv",
                     geojson: "/dataset/sad/geojson/AMZ_municipios.geojson"
                 },
                 terrasIndigenas: {  
-                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_04_2024_terraIndigena.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_terraIndigena.csv",
                     geojson: "/dataset/sad/geojson/AMZ_terra_indigena.geojson"
                 },
                 unidadesConservacao: {  
-                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_04_2024_ucs.csv",
+                    csv: "/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_ucs.csv",
                     geojson: "/dataset/sad/geojson/AMZ_unidade_conservacao.geojson"
                 }
             }
@@ -731,7 +1068,7 @@
                         d.AREAKM2 = +d.AREAKM2 || 0;
                     });
                     
-                    // Carregar GeoJSON
+                    // Carrega GeoJSON
                     const geojsonResponse = await fetch(dataSources[dataType][territoryType].geojson);
                     const geojsonData = await geojsonResponse.json();
                     
@@ -783,113 +1120,96 @@
         }
 
         async function updateDashboard() {
+            // 1) Carrega dados brutos
             const { csvData, geojsonData } = await loadData();
             if (!csvData.length || !geojsonData) return;
 
             const territoryType = getSelectedTerritoryType();
-            const nameKey = territoryNameMapping[territoryType];
-            
-            // Lógica de filtragem de período
-            const currentYear = new Date().getFullYear();
-            const startYear = 2008;
-            const allPeriodData = csvData.filter(d => {
-                return d.ANO >= startYear && d.ANO <= currentYear-1;
+            const nameKey       = territoryNameMapping[territoryType];
+
+            // 2) Prepara os dados completos para Série Histórica Anual e Mensal
+            const currentYear   = new Date().getFullYear();
+            const allPeriodData = csvData.filter(d => d.ANO >= 2008 && d.ANO <= currentYear - 1);
+
+            // 3) Filtra pelo período escolhido nos inputs MM/YYYY
+            const [sMonth, sYear] = startPeriodInput.value.split('/');
+            const [eMonth, eYear] = endPeriodInput.value.split('/');
+            const startDate = new Date(`${sYear}-${sMonth.padStart(2,'0')}-01`);
+            const endDate   = new Date(`${eYear}-${eMonth.padStart(2,'0')}-01`);
+
+            let filteredData = csvData.filter(d => {
+                const dt = new Date(`${d.ANO}-${String(d.MES).padStart(2,'0')}-01`);
+                return dt >= startDate && dt <= endDate;
             });
 
-            
-            const start = new Date(startPeriodInput.value + '-01');
-const selectedYear = start.getFullYear();
-
-let filteredData = csvData.filter(d => {
-    return Number(d.ANO) === selectedYear;
-});
-
-
-            
-            // Aplicar filtros específicos
+            // 4) Aplica filtros específicos de território (inclui estado e município)
             filteredData = applySpecificFilters(filteredData, territoryType);
 
-            // Agregação de dados
+            // 5) Agrega para Ranking e Mapa
             const aggregatedData = {};
             filteredData.forEach(d => {
-                const name = d[nameKey];
-                const area = parseFloat(d.AREAKM2) || 0;
-                if (name) {
-                    aggregatedData[name] = (aggregatedData[name] || 0) + area;
-                }
+                const label = d[nameKey];
+                const area  = parseFloat(d.AREAKM2) || 0;
+                if (label) aggregatedData[label] = (aggregatedData[label] || 0) + area;
             });
+            const sorted = Object.entries(aggregatedData)
+                .sort(([,a],[,b]) => b - a)
+                .slice(0, 10);
+            const labels     = sorted.map(([k]) => territoryType === 'estados' ? estadoNomes[k] || k : k);
+            const dataValues = sorted.map(([,v]) => v);
+            currentTopTerritories = sorted.map(([k]) => k);
 
-            const sortedData = Object.entries(aggregatedData)
-                .sort(([, a], [, b]) => b - a)
-                .slice(0, 10); // Top 15
-
-            const labels = sortedData.map(([name]) => {
-                if (territoryType === 'estados' && estadoNomes[name]) {
-                    return estadoNomes[name];
-                }
-                return name;
-            });
-
-            const dataValues = sortedData.map(([, area]) => area);
-
-            // Armazenar territórios visíveis
-            currentTopTerritories = sortedData.map(([sigla]) => sigla);
-
-            // Atualizar estatísticas
+            // 6) Atualiza estatísticas, ranking e mapa
             updateStatistics(aggregatedData, filteredData, territoryType);
-
             updateBarChart(labels, dataValues);
-            updateLineChart(allPeriodData, territoryType);
-            updateYearlyChart(allPeriodData);
             updateMap(geojsonData, aggregatedData, territoryType);
             updateTitles();
+
+            // 7) **Série Histórica Mensal**: usa todos os anos (2008–atual) MAS filtra apenas pelo território
+            const seriesData = applySpecificFilters(allPeriodData, territoryType);
+            updateLineChart(seriesData, territoryType);
+
+            // 8) **Série Histórica Anual** mantém todos os anos completos
+            updateYearlyChart(allPeriodData);
         }
 
         // Atualizar estatísticas
-function updateStatistics(aggregatedData, filteredData, territoryType) {
-    // Área total
-    const totalArea = Object.values(aggregatedData).reduce((sum, area) => sum + area, 0);
-    totalAreaEl.textContent = totalArea.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
+        function updateStatistics(aggregatedData, filteredData, territoryType) {
+            // Área total
+            const totalArea = Object.values(aggregatedData).reduce((sum, area) => sum + area, 0);
+            totalAreaEl.textContent = totalArea.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
 
-    // Detectar o ano mais recente nos dados filtrados
-    const anosPresentes = [...new Set(filteredData.map(d => Number(d.ANO)))].filter(Boolean).sort();
-    const anoAtual = Math.max(...anosPresentes);
-    const anoAnterior = anoAtual - 1;
+            // Detectar o ano mais recente nos dados filtrados
+            const anosPresentes = [...new Set(filteredData.map(d => Number(d.ANO)))].filter(Boolean).sort();
+            const anoAtual = Math.max(...anosPresentes);
+            const anoAnterior = anoAtual - 1;
 
-    // Filtrar dados por ano
-    const dadosAtual = filteredData.filter(d => Number(d.ANO) === anoAtual);
-    const dadosAnterior = filteredData.filter(d => Number(d.ANO) === anoAnterior);
+            // Filtrar dados por ano
+            const dadosAtual = filteredData.filter(d => Number(d.ANO) === anoAtual);
+            const dadosAnterior = filteredData.filter(d => Number(d.ANO) === anoAnterior);
 
-    // Calcular média mensal do ano atual
-    const monthsCount = new Set(dadosAtual.map(d => Number(d.MES))).size;
-    const somaAtual = dadosAtual.reduce((sum, d) => sum + Number(d.AREAKM2), 0);
-    const avgArea = monthsCount > 0 ? somaAtual / monthsCount : 0;
-    avgAreaEl.textContent = avgArea.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
+            // Calcular média mensal do ano atual
+            const monthsCount = new Set(dadosAtual.map(d => Number(d.MES))).size;
+            const somaAtual = dadosAtual.reduce((sum, d) => sum + Number(d.AREAKM2), 0);
+            const avgArea = monthsCount > 0 ? somaAtual / monthsCount : 0;
+            avgAreaEl.textContent = avgArea.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
 
-    // Territórios afetados
-    const affectedTerritories = Object.keys(aggregatedData).length;
-    affectedTerritoriesEl.textContent = affectedTerritories;
+            // Territórios afetados
+            const affectedTerritories = Object.keys(aggregatedData).length;
+            affectedTerritoriesEl.textContent = affectedTerritories;
 
-    // Calcular variação anual real
-    const somaAnterior = dadosAnterior.reduce((sum, d) => sum + Number(d.AREAKM2), 0);
+            // Calcular variação anual real
+            const somaAnterior = dadosAnterior.reduce((sum, d) => sum + Number(d.AREAKM2), 0);
 
-    let variation = 0;
-    if (somaAnterior > 0) {
-        variation = ((somaAtual - somaAnterior) / somaAnterior) * 100;
-    } else if (somaAtual > 0) {
-        variation = 100;
-    }
+            let variation = 0;
+            if (somaAnterior > 0) {
+                variation = ((somaAtual - somaAnterior) / somaAnterior) * 100;
+            } else if (somaAtual > 0) {
+                variation = 100;
+            }
 
-    annualChangeEl.textContent = `${variation > 0 ? '+' : ''}${variation.toFixed(1)}% em relação a ${anoAnterior}`;
-    annualChangeEl.style.color = variation > 0 ? '#ff5252' : '#4caf50';
-
-    // Debug opcional
-    console.log(`Ano atual: ${anoAtual} | Área: ${somaAtual}`);
-    console.log(`Ano anterior: ${anoAnterior} | Área: ${somaAnterior}`);
-    console.log(`Variação: ${variation.toFixed(1)}%`);
-}
-
-
+            annualChangeEl.textContent = variation.toFixed(2) + '%';
+        }
 
         // Função para aplicar filtros específicos
         function applySpecificFilters(data, territoryType) {
@@ -904,9 +1224,22 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
                     }
                 }
                 else if (territoryType === 'estados') {
+                    // pegamos o select de estados (onde já existe a opção "amazonia_legal")
                     const stateFilter = document.getElementById('stateFilterEstados');
-                    if (stateFilter && stateFilter.value !== 'all') {
-                        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
+                    if (stateFilter) {
+                        if (stateFilter.value === 'amazonia_legal') {
+                            // se escolheu Amazônia Legal, filtra pelas UFs definidas
+                            filteredData = filteredData.filter(d =>
+                                amazoniaLegalStates.includes(d.ESTADO)
+                            );
+                        }
+                        else if (stateFilter.value !== 'all') {
+                            // se escolheu um estado específico ou combinação, filtra por ele
+                            filteredData = filteredData.filter(d =>
+                                d.ESTADO === stateFilter.value
+                            );
+                        }
+                        // se for "all", não faz nada (mantém todos)
                     }
                 }
                 else if (territoryType === 'municipios') {
@@ -920,20 +1253,17 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
                         filteredData = filteredData.filter(d => d.MUNICIPIO === municipioFilter.value);
                     }
                 }
-
                 else if (territoryType === 'terrasIndigenas') {
-    const stateFilter = document.getElementById('stateFilterTerrasIndigenas');
-    if (stateFilter && stateFilter.value !== 'all') {
-        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
-    }
+                    const stateFilter = document.getElementById('stateFilterTerrasIndigenas');
+                    if (stateFilter && stateFilter.value !== 'all') {
+                        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
+                    }
 
-    const checkboxes = document.querySelectorAll('.terra-checkbox:checked');
-    if (checkboxes.length > 0) {
-        const selecionadas = Array.from(checkboxes).map(cb => cb.value);
-        filteredData = filteredData.filter(d => selecionadas.includes(d.TERRA_INDI));
-    }
-
-
+                    const checkboxes = document.querySelectorAll('.terra-checkbox:checked');
+                    if (checkboxes.length > 0) {
+                        const selecionadas = Array.from(checkboxes).map(cb => cb.value);
+                        filteredData = filteredData.filter(d => selecionadas.includes(d.TERRA_INDI));
+                    }
                 }
                 else if (territoryType === 'unidadesConservacao') {
                     const stateFilter = document.getElementById('stateFilterUC');
@@ -956,227 +1286,212 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
         }
 
         // Função para atualizar o gráfico de barras
-       function updateBarChart(labels, dataValues) {
-    const ctx = document.getElementById('barChart').getContext('2d');
-    if (barChart) {
-        barChart.destroy();
-    }
-
-    const dataType = getSelectedDataType();
-    const maxVal = Math.max(...dataValues);
-
-    // Escala de cores gradiente (como no mapa)
-    const colorScale = d3.scaleSequential()
-        .domain([0, maxVal])
-        .interpolator(dataType === 'desmatamento' ? d3.interpolateReds : d3.interpolateOranges);
-
-    const barColors = dataValues.map(v => colorScale(v));
-
-    barChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Área (km²)',
-                data: dataValues,
-                backgroundColor: barColors,
-                borderColor: barColors,
-                borderWidth: 1,
-                borderRadius: 4,
-                borderSkipped: false
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: {
-                padding: {
-                    right: 40  // espaço para texto fora da barra
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                datalabels: {
-                    anchor: 'end',
-                    align: 'right',
-                    offset: 8,
-                    clamp: true,
-                    clip: false,
-                    color: '#111',
-                    font: {
-                        weight: 'bold',
-                        size: 12
-                    },
-                    formatter: value =>
-                        `${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: 'white',
-                    bodyColor: 'white',
-                    borderColor: '#444',
-                    borderWidth: 1,
-                    callbacks: {
-                        label: context =>
-                            `Área: ${context.parsed.x.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} km²`
-                    }
-                }
-            },
-            onClick: (e, elements) => {
-                if (elements.length > 0) {
-                    const index = elements[0].index;
-                    const territoryName = labels[index];
-                    if (territoryBounds[territoryName]) {
-                        map.fitBounds(territoryBounds[territoryName], {
-                            padding: [50, 50],
-                            animate: true,
-                            duration: 1.5
-                        });
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Área (km²)',
-                        font: { weight: 'bold' }
-                    },
-                    grid: { display: false },
-                    ticks: {
-                        callback: value => value.toLocaleString('pt-BR')
-                    }
-                },
-                y: {
-                    grid: { display: false },
-                    ticks: {
-                        font: { size: 11 }
-                    }
-                }
-            },
-            animation: {
-                duration: 1000,
-                easing: 'easeInOutQuart'
+        function updateBarChart(labels, dataValues) {
+            const ctx = document.getElementById('barChart').getContext('2d');
+            if (barChart) {
+                barChart.destroy();
             }
-        },
-        plugins: [ChartDataLabels]
-    });
-}
 
+            const dataType = getSelectedDataType();
+            const maxVal = Math.max(...dataValues);
 
+            // Escala de cores gradiente (como no mapa)
+            const colorScale = d3.scaleSequential()
+                .domain([0, maxVal])
+                .interpolator(dataType === 'desmatamento' ? d3.interpolateReds : d3.interpolateOranges);
 
+            const barColors = dataValues.map(v => colorScale(v));
 
-        // Função para atualizar o gráfico de linha (série histórica)
-       function updateLineChart(csvData, territoryType) {
-    const ctx = document.getElementById('lineChart').getContext('2d');
-    if (lineChart) {
-        lineChart.destroy();
-    }
-
-    const dataType = getSelectedDataType();
-    const years = Array.from(new Set(csvData.map(d => d.ANO))).sort();
-
-    const nameKey = territoryNameMapping[territoryType];
-    const groupedData = {};
-
-    // Agrupamento dos dados
-    csvData.forEach(d => {
-        const key = (territoryType === 'estados' || territoryType === 'municipios') ? d.ESTADO : d[nameKey];
-        const ano = d.ANO;
-        const area = parseFloat(d.AREAKM2) || 0;
-
-        if (!groupedData[key]) groupedData[key] = {};
-        if (!groupedData[key][ano]) groupedData[key][ano] = 0;
-        groupedData[key][ano] += area;
-    });
-
-    // Paleta de cores fixa (10 tons)
-    const pal = d3.schemeTableau10.concat(d3.schemeSet2); // Mais contraste
-
-
-    const datasets = [];
-
-    currentTopTerritories.slice(0, 10).forEach((territorio, index) => {
-        const anos = groupedData[territorio] || {};
-        const data = years.map(year => anos[year] || 0);
-        const cor = pal[index % pal.length];
-
-        datasets.push({
-            label: (estadoNomes[territorio] || territorio),
-            data: data,
-            borderColor: cor,
-            backgroundColor: cor + '20',
-            fill: false,
-            tension: 0.4
-        });
-    });
-
-    lineChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: years,
-            datasets: datasets
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                        font: { weight: 'bold' }
-                    }
+            barChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Área (km²)',
+                        data: dataValues,
+                        backgroundColor: barColors,
+                        borderColor: barColors,
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        borderSkipped: false
+                    }]
                 },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: 'white',
-                    bodyColor: 'white',
-                    borderColor: dataType === 'desmatamento' ? '#008055' : '#FF6D00',
-                    borderWidth: 1,
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.dataset.label}: ${context.parsed.y.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} km²`;
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            right: 40  // espaço para texto fora da barra
                         }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Área (km²)',
-                        font: { weight: 'bold' }
                     },
-                    grid: { display: false },
-                    ticks: {
-                        callback: value => value.toLocaleString('pt-BR')
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'right',
+                            offset: 8,
+                            clamp: true,
+                            clip: false,
+                            color: '#111',
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            },
+                            formatter: value =>
+                                `${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: '#444',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: context =>
+                                    `Área: ${context.parsed.x.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} km²`
+                            }
+                        }
+                    },
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const territoryName = labels[index];
+                            if (territoryBounds[territoryName]) {
+                                map.fitBounds(territoryBounds[territoryName], {
+                                    padding: [50, 50],
+                                    animate: true,
+                                    duration: 1.5
+                                });
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Área (km²)',
+                                font: { weight: 'bold' }
+                            },
+                            grid: { display: false },
+                            ticks: {
+                                callback: value => value.toLocaleString('pt-BR')
+                            }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: {
+                                font: { size: 11 }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuart'
                     }
                 },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Ano',
-                        font: { weight: 'bold' }
-                    },
-                    grid: { display: false }
-                }
-            },
-            animation: {
-                duration: 1500,
-                easing: 'easeInOutQuart'
-            }
+                plugins: [ChartDataLabels]
+            });
         }
-    });
-}
 
+        function updateLineChart(csvData, territoryType) {
+            const ctx = document.getElementById('lineChart').getContext('2d');
+            if (lineChart) {
+                lineChart.destroy();
+            }
 
+            const dataType = getSelectedDataType();
+            const years = Array.from(new Set(csvData.map(d => d.ANO))).sort();
+            const nameKey = territoryNameMapping[territoryType];
+            const groupedData = {};
 
+            // Agrupar dados por território e ano
+            csvData.forEach(d => {
+                // CORREÇÃO: Usar a chave correta (nameKey) para todos os tipos de território
+                const key = d[nameKey]; 
+                const year = d.ANO;
+                const area = parseFloat(d.AREAKM2) || 0;
+
+                if (!groupedData[key]) groupedData[key] = {};
+                groupedData[key][year] = (groupedData[key][year] || 0) + area;
+            });
+
+            // Construir datasets com cores fixas
+            const pal = d3.schemeTableau10.concat(d3.schemeSet2);
+            const datasets = currentTopTerritories.slice(0, 10).map((territorio, i) => ({
+                label: estadoNomes[territorio] || territorio,
+                data: years.map(y => groupedData[territorio]?.[y] || 0),
+                borderColor: pal[i % pal.length],
+                backgroundColor: pal[i % pal.length] + '20',
+                fill: false,
+                tension: 0.4,
+                pointRadius: 3
+            }));
+
+            // Criar o gráfico sem data labels no final
+            lineChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: years, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: { font: { weight: 'bold' } }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: dataType === 'desmatamento' ? '#008055' : '#FF6D00',
+                            borderWidth: 1,
+                            callbacks: {
+                                label(ctx) {
+                                    return `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('pt-BR', {
+                                        maximumFractionDigits: 2
+                                    })} km²`;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            // Desliga completamente os rótulos de dados neste gráfico
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Área (km²)',
+                                font: { weight: 'bold' }
+                            },
+                            grid: { display: false },
+                            ticks: {
+                                callback: v => v.toLocaleString('pt-BR')
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Ano',
+                                font: { weight: 'bold' }
+                            },
+                            grid: { display: false }
+                        }
+                    },
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+        }
 
         // Função para atualizar o gráfico anual
         function updateYearlyChart(csvData) {
@@ -1227,31 +1542,31 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-    legend: {
-        display: false
-    },
-    datalabels: {
-        anchor: 'end',
-        align: 'top',
-        color: '#333',
-        font: {
-            weight: 'bold',
-            size: 11
-        },
-        formatter: value =>
-            `${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`
-    },
-    tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white',
-                            borderColor: borderColor,
-                            borderWidth: 1,
-                            callbacks: {
-                                label: function(context) {
-                                    return `Área: ${context.parsed.y.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} km²`;
+                        legend: {
+                            display: false
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#333',
+                            font: {
+                                weight: 'bold',
+                                size: 11
+                            },
+                            formatter: value =>
+                                `${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`
+                        },
+                        tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    titleColor: 'white',
+                                    bodyColor: 'white',
+                                    borderColor: borderColor,
+                                    borderWidth: 1,
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `Área: ${context.parsed.y.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} km²`;
+                                        }
+                                    }
                                 }
-                            }
-                        }
                     },
                     scales: {
                         y: {
@@ -1310,14 +1625,12 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
                 .domain([0, maxVal])
                 .interpolator(dataType === 'desmatamento' ? d3.interpolateReds : d3.interpolateOranges);
 
-
             // Filtrar apenas os territórios que estão no top 15
             const filteredGeojson = {
                 ...geojsonData,
                 features: geojsonData.features.filter(feature => {
                     const name = feature.properties[nameKey];
                     return currentTopTerritories.includes(feature.properties[nameKey]);
-
                 })
             };
 
@@ -1380,8 +1693,7 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
 
                             selectedTerritoryEl.textContent = name || 'Território';
                             selectedAreaEl.textContent = value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
-                            selectedStateEl.textContent = state;
-                            selectedPercentageEl.textContent = percentage;
+                            
                             infoPanel.style.display = 'block';
                         },
 
@@ -1401,23 +1713,18 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
                 }
             }).addTo(map);
 
-            // Adicionar legenda do mapa
-            //addMapLegend(maxVal, colorScale);
-
             // Ajustar visualização do mapa
             if (geoJsonLayer.getBounds().isValid()) {
                 map.fitBounds(geoJsonLayer.getBounds(), { padding: [20, 20] });
             }
         }
 
-        // Função para adicionar legenda ao mapa
-        
         const territoryNaming = {
-            estados: { artigo: 'dos', nome: 'Estados', genero: 'm' },
-            municipios: { artigo: 'dos', nome: 'Municípios', genero: 'm' },
-            terrasIndigenas: { artigo: 'das', nome: 'Terras Indígenas', genero: 'f' },
-            unidadesConservacao: { artigo: 'das', nome: 'Unidades de Conservação', genero: 'f' },
-            assentamentos: { artigo: 'dos', nome: 'Assentamentos', genero: 'm' }
+            estados:             { nome: 'Estados',               preposicao: 'nos', genero: 'm' },
+            municipios:         { nome: 'Municípios',           preposicao: 'nos', genero: 'm' },
+            terrasIndigenas:     { nome: 'Terras Indígenas',     preposicao: 'nas', genero: 'f' },
+            unidadesConservacao: { nome: 'Unidades de Conservação', preposicao: 'nas', genero: 'f' },
+            assentamentos:       { nome: 'Assentamentos',         preposicao: 'nos', genero: 'm' }
         };
 
         const dataTypeLabel = {
@@ -1437,54 +1744,54 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
         };
 
         function updateTitles() {
-            const selectedYear = new Date(startPeriodInput.value).getFullYear();
-
-
-            const dataType = getSelectedDataType();
-            let territoryTypeText = getSelectedTerritoryType();
-            
-            // Traduzir para termos mais amigáveis
-            if (territoryTypeText === 'unidadesConservacao') {
-                territoryTypeText = 'Unidades de Conservação';
-            } else if (territoryTypeText === 'terrasIndigenas') {
-                territoryTypeText = 'Terras Indígenas';
-            }
-            
             const territoryKey = getSelectedTerritoryType();
-            const dataKey = getSelectedDataType();
+            const dataKey      = getSelectedDataType();
+            const { nome, preposicao, genero } = territoryNaming[territoryKey];
 
-            const { artigo, nome, genero } = territoryNaming[territoryKey];
-            const tipoLabel = dataTypeLabel[dataKey][genero];
-            
-            function formatarPeriodo(valor) {
-                const [ano, mes] = valor.split("-");
-                const meses = [
-                    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-                    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-                ];
-                return `${meses[parseInt(mes) - 1]} de ${ano}`;
-            }
-
+            // 1) Ranking
+            const rankingArticle = genero === 'f' ? 'das' : 'dos';
+            const tipoLabel      = dataTypeLabel[dataKey][genero];
             if (territoryKey === 'estados') {
-                barChartTitle.innerHTML = `<i class="fas fa-chart-bar me-2"></i>Ranking ${artigo} ${nome} ${tipoLabel}`;
+                barChartTitle.innerHTML =
+                    `<i class="fas fa-chart-bar me-2"></i>` +
+                    `Ranking ${rankingArticle} ${nome} ${tipoLabel}`;
             } else {
-                barChartTitle.innerHTML = `<i class="fas fa-chart-bar me-2"></i>Ranking ${artigo} 10 ${nome} ${tipoLabel}`;
+                barChartTitle.innerHTML =
+                    `<i class="fas fa-chart-bar me-2"></i>` +
+                    `Ranking ${rankingArticle} 10 ${nome} ${tipoLabel}`;
             }
 
-            const singularNome = territorySingular[territoryKey];
-            const dataLabel = dataKey === 'desmatamento' ? 'alertas de desmatamento' : 'alertas de degradação';
+            // 2) Formatação Numérica (MM/AAAA) para os filtros
+            const formatarPeriodo = valor => valor;  // já vem "MM/YYYY"
 
             const startLabel = formatarPeriodo(startPeriodInput.value);
-            const endLabel = formatarPeriodo(endPeriodInput.value);
+            const endLabel   = formatarPeriodo(endPeriodInput.value);
 
-            mapTitle.innerHTML = `<i class="fas fa-map me-2"></i>Mapa de ${dataLabel} por ${singularNome.charAt(0).toUpperCase() + singularNome.slice(1)} (${startLabel})`;
+            const singular  = territorySingular[territoryKey];
+            const dataLabel = dataKey === 'desmatamento'
+                                ? 'Alertas de Desmatamento'
+                                : 'Alertas de Degradação';
+            
+            // 2) Título do Mapa (já com as variáveis existentes)
+            mapTitle.innerHTML =
+                `<i class="fas fa-map me-2"></i>` +
+                `Mapa de ${dataLabel} por ${singular} (${startLabel} a ${endLabel})`;
 
+            // 4) Série Histórica Mensal (mantém orgânico)
+            const artLine = dataTypeFrase[dataKey].artigo;
+            const preLine = dataTypeFrase[dataKey].preposicao;
+            lineChartTitle.innerHTML =
+                `<i class="fas fa-chart-line me-2"></i>` +
+                `Série Histórica ${artLine} ${dataLabel.toLowerCase()} ${preLine} ${nome} ` +
+                `(2008 – ${new Date().getFullYear() - 1})`;
 
-            const fraseArtigo = dataTypeFrase[dataKey].artigo;
-            const preposicao = dataTypeFrase[dataKey].preposicao;
-
-            lineChartTitle.innerHTML = `<i class="fas fa-chart-line me-2"></i>Série histórica ${fraseArtigo} ${dataKey} ${preposicao} ${nome} (2008 - 2024)`;
-            yearlyChartTitle.innerHTML = `<i class="fas fa-chart-area me-2"></i>Série histórica anual na Amazônia Legal ${fraseArtigo} ${dataKey} ${preposicao} ${nome} (2008 - 2024)`;
+            // 5) Série Histórica Anual
+            const firstYear = 2008;
+            const lastYear  = +endPeriodInput.value.split('/')[1];
+            yearlyChartTitle.innerHTML =
+                `<i class="fas fa-chart-area me-2"></i>` +
+                `Série Histórica Anual ${preposicao} ${nome} da Amazônia Legal ` +
+                `(${firstYear} – ${lastYear})`;
         }
 
         // Event Listeners para botões de filtro
@@ -1537,10 +1844,7 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
         
             // Atualizar dashboard com filtros limpos
             updateDashboard();
-});
-
-
-
+        });
 
         // Função para atualizar os filtros específicos
         function updateSpecificFilters() {
@@ -1574,6 +1878,7 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
                             <label for="stateFilterEstados" class="form-label fw-bold">Filtrar por Estado:</label>
                             <select id="stateFilterEstados" class="form-select">
                                 <option value="all">Todos os Estados</option>
+                                <option value="amazonia_legal">Amazônia Legal</option>  <!-- nova opção -->
                                 <option value="AC">Acre</option>
                                 <option value="AP">Amapá</option>
                                 <option value="AM">Amazonas</option>
@@ -1583,230 +1888,221 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
                                 <option value="RO">Rondônia</option>
                                 <option value="RR">Roraima</option>
                                 <option value="TO">Tocantins</option>
-                                <option value="RO/AM">RO/AM</option>
-                                <option value="RO/AC">RO/AC</option>
-                                <option value="AC/AM">AC/AM</option>
+                                
                             </select>
                         </div>`;
                     specificFiltersContainer.style.display = 'block';
                 }
                 else if (territoryType === 'municipios') {
-    specificFiltersContent.innerHTML = `
-        <div class="col-md-4">
-            <label for="stateFilterMunicipios" class="form-label fw-bold">Filtrar por Estado:</label>
-            <select id="stateFilterMunicipios" class="form-select">
-                <option value="all">Todos os Estados</option>
-                <option value="AC">Acre</option>
-                <option value="AP">Amapá</option>
-                <option value="AM">Amazonas</option>
-                <option value="MA">Maranhão</option>
-                <option value="MT">Mato Grosso</option>
-                <option value="PA">Pará</option>
-                <option value="RO">Rondônia</option>
-                <option value="RR">Roraima</option>
-                <option value="TO">Tocantins</option>
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label for="municipioFilter" class="form-label fw-bold">Filtrar por Município:</label>
-            <select id="municipioFilter" class="form-select">
-                <option value="all">Todos os Municípios</option>
-            </select>
-        </div>`;
+                    // 1) Injeta os selects de Estado e Município no DOM
+                    specificFiltersContent.innerHTML = `
+                        <div class="col-md-4">
+                            <label for="stateFilterMunicipios" class="form-label fw-bold">Filtrar por Estado:</label>
+                            <select id="stateFilterMunicipios" class="form-select">
+                                <option value="all">Todos os Estados</option>
+                                <option value="AC">Acre</option>
+                                <option value="AP">Amapá</option>
+                                <option value="AM">Amazonas</option>
+                                <option value="MA">Maranhão</option>
+                                <option value="MT">Mato Grosso</option>
+                                <option value="PA">Pará</option>
+                                <option value="RO">Rondônia</option>
+                                <option value="RR">Roraima</option>
+                                <option value="TO">Tocantins</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="municipioFilter" class="form-label fw-bold">Filtrar por Município:</label>
+                            <select id="municipioFilter" class="form-select">
+                                <option value="all">Todos os Municípios</option>
+                            </select>
+                        </div>
+                    `;
+                    specificFiltersContainer.style.display = 'block';
 
-    specificFiltersContainer.style.display = 'block';
+                    // 2) Carrega o CSV e popula os selects ANTES de chamar updateDashboard
+                    (async () => {
+                        const estadoSelect   = document.getElementById('stateFilterMunicipios');
+                        const municipioSelect = document.getElementById('municipioFilter');
+                        const dataType        = getSelectedDataType();
+                        const csvPath         = dataSources[dataType]['municipios'].csv;
+                        const csvData         = await d3.csv(csvPath);
 
-    // Espera o CSV estar carregado para popular dinamicamente
-    setTimeout(async () => {
-        const estadoSelect = document.getElementById('stateFilterMunicipios');
-        const municipioSelect = document.getElementById('municipioFilter');
+                        function populaMunicipios(uf) {
+                            const nomes = new Set();
+                            csvData.forEach(d => {
+                                if (uf === 'all' || d.ESTADO === uf) {
+                                    nomes.add(d.MUNICIPIO);
+                                }
+                            });
+                            municipioSelect.innerHTML = '<option value="all">Todos os Municípios</option>';
+                            Array.from(nomes).sort().forEach(mun => {
+                                municipioSelect.appendChild(new Option(mun, mun));
+                            });
+                        }
 
-        const dataType = getSelectedDataType();
-        const territoryType = 'municipios';
-        const csvPath = dataSources[dataType][territoryType].csv;
-        const csvData = await d3.csv(csvPath);
+                        // 3) Ao mudar o estado, repopula os municípios e atualiza o dashboard
+                        estadoSelect.addEventListener('change', () => {
+                            populaMunicipios(estadoSelect.value);
+                            updateDashboard();
+                        });
 
-        estadoSelect.addEventListener('change', () => {
-            const estadoSelecionado = estadoSelect.value;
-            const municipiosFiltrados = new Set();
-
-            csvData.forEach(d => {
-                if (estadoSelecionado === 'all' || d.ESTADO === estadoSelecionado) {
-                    municipiosFiltrados.add(d.MUNICIPIO);
+                        // 4) Inicializa com "all" e desenha o dashboard uma única vez
+                        populaMunicipios('all');
+                        updateDashboard();
+                    })();
                 }
-            });
+                else if (territoryType === 'terrasIndigenas') {
+                    specificFiltersContent.innerHTML = `
+                        <div class="col-md-6">
+                            <label for="stateFilterTerrasIndigenas" class="form-label fw-bold">Filtrar por Estado:</label>
+                            <select id="stateFilterTerrasIndigenas" class="form-select">
+                                <option value="all">Todos os Estados</option>
+                                <option value="AC">Acre</option>
+                                <option value="AP">Amapá</option>
+                                <option value="AM">Amazonas</option>
+                                <option value="MA">Maranhão</option>
+                                <option value="MT">Mato Grosso</option>
+                                <option value="PA">Pará</option>
+                                <option value="RO">Rondônia</option>
+                                <option value="RR">Roraima</option>
+                                <option value="TO">Tocantins</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Selecionar Terras Indígenas:</label><br>
+                            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#terraModal">Selecionar Terras</button>
+                            <div id="terraSelecionadasResumo" class="mt-2 small text-muted">Nenhuma selecionada.</div>
+                        </div>
 
-            municipioSelect.innerHTML = '<option value="all">Todos os Municípios</option>';
-            Array.from(municipiosFiltrados).sort().forEach(mun => {
-                const opt = document.createElement('option');
-                opt.value = mun;
-                opt.textContent = mun;
-                municipioSelect.appendChild(opt);
-            });
-        });
+                        <!-- Modal -->
+                        <div class="modal fade" id="terraModal" tabindex="-1" aria-labelledby="terraModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-scrollable modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="terraModalLabel">Selecione até 10 Terras Indígenas</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <input type="text" id="terraSearchInput" class="form-control mb-3" placeholder="Pesquisar por nome da terra...">
+                                        <div id="checkboxContainer" class="row"></div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <small class="text-muted me-auto" id="contagemSelecionados">0 selecionadas</small>
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    specificFiltersContainer.style.display = 'block';
 
-        // Disparar evento para preencher ao abrir
-        estadoSelect.dispatchEvent(new Event('change'));
-    }, 0);
-}
+                    // Aguarda para carregar terras
+                    setTimeout(async () => {
+                        const estadoSelect = document.getElementById('stateFilterTerrasIndigenas');
+                        const container = document.getElementById('checkboxContainer');
+                        const resumoSelecionadas = document.getElementById('terraSelecionadasResumo');
+                        const contagemEl = document.getElementById('contagemSelecionados');
 
-               else if (territoryType === 'terrasIndigenas') {
-    specificFiltersContent.innerHTML = `
-        <div class="col-md-6">
-            <label for="stateFilterTerrasIndigenas" class="form-label fw-bold">Filtrar por Estado:</label>
-            <select id="stateFilterTerrasIndigenas" class="form-select">
-                <option value="all">Todos os Estados</option>
-                <option value="AC">Acre</option>
-                <option value="AP">Amapá</option>
-                <option value="AM">Amazonas</option>
-                <option value="MA">Maranhão</option>
-                <option value="MT">Mato Grosso</option>
-                <option value="PA">Pará</option>
-                <option value="RO">Rondônia</option>
-                <option value="RR">Roraima</option>
-                <option value="TO">Tocantins</option>
-            </select>
-        </div>
-        <div class="col-md-6">
-            <label class="form-label fw-bold">Selecionar Terras Indígenas:</label><br>
-            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#terraModal">Selecionar Terras</button>
-            <div id="terraSelecionadasResumo" class="mt-2 small text-muted">Nenhuma selecionada.</div>
-        </div>
+                        const csvPath = dataSources[getSelectedDataType()].terrasIndigenas.csv;
+                        const csvData = await d3.csv(csvPath);
 
-        <!-- Modal -->
-<div class="modal fade" id="terraModal" tabindex="-1" aria-labelledby="terraModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-scrollable modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="terraModalLabel">Selecione até 10 Terras Indígenas</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body">
-        <input type="text" id="terraSearchInput" class="form-control mb-3" placeholder="Pesquisar por nome da terra...">
-        <div id="checkboxContainer" class="row"></div>
-      </div>
-      <div class="modal-footer">
-        <small class="text-muted me-auto" id="contagemSelecionados">0 selecionadas</small>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
-</div>
+                        let terrasDisponiveis = [];
+                        let terrasFiltradas = [];
+                        function drawCheckboxes(lista) {
+                            container.innerHTML = '';
+                            lista.forEach(nome => {
+                                const col = document.createElement('div');
+                                col.className = 'col-md-4 mb-2';
+                                col.innerHTML = `
+                                    <div class="form-check">
+                                        <input class="form-check-input terra-checkbox" type="checkbox" value="${nome}" id="${nome}">
+                                        <label class="form-check-label" for="${nome}">${nome}</label>
+                                    </div>`;
+                                container.appendChild(col);
+                            });
 
-    `;
-    specificFiltersContainer.style.display = 'block';
+                            // Lógica de limite
+                            const checkboxes = container.querySelectorAll('.terra-checkbox');
+                            checkboxes.forEach(cb => {
+                                cb.addEventListener('change', () => {
+                                    const selecionados = container.querySelectorAll('.terra-checkbox:checked');
+                                    if (selecionados.length > 10) {
+                                        cb.checked = false;
+                                        alert('Você só pode selecionar até 10 terras.');
+                                    }
+                                    updateContagem();
+                                });
+                            });
 
-    // Aguarda para carregar terras
-    setTimeout(async () => {
-        const estadoSelect = document.getElementById('stateFilterTerrasIndigenas');
-        const container = document.getElementById('checkboxContainer');
-        const resumoSelecionadas = document.getElementById('terraSelecionadasResumo');
-        const contagemEl = document.getElementById('contagemSelecionados');
+                            updateContagem();
+                        }
 
-        const csvPath = dataSources[getSelectedDataType()].terrasIndigenas.csv;
-        const csvData = await d3.csv(csvPath);
+                        function renderCheckboxes(estadoSelecionado = 'all') {
+                            const nomes = new Set();
+                            container.innerHTML = '';
+                            csvData.forEach(d => {
+                                if (estadoSelecionado === 'all' || d.ESTADO === estadoSelecionado) {
+                                    nomes.add(d.TERRA_INDI);
+                                }
+                            });
 
-        
-        let terrasDisponiveis = [];
-        let terrasFiltradas = [];
-        function drawCheckboxes(lista) {
-    container.innerHTML = '';
-    lista.forEach(nome => {
-        const col = document.createElement('div');
-        col.className = 'col-md-4 mb-2';
-        col.innerHTML = `
-            <div class="form-check">
-                <input class="form-check-input terra-checkbox" type="checkbox" value="${nome}" id="${nome}">
-                <label class="form-check-label" for="${nome}">${nome}</label>
-            </div>`;
-        container.appendChild(col);
-    });
+                            terrasDisponiveis = Array.from(nomes).sort();
+                            terrasFiltradas = [...terrasDisponiveis]; // inicia com todas
 
-    // Lógica de limite
-    const checkboxes = container.querySelectorAll('.terra-checkbox');
-    checkboxes.forEach(cb => {
-        cb.addEventListener('change', () => {
-            const selecionados = container.querySelectorAll('.terra-checkbox:checked');
-            if (selecionados.length > 10) {
-                cb.checked = false;
-                alert('Você só pode selecionar até 10 terras.');
-            }
-            updateContagem();
-        });
-    });
+                            drawCheckboxes(terrasFiltradas);
 
-    updateContagem();
-}
+                            terrasDisponiveis.forEach(nome => {
+                                const col = document.createElement('div');
+                                col.className = 'col-md-4 mb-2';
+                                col.innerHTML = `
+                                    <div class="form-check">
+                                        <input class="form-check-input terra-checkbox" type="checkbox" value="${nome}" id="${nome}">
+                                        <label class="form-check-label" for="${nome}">${nome}</label>
+                                    </div>`;
+                                container.appendChild(col);
+                            });
 
-        function renderCheckboxes(estadoSelecionado = 'all') {
-            
+                            // Limitar seleção
+                            const checkboxes = container.querySelectorAll('.terra-checkbox');
+                            checkboxes.forEach(cb => {
+                                cb.addEventListener('change', () => {
+                                    const selecionados = container.querySelectorAll('.terra-checkbox:checked');
+                                    if (selecionados.length > 10) {
+                                        cb.checked = false;
+                                        alert('Você só pode selecionar até 10 terras.');
+                                    }
+                                    updateContagem();
+                                });
+                            });
 
-            const nomes = new Set();
-            container.innerHTML = '';
-            csvData.forEach(d => {
-                if (estadoSelecionado === 'all' || d.ESTADO === estadoSelecionado) {
-                    nomes.add(d.TERRA_INDI);
+                            updateContagem();
+                        }
+
+                        function updateContagem() {
+                            const selecionados = container.querySelectorAll('.terra-checkbox:checked');
+                            contagemEl.textContent = `${selecionados.length} selecionadas`;
+                            resumoSelecionadas.textContent = selecionados.length
+                                ? Array.from(selecionados).map(el => el.value).join(', ')
+                                : 'Nenhuma selecionada.';
+                        }
+
+                        estadoSelect.addEventListener('change', () => {
+                            renderCheckboxes(estadoSelect.value);
+                        });
+
+                        renderCheckboxes('all');
+                        const searchInput = document.getElementById('terraSearchInput');
+                        searchInput.addEventListener('input', () => {
+                            const termo = searchInput.value.trim().toLowerCase();
+                            const filtradas = terrasDisponiveis.filter(nome =>
+                                nome.toLowerCase().includes(termo)
+                            );
+                            drawCheckboxes(filtradas);
+                        });
+
+                    }, 0);
                 }
-            });
-
-            terrasDisponiveis = Array.from(nomes).sort();
-            terrasFiltradas = [...terrasDisponiveis]; // inicia com todas
-
-            drawCheckboxes(terrasFiltradas);
-
-            terrasDisponiveis.forEach(nome => {
-                const col = document.createElement('div');
-                col.className = 'col-md-4 mb-2';
-                col.innerHTML = `
-                    <div class="form-check">
-                        <input class="form-check-input terra-checkbox" type="checkbox" value="${nome}" id="${nome}">
-                        <label class="form-check-label" for="${nome}">${nome}</label>
-                    </div>`;
-                container.appendChild(col);
-            });
-
-            // Limitar seleção
-            const checkboxes = container.querySelectorAll('.terra-checkbox');
-            checkboxes.forEach(cb => {
-                cb.addEventListener('change', () => {
-                    const selecionados = container.querySelectorAll('.terra-checkbox:checked');
-                    if (selecionados.length > 10) {
-                        cb.checked = false;
-                        alert('Você só pode selecionar até 10 terras.');
-                    }
-                    updateContagem();
-                });
-            });
-
-            updateContagem();
-        }
-
-        function updateContagem() {
-            const selecionados = container.querySelectorAll('.terra-checkbox:checked');
-            contagemEl.textContent = `${selecionados.length} selecionadas`;
-            resumoSelecionadas.textContent = selecionados.length
-                ? Array.from(selecionados).map(el => el.value).join(', ')
-                : 'Nenhuma selecionada.';
-        }
-
-        estadoSelect.addEventListener('change', () => {
-            renderCheckboxes(estadoSelect.value);
-        });
-
-        renderCheckboxes('all');
-        const searchInput = document.getElementById('terraSearchInput');
-searchInput.addEventListener('input', () => {
-    const termo = searchInput.value.trim().toLowerCase();
-    const filtradas = terrasDisponiveis.filter(nome =>
-        nome.toLowerCase().includes(termo)
-    );
-    drawCheckboxes(filtradas);
-});
-
-    }, 0);
-}
-
-
                 else if (territoryType === 'unidadesConservacao') {
                     specificFiltersContent.innerHTML = `
                         <div class="col-md-3">
