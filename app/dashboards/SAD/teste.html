@@ -21,6 +21,12 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <style>
+        /* Terras Indígenas – lista sem checkbox */
+.ti-item          { padding:10px 15px; border-bottom:1px solid #eee;
+                    cursor:pointer; transition:background .2s;}
+.ti-item:hover    { background:#f0f8ff;}
+.ti-item.selected { background:#e0f7e9; font-weight:600;}
+
         .select2-container--default .select2-selection--multiple {
             border-radius: 8px;
             border-color: #ddd;
@@ -543,6 +549,45 @@
                 font-size: 1.4rem;
             }
         }
+
+        /* Modal para seleção de terras indígenas */
+        .settlement-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .settlement-item:hover {
+            background-color: #f0f8ff;
+        }
+
+        .settlement-item.selected {
+            background-color: #e0f7e9;
+            font-weight: 600;
+        }
+
+        .selection-info {
+            padding: 10px 0;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .modal-terras-indigenas .modal-content {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        .modal-terras-indigenas .modal-header {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .modal-terras-indigenas .modal-footer .btn {
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 8px 20px;
+        }
     </style>
 </head>
 <body>
@@ -832,6 +877,13 @@
         const startPeriodInput = document.getElementById('startPeriod');
         const endPeriodInput = document.getElementById('endPeriod');
         const periodDisplay = document.getElementById('period-display');
+        // --- NOVO helper: devolve o intervalo de anos atualmente filtrado
+function getSelectedYearRange() {
+    const [sMonth, sYear] = startPeriodInput.value.split('/');
+    const [eMonth, eYear] = endPeriodInput.value.split('/');
+    return { start: parseInt(sYear, 10), end: parseInt(eYear, 10) };
+}
+
         
         // Função para validar o input de data
         function validateDateInput(input) {
@@ -938,10 +990,10 @@
                 updatePeriodDisplay();
             });
             
-            input.addEventListener('blur', function() {
-                validateDateInput(this);
-                updatePeriodDisplay();
-            });
+            [startPeriodInput, endPeriodInput].forEach(inp =>
+    inp.addEventListener('blur', updateSpecificFilters)
+);
+
         });
         
         // Event listeners para presets
@@ -1254,17 +1306,15 @@
                     }
                 }
                 else if (territoryType === 'terrasIndigenas') {
-                    const stateFilter = document.getElementById('stateFilterTerrasIndigenas');
-                    if (stateFilter && stateFilter.value !== 'all') {
-                        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
-                    }
+    const stateFilter = document.getElementById('stateFilterTI');
+    if (stateFilter && stateFilter.value !== 'all')
+        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
 
-                    const checkboxes = document.querySelectorAll('.terra-checkbox:checked');
-                    if (checkboxes.length > 0) {
-                        const selecionadas = Array.from(checkboxes).map(cb => cb.value);
-                        filteredData = filteredData.filter(d => selecionadas.includes(d.TERRA_INDI));
-                    }
-                }
+    if (window.tiSelecionadas?.length)
+        filteredData = filteredData.filter(d =>
+            window.tiSelecionadas.includes(d.TERRA_INDI));
+}
+
                 else if (territoryType === 'unidadesConservacao') {
                     const stateFilter = document.getElementById('stateFilterUC');
                     const jurisdicaoFilter = document.getElementById('jurisdicaoFilter');
@@ -1397,101 +1447,107 @@
             });
         }
 
-        function updateLineChart(csvData, territoryType) {
-            const ctx = document.getElementById('lineChart').getContext('2d');
-            if (lineChart) {
-                lineChart.destroy();
-            }
+       function updateLineChart(csvData, territoryType) {
+    const ctx = document.getElementById('lineChart').getContext('2d');
+    if (lineChart) {
+        lineChart.destroy();
+    }
 
-            const dataType = getSelectedDataType();
-            const years = Array.from(new Set(csvData.map(d => d.ANO))).sort();
-            const nameKey = territoryNameMapping[territoryType];
-            const groupedData = {};
+    const dataType = getSelectedDataType();
+    const years = Array.from(new Set(csvData.map(d => d.ANO))).sort();
+    const nameKey = territoryNameMapping[territoryType];
+    const groupedData = {};
 
-            // Agrupar dados por território e ano
-            csvData.forEach(d => {
-                // CORREÇÃO: Usar a chave correta (nameKey) para todos os tipos de território
-                const key = d[nameKey]; 
-                const year = d.ANO;
-                const area = parseFloat(d.AREAKM2) || 0;
+    // Agrupar dados por território e ano
+    csvData.forEach(d => {
+        const key = d[nameKey]; 
+        const year = d.ANO;
+        const area = parseFloat(d.AREAKM2) || 0;
 
-                if (!groupedData[key]) groupedData[key] = {};
-                groupedData[key][year] = (groupedData[key][year] || 0) + area;
-            });
+        if (!groupedData[key]) groupedData[key] = {};
+        groupedData[key][year] = (groupedData[key][year] || 0) + area;
+    });
 
-            // Construir datasets com cores fixas
-            const pal = d3.schemeTableau10.concat(d3.schemeSet2);
-            const datasets = currentTopTerritories.slice(0, 10).map((territorio, i) => ({
-                label: estadoNomes[territorio] || territorio,
-                data: years.map(y => groupedData[territorio]?.[y] || 0),
-                borderColor: pal[i % pal.length],
-                backgroundColor: pal[i % pal.length] + '20',
-                fill: false,
-                tension: 0.4,
-                pointRadius: 3
-            }));
+    // Construir datasets com cores fixas
+    const pal = d3.schemeTableau10.concat(d3.schemeSet2);
+    const datasets = currentTopTerritories.slice(0, 10).map((territorio, i) => ({
+        label: estadoNomes[territorio] || territorio,
+        data: years.map(y => groupedData[territorio]?.[y] || 0),
+        borderColor: pal[i % pal.length],
+        backgroundColor: pal[i % pal.length] + '20',
+        pointBackgroundColor: pal[i % pal.length], // Mesma cor da linha
+        pointBorderColor: '#ffffff',
+        pointStyle: 'circle', // Define o estilo como círculo
+        pointRadius: 4,       // Tamanho padrão
+        pointHoverRadius: 6,  // Tamanho aumentado no hover
+        borderWidth: 2,
+        fill: false,
+        tension: 0.4
+    }));
 
-            // Criar o gráfico sem data labels no final
-            lineChart = new Chart(ctx, {
-                type: 'line',
-                data: { labels: years, datasets },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: { font: { weight: 'bold' } }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white',
-                            borderColor: dataType === 'desmatamento' ? '#008055' : '#FF6D00',
-                            borderWidth: 1,
-                            callbacks: {
-                                label(ctx) {
-                                    return `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('pt-BR', {
-                                        maximumFractionDigits: 2
-                                    })} km²`;
-                                }
-                            }
-                        },
-                        datalabels: {
-                            // Desliga completamente os rótulos de dados neste gráfico
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Área (km²)',
-                                font: { weight: 'bold' }
-                            },
-                            grid: { display: false },
-                            ticks: {
-                                callback: v => v.toLocaleString('pt-BR')
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Ano',
-                                font: { weight: 'bold' }
-                            },
-                            grid: { display: false }
-                        }
-                    },
-                    animation: {
-                        duration: 1500,
-                        easing: 'easeInOutQuart'
+    // Criar o gráfico
+    lineChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: years, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: { 
+                        font: { weight: 'bold' },
+                        usePointStyle: true // Usa o estilo de ponto na legenda
                     }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: dataType === 'desmatamento' ? '#008055' : '#FF6D00',
+                    borderWidth: 1,
+                    callbacks: {
+                        label(ctx) {
+                            return `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('pt-BR', {
+                                maximumFractionDigits: 2
+                            })} km²`;
+                        }
+                    }
+                },
+                datalabels: {
+                    display: false
                 }
-            });
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Área (km²)',
+                        font: { weight: 'bold' }
+                    },
+                    grid: { display: false },
+                    ticks: {
+                        callback: v => v.toLocaleString('pt-BR')
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Ano',
+                        font: { weight: 'bold' }
+                    },
+                    grid: { display: false }
+                }
+            },
+            animation: {
+                duration: 1500,
+                easing: 'easeInOutQuart'
+            }
         }
+    });
+}
 
         // Função para atualizar o gráfico anual
         function updateYearlyChart(csvData) {
@@ -1524,38 +1580,37 @@
             const borderColor = dataType === 'desmatamento' ? 'rgba(198, 40, 40, 1)' : 'rgba(255, 109, 0, 1)';
 
             yearlyChart = new Chart(ctx, {
-                plugins: [ChartDataLabels],
-                type: 'bar',
-                data: {
-                    labels: years,
-                    datasets: [{
-                        label: 'Área Total (km²)',
-                        data: values,
-                        backgroundColor: bgColor,
-                        borderColor: borderColor,
-                        borderWidth: 1,
-                        borderRadius: 4,
-                        borderSkipped: false,
-                    }]
-                },
+        plugins: [ChartDataLabels],
+        type: 'bar',
+        data: {
+            labels: years,
+            datasets: [{
+                label: 'Área Total (km²)',
+                data: values,
+                backgroundColor: bgColor,
+                borderColor: borderColor,
+                borderWidth: 1,
+                borderRadius: 4,
+                borderSkipped: false,
+
+                
+                barPercentage: 0.89,      
+                categoryPercentage: 0.89
+            }]
+        },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'top',
-                            color: '#333',
-                            font: {
-                                weight: 'bold',
-                                size: 11
-                            },
-                            formatter: value =>
-                                `${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`
-                        },
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    color: '#333',
+                    
+                    font: { weight: 'bold', size: 10 },
+                    formatter: v => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
+                },
                         tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)',
                                     titleColor: 'white',
                                     bodyColor: 'white',
@@ -1769,8 +1824,8 @@
 
             const singular  = territorySingular[territoryKey];
             const dataLabel = dataKey === 'desmatamento'
-                                ? 'Alertas de Desmatamento'
-                                : 'Alertas de Degradação';
+                                ? 'Desmatamento'
+                                : 'Degradação';
             
             // 2) Título do Mapa (já com as variáveis existentes)
             mapTitle.innerHTML =
@@ -1782,7 +1837,7 @@
             const preLine = dataTypeFrase[dataKey].preposicao;
             lineChartTitle.innerHTML =
                 `<i class="fas fa-chart-line me-2"></i>` +
-                `Série Histórica ${artLine} ${dataLabel.toLowerCase()} ${preLine} ${nome} ` +
+                `Série Histórica ${artLine} ${dataLabel} ${preLine} ${nome} ` +
                 `(2008 – ${new Date().getFullYear() - 1})`;
 
             // 5) Série Histórica Anual
@@ -1790,8 +1845,8 @@
             const lastYear  = +endPeriodInput.value.split('/')[1];
             yearlyChartTitle.innerHTML =
                 `<i class="fas fa-chart-area me-2"></i>` +
-                `Série Histórica Anual ${preposicao} ${nome} da Amazônia Legal ` +
-                `(${firstYear} – ${lastYear})`;
+                `Série Histórica do Desmatamento na Amazônia Legal ` +
+                `(2008 - 2024)`;
         }
 
         // Event Listeners para botões de filtro
@@ -1839,8 +1894,7 @@
             // Atualiza resumo e contagem, se existirem
             const resumo = document.getElementById('terraSelecionadasResumo');
             const contagem = document.getElementById('contagemSelecionados');
-            if (resumo) resumo.textContent = 'Nenhuma selecionada.';
-            if (contagem) contagem.textContent = '0 selecionadas';
+            
         
             // Atualizar dashboard com filtros limpos
             updateDashboard();
@@ -1953,156 +2007,128 @@
                     })();
                 }
                 else if (territoryType === 'terrasIndigenas') {
-                    specificFiltersContent.innerHTML = `
-                        <div class="col-md-6">
-                            <label for="stateFilterTerrasIndigenas" class="form-label fw-bold">Filtrar por Estado:</label>
-                            <select id="stateFilterTerrasIndigenas" class="form-select">
-                                <option value="all">Todos os Estados</option>
-                                <option value="AC">Acre</option>
-                                <option value="AP">Amapá</option>
-                                <option value="AM">Amazonas</option>
-                                <option value="MA">Maranhão</option>
-                                <option value="MT">Mato Grosso</option>
-                                <option value="PA">Pará</option>
-                                <option value="RO">Rondônia</option>
-                                <option value="RR">Roraima</option>
-                                <option value="TO">Tocantins</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Selecionar Terras Indígenas:</label><br>
-                            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#terraModal">Selecionar Terras</button>
-                            <div id="terraSelecionadasResumo" class="mt-2 small text-muted">Nenhuma selecionada.</div>
-                        </div>
+    specificFiltersContent.innerHTML = `
+        <div class="col-md-6">
+            <label for="stateFilterTI" class="form-label fw-bold">Filtrar por Estado:</label>
+            <select id="stateFilterTI" class="form-select">
+                <option value="all">Todos os Estados</option>
+                <option value="AC">Acre</option><option value="AP">Amapá</option>
+                <option value="AM">Amazonas</option><option value="MA">Maranhão</option>
+                <option value="MT">Mato Grosso</option><option value="PA">Pará</option>
+                <option value="RO">Rondônia</option><option value="RR">Roraima</option>
+                <option value="TO">Tocantins</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Selecionar Terras Indígenas:</label><br>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#terraModal">
+                <i class="fas fa-campground me-2"></i>Selecionar
+            </button>
+            
+        </div>
 
-                        <!-- Modal -->
-                        <div class="modal fade" id="terraModal" tabindex="-1" aria-labelledby="terraModalLabel" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-scrollable modal-lg">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="terraModalLabel">Selecione até 10 Terras Indígenas</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <input type="text" id="terraSearchInput" class="form-control mb-3" placeholder="Pesquisar por nome da terra...">
-                                        <div id="checkboxContainer" class="row"></div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <small class="text-muted me-auto" id="contagemSelecionados">0 selecionadas</small>
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    specificFiltersContainer.style.display = 'block';
+        <!-- Modal Terras Indígenas -->
+        <div class="modal fade" id="terraModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Selecionar Terras Indígenas (máx. 10)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" id="tiSearch" class="form-control mb-3"
+                               placeholder="Buscar terra indígena…">
+                        <div class="small mb-2"><span id="tiCount">0</span> de 10 selecionadas</div>
+                        <div id="tiList" style="max-height:400px;overflow:auto;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" id="apply-ti">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    specificFiltersContainer.style.display = 'block';
 
-                    // Aguarda para carregar terras
-                    setTimeout(async () => {
-                        const estadoSelect = document.getElementById('stateFilterTerrasIndigenas');
-                        const container = document.getElementById('checkboxContainer');
-                        const resumoSelecionadas = document.getElementById('terraSelecionadasResumo');
-                        const contagemEl = document.getElementById('contagemSelecionados');
+    /* ==========  JS do modal ========== */
+    setTimeout(async () => {
+        const stateSel = document.getElementById('stateFilterTI');
+        const listDiv  = document.getElementById('tiList');
+        const resumo   = document.getElementById('tiResumo');
+        const countEl  = document.getElementById('tiCount');
+        const search   = document.getElementById('tiSearch');
+        const applyBtn = document.getElementById('apply-ti');
 
-                        const csvPath = dataSources[getSelectedDataType()].terrasIndigenas.csv;
-                        const csvData = await d3.csv(csvPath);
+        const csvPath  = dataSources[getSelectedDataType()].terrasIndigenas.csv;
+        const csvData  = await d3.csv(csvPath);
 
-                        let terrasDisponiveis = [];
-                        let terrasFiltradas = [];
-                        function drawCheckboxes(lista) {
-                            container.innerHTML = '';
-                            lista.forEach(nome => {
-                                const col = document.createElement('div');
-                                col.className = 'col-md-4 mb-2';
-                                col.innerHTML = `
-                                    <div class="form-check">
-                                        <input class="form-check-input terra-checkbox" type="checkbox" value="${nome}" id="${nome}">
-                                        <label class="form-check-label" for="${nome}">${nome}</label>
-                                    </div>`;
-                                container.appendChild(col);
-                            });
+        // array global para o filtro
+        window.tiSelecionadas = [];
 
-                            // Lógica de limite
-                            const checkboxes = container.querySelectorAll('.terra-checkbox');
-                            checkboxes.forEach(cb => {
-                                cb.addEventListener('change', () => {
-                                    const selecionados = container.querySelectorAll('.terra-checkbox:checked');
-                                    if (selecionados.length > 10) {
-                                        cb.checked = false;
-                                        alert('Você só pode selecionar até 10 terras.');
-                                    }
-                                    updateContagem();
-                                });
-                            });
+        // helpers
+        const yearRange = () => {
+            const [,sY] = startPeriodInput.value.split('/');
+            const [,eY] = endPeriodInput.value.split('/');
+            return {ini:+sY, fim:+eY};
+        };
 
-                            updateContagem();
-                        }
+        let listaAtual = [];
 
-                        function renderCheckboxes(estadoSelecionado = 'all') {
-                            const nomes = new Set();
-                            container.innerHTML = '';
-                            csvData.forEach(d => {
-                                if (estadoSelecionado === 'all' || d.ESTADO === estadoSelecionado) {
-                                    nomes.add(d.TERRA_INDI);
-                                }
-                            });
-
-                            terrasDisponiveis = Array.from(nomes).sort();
-                            terrasFiltradas = [...terrasDisponiveis]; // inicia com todas
-
-                            drawCheckboxes(terrasFiltradas);
-
-                            terrasDisponiveis.forEach(nome => {
-                                const col = document.createElement('div');
-                                col.className = 'col-md-4 mb-2';
-                                col.innerHTML = `
-                                    <div class="form-check">
-                                        <input class="form-check-input terra-checkbox" type="checkbox" value="${nome}" id="${nome}">
-                                        <label class="form-check-label" for="${nome}">${nome}</label>
-                                    </div>`;
-                                container.appendChild(col);
-                            });
-
-                            // Limitar seleção
-                            const checkboxes = container.querySelectorAll('.terra-checkbox');
-                            checkboxes.forEach(cb => {
-                                cb.addEventListener('change', () => {
-                                    const selecionados = container.querySelectorAll('.terra-checkbox:checked');
-                                    if (selecionados.length > 10) {
-                                        cb.checked = false;
-                                        alert('Você só pode selecionar até 10 terras.');
-                                    }
-                                    updateContagem();
-                                });
-                            });
-
-                            updateContagem();
-                        }
-
-                        function updateContagem() {
-                            const selecionados = container.querySelectorAll('.terra-checkbox:checked');
-                            contagemEl.textContent = `${selecionados.length} selecionadas`;
-                            resumoSelecionadas.textContent = selecionados.length
-                                ? Array.from(selecionados).map(el => el.value).join(', ')
-                                : 'Nenhuma selecionada.';
-                        }
-
-                        estadoSelect.addEventListener('change', () => {
-                            renderCheckboxes(estadoSelect.value);
-                        });
-
-                        renderCheckboxes('all');
-                        const searchInput = document.getElementById('terraSearchInput');
-                        searchInput.addEventListener('input', () => {
-                            const termo = searchInput.value.trim().toLowerCase();
-                            const filtradas = terrasDisponiveis.filter(nome =>
-                                nome.toLowerCase().includes(termo)
-                            );
-                            drawCheckboxes(filtradas);
-                        });
-
-                    }, 0);
+        function carregaLista(uf='all', busca='') {
+            const {ini,fim} = yearRange();
+            const nomes = new Set();
+            csvData.forEach(d => {
+                const ano = +d.ANO;
+                if (ano>=ini && ano<=fim && (uf==='all'||d.ESTADO===uf)) {
+                    if (d.TERRA_INDI.toLowerCase().includes(busca)) nomes.add(d.TERRA_INDI);
                 }
+            });
+            listaAtual = Array.from(nomes).sort();
+            render();
+        }
+
+        function render() {
+            listDiv.innerHTML = '';
+            listaAtual.forEach(nome => {
+                listDiv.insertAdjacentHTML('beforeend',
+                    `<div class="ti-item ${tiSelecionadas.includes(nome)?'selected':''}">
+                        ${nome}
+                     </div>`);
+            });
+            listDiv.querySelectorAll('.ti-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const nome = el.textContent.trim();
+                    if (tiSelecionadas.includes(nome)) {
+                        tiSelecionadas = tiSelecionadas.filter(n => n!==nome);
+                        el.classList.remove('selected');
+                    } else if (tiSelecionadas.length < 10) {
+                        tiSelecionadas.push(nome);
+                        el.classList.add('selected');
+                    }
+                    countEl.textContent = tiSelecionadas.length;
+                });
+            });
+            countEl.textContent = tiSelecionadas.length;
+        }
+
+        // eventos
+        stateSel.addEventListener('change',   () => carregaLista(stateSel.value, search.value.toLowerCase()));
+        search  .addEventListener('input',    () => carregaLista(stateSel.value, search.value.trim().toLowerCase()));
+        [startPeriodInput,endPeriodInput].forEach(inp =>
+            inp.addEventListener('blur', () => carregaLista(stateSel.value, search.value.toLowerCase()))
+        );
+
+        applyBtn.addEventListener('click', () => {
+            bootstrap.Modal.getInstance(document.getElementById('terraModal')).hide();
+            updateDashboard();               // aplica o filtro no mapa/gráficos
+        });
+
+        // inicial
+        carregaLista();
+    },0);
+}
+
                 else if (territoryType === 'unidadesConservacao') {
                     specificFiltersContent.innerHTML = `
                         <div class="col-md-3">
@@ -2152,6 +2178,30 @@
         updateDashboard();
     });
 </script>
+<!-- Adicione este modal genérico no final do body -->
+<div class="modal fade modal-territorios" id="territorioModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTerritorioTitle">Selecionar Territórios</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="search-box mb-3">
+                    <input type="text" id="territorioSearchInput" class="form-control" placeholder="Buscar...">
+                </div>
+                <div class="selection-info">
+                    <span id="contagemSelecionados">0</span> de 10 selecionados
+                </div>
+                <div id="territorioCheckboxContainer" class="row mt-2" style="max-height: 400px; overflow-y: auto;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="apply-territorio-selection">Aplicar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
