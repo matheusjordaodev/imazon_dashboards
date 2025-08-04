@@ -21,6 +21,30 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <style>
+        /* Assentamentos – lista limpa */
+.assent-item          { padding:10px 15px; border-bottom:1px solid #eee;
+                        cursor:pointer; transition:background .2s;}
+.assent-item:hover    { background:#f0f8ff;}
+.assent-item.selected { background:#e0f7e9; font-weight:600;}
+
+        /* Municípios – lista sem checkbox */
+.muni-item          { padding:10px 15px; border-bottom:1px solid #eee;
+                      cursor:pointer; transition:background .2s;}
+.muni-item:hover    { background:#f0f8ff;}
+.muni-item.selected { background:#e0f7e9; font-weight:600;}
+
+        /* Unidades de Conservação – lista clean */
+.uc-item          { padding:10px 15px; border-bottom:1px solid #eee;
+                    cursor:pointer; transition:background .2s;}
+.uc-item:hover    { background:#f0f8ff;}
+.uc-item.selected { background:#e0f7e9; font-weight:600;}
+
+        /* Terras Indígenas – lista sem checkbox */
+.ti-item          { padding:10px 15px; border-bottom:1px solid #eee;
+                    cursor:pointer; transition:background .2s;}
+.ti-item:hover    { background:#f0f8ff;}
+.ti-item.selected { background:#e0f7e9; font-weight:600;}
+
         .select2-container--default .select2-selection--multiple {
             border-radius: 8px;
             border-color: #ddd;
@@ -871,6 +895,13 @@
         const startPeriodInput = document.getElementById('startPeriod');
         const endPeriodInput = document.getElementById('endPeriod');
         const periodDisplay = document.getElementById('period-display');
+        // --- NOVO helper: devolve o intervalo de anos atualmente filtrado
+function getSelectedYearRange() {
+    const [sMonth, sYear] = startPeriodInput.value.split('/');
+    const [eMonth, eYear] = endPeriodInput.value.split('/');
+    return { start: parseInt(sYear, 10), end: parseInt(eYear, 10) };
+}
+
         
         // Função para validar o input de data
         function validateDateInput(input) {
@@ -977,10 +1008,10 @@
                 updatePeriodDisplay();
             });
             
-            input.addEventListener('blur', function() {
-                validateDateInput(this);
-                updatePeriodDisplay();
-            });
+            [startPeriodInput, endPeriodInput].forEach(inp =>
+    inp.addEventListener('blur', updateSpecificFilters)
+);
+
         });
         
         // Event listeners para presets
@@ -1213,42 +1244,53 @@
         }
 
         // Atualizar estatísticas
-        function updateStatistics(aggregatedData, filteredData, territoryType) {
-            // Área total
-            const totalArea = Object.values(aggregatedData).reduce((sum, area) => sum + area, 0);
-            totalAreaEl.textContent = totalArea.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
+        // ────────────────────────────────────────────────────────────
 
-            // Detectar o ano mais recente nos dados filtrados
-            const anosPresentes = [...new Set(filteredData.map(d => Number(d.ANO)))].filter(Boolean).sort();
-            const anoAtual = Math.max(...anosPresentes);
-            const anoAnterior = anoAtual - 1;
+function updateStatistics(aggregatedData, filteredData, territoryType) {
 
-            // Filtrar dados por ano
-            const dadosAtual = filteredData.filter(d => Number(d.ANO) === anoAtual);
-            const dadosAnterior = filteredData.filter(d => Number(d.ANO) === anoAnterior);
+    /* ---------- 1. Área total no período ---------- */
+    const totalArea = Object.values(aggregatedData)
+        .reduce((sum, area) => sum + area, 0);
+    totalAreaEl.textContent =
+        totalArea.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
 
-            // Calcular média mensal do ano atual
-            const monthsCount = new Set(dadosAtual.map(d => Number(d.MES))).size;
-            const somaAtual = dadosAtual.reduce((sum, d) => sum + Number(d.AREAKM2), 0);
-            const avgArea = monthsCount > 0 ? somaAtual / monthsCount : 0;
-            avgAreaEl.textContent = avgArea.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
+    /* ---------- 2. Descobre anos presentes ---------- */
+    const anosPresentes = [...new Set(
+        filteredData.map(d => Number(d.ANO))
+    )].filter(Boolean).sort();
+    const anoAtual    = Math.max(...anosPresentes);
+    const anoAnterior = anoAtual - 1;
 
-            // Territórios afetados
-            const affectedTerritories = Object.keys(aggregatedData).length;
-            affectedTerritoriesEl.textContent = affectedTerritories;
+    /* ---------- 3. Média mensal do ano atual ---------- */
+    const dadosAtual = filteredData.filter(d => +d.ANO === anoAtual);
+    const meses      = new Set(dadosAtual.map(d => +d.MES)).size;
+    const somaAtual  = dadosAtual.reduce((s,d) => s + +d.AREAKM2, 0);
+    const media      = meses ? somaAtual / meses : 0;
+    avgAreaEl.textContent =
+        media.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' km²';
 
-            // Calcular variação anual real
-            const somaAnterior = dadosAnterior.reduce((sum, d) => sum + Number(d.AREAKM2), 0);
+    /* Atualiza rótulo “em XXXX” logo abaixo da média  */
+    const mediaLabelEl = avgAreaEl.nextElementSibling;
+    if (mediaLabelEl) mediaLabelEl.textContent = `em ${anoAtual}`;
 
-            let variation = 0;
-            if (somaAnterior > 0) {
-                variation = ((somaAtual - somaAnterior) / somaAnterior) * 100;
-            } else if (somaAtual > 0) {
-                variation = 100;
-            }
+    /* ---------- 4. Territórios afetados ---------- */
+    affectedTerritoriesEl.textContent = Object.keys(aggregatedData).length;
 
-            annualChangeEl.textContent = variation.toFixed(2) + '%';
-        }
+    /* ---------- 5. Variação anual (%) ---------- */
+    const dadosAnterior = filteredData.filter(d => +d.ANO === anoAnterior);
+    const somaAnterior  = dadosAnterior.reduce((s,d) => s + +d.AREAKM2, 0);
+
+    let variacao = 0;
+    if (somaAnterior > 0)      variacao = (somaAtual - somaAnterior) / somaAnterior * 100;
+    else if (somaAtual > 0)    variacao = 100;
+
+    annualChangeEl.textContent = variacao.toFixed(2) + '%';
+
+    /* Atualiza rótulo “em relação a XXXX” logo abaixo da variação */
+    const varLabelEl = annualChangeEl.nextElementSibling;
+    if (varLabelEl) varLabelEl.textContent = `em relação a ${anoAnterior}`;
+}
+
 
         // Função para aplicar filtros específicos
         function applySpecificFilters(data, territoryType) {
@@ -1257,11 +1299,14 @@
 
             if (dataType === 'desmatamento' || dataType === 'degradacao') {
                 if (territoryType === 'assentamentos') {
-                    const stateFilter = document.getElementById('stateFilter');
-                    if (stateFilter && stateFilter.value !== 'all') {
-                        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
-                    }
-                }
+    const stateSel = document.getElementById('stateFilterAssent');
+    if (stateSel && stateSel.value !== 'all')
+        filteredData = filteredData.filter(d => d.ESTADO === stateSel.value);
+
+    if (window.assentSelecionados?.length)
+        filteredData = filteredData.filter(d =>
+            window.assentSelecionados.includes(d.ASSENTAMEN));
+}
                 else if (territoryType === 'estados') {
                     // pegamos o select de estados (onde já existe a opção "amazonia_legal")
                     const stateFilter = document.getElementById('stateFilterEstados');
@@ -1282,43 +1327,42 @@
                     }
                 }
                 else if (territoryType === 'municipios') {
-                    const stateFilter = document.getElementById('stateFilterMunicipios');
-                    const municipioFilter = document.getElementById('municipioFilter');
-                                
-                    if (stateFilter && stateFilter.value !== 'all') {
-                        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
-                    }
-                    if (municipioFilter && municipioFilter.value !== 'all') {
-                        filteredData = filteredData.filter(d => d.MUNICIPIO === municipioFilter.value);
-                    }
-                }
+    const stateFilter = document.getElementById('stateFilterMun');
+    if (stateFilter && stateFilter.value !== 'all')
+        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
+
+    if (window.munSelecionados?.length)
+        filteredData = filteredData.filter(d =>
+            window.munSelecionados.includes(d.MUNICIPIO));
+}
+
                 else if (territoryType === 'terrasIndigenas') {
-                    const stateFilter = document.getElementById('stateFilterTerrasIndigenas');
-                    if (stateFilter && stateFilter.value !== 'all') {
-                        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
-                    }
+    const stateFilter = document.getElementById('stateFilterTI');
+    if (stateFilter && stateFilter.value !== 'all')
+        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
 
-                    const checkboxes = document.querySelectorAll('.terra-checkbox:checked');
-                    if (checkboxes.length > 0) {
-                        const selecionadas = Array.from(checkboxes).map(cb => cb.value);
-                        filteredData = filteredData.filter(d => selecionadas.includes(d.TERRA_INDI));
-                    }
-                }
+    if (window.tiSelecionadas?.length)
+        filteredData = filteredData.filter(d =>
+            window.tiSelecionadas.includes(d.TERRA_INDI));
+}
+
                 else if (territoryType === 'unidadesConservacao') {
-                    const stateFilter = document.getElementById('stateFilterUC');
-                    const jurisdicaoFilter = document.getElementById('jurisdicaoFilter');
-                    const modalidadeFilter = document.getElementById('modalidadeFilter');
+    const stateSel = document.getElementById('stateFilterUC');
+    const jurisSel = document.getElementById('jurisdicaoFilterUC');
+    const modaSel  = document.getElementById('modalidadeFilterUC');
 
-                    if (stateFilter && stateFilter.value !== 'all') {
-                        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
-                    }
-                    if (jurisdicaoFilter && jurisdicaoFilter.value !== 'all') {
-                        filteredData = filteredData.filter(d => d.JURISDICAO === jurisdicaoFilter.value);
-                    }
-                    if (modalidadeFilter && modalidadeFilter.value !== 'all') {
-                        filteredData = filteredData.filter(d => d.USO === modalidadeFilter.value);
-                    }
-                }
+    if (stateSel && stateSel.value !== 'all')
+        filteredData = filteredData.filter(d => d.ESTADO === stateSel.value);
+    if (jurisSel && jurisSel.value !== 'all')
+        filteredData = filteredData.filter(d => d.JURISDICAO === jurisSel.value);
+    if (modaSel && modaSel.value !== 'all')
+        filteredData = filteredData.filter(d => d.USO === modaSel.value);
+
+    if (window.ucSelecionadas?.length)
+        filteredData = filteredData.filter(d =>
+            window.ucSelecionadas.includes(d.UNID_CONSE));
+}
+
             }
             
             return filteredData;
@@ -1826,7 +1870,7 @@
             const preLine = dataTypeFrase[dataKey].preposicao;
             lineChartTitle.innerHTML =
                 `<i class="fas fa-chart-line me-2"></i>` +
-                `Série Histórica ${artLine} ${dataLabel} ${preLine} ${nome} ` +
+                `Série Histórica ${artLine} ${dataLabel} -  ${nome} ` +
                 `(2008 – ${new Date().getFullYear() - 1})`;
 
             // 5) Série Histórica Anual
@@ -1834,7 +1878,7 @@
             const lastYear  = +endPeriodInput.value.split('/')[1];
             yearlyChartTitle.innerHTML =
                 `<i class="fas fa-chart-area me-2"></i>` +
-                `Série Histórica do Desmatamento na Amazônia Legal ` +
+                `Série Histórica ${artLine} ${dataLabel} - Amazônia Legal ` +
                 `(2008 - 2024)`;
         }
 
@@ -1883,8 +1927,7 @@
             // Atualiza resumo e contagem, se existirem
             const resumo = document.getElementById('terraSelecionadasResumo');
             const contagem = document.getElementById('contagemSelecionados');
-            if (resumo) resumo.textContent = 'Nenhuma selecionada.';
-            if (contagem) contagem.textContent = '0 selecionadas';
+            
         
             // Atualizar dashboard com filtros limpos
             updateDashboard();
@@ -1897,298 +1940,534 @@
             specificFiltersContent.innerHTML = '';
 
             if (dataType === 'desmatamento' || dataType === 'degradacao') {
-                if (territoryType === 'assentamentos') {
-                    specificFiltersContent.innerHTML = `
-                        <div class="col-md-4">
-                            <label for="stateFilter" class="form-label fw-bold">Filtrar por Estado:</label>
-                            <select id="stateFilter" class="form-select">
-                                <option value="all">Todos os Estados</option>
-                                <option value="AC">Acre</option>
-                                <option value="AP">Amapá</option>
-                                <option value="AM">Amazonas</option>
-                                <option value="MA">Maranhão</option>
-                                <option value="MT">Mato Grosso</option>
-                                <option value="PA">Pará</option>
-                                <option value="RO">Rondônia</option>
-                                <option value="RR">Roraima</option>
-                                <option value="TO">Tocantins</option>
-                            </select>
-                        </div>`;
-                    specificFiltersContainer.style.display = 'block';
-                } 
-                else if (dataType === 'desmatamento' && territoryType === 'estados') {
-                    specificFiltersContent.innerHTML = `
-                        <div class="col-md-4">
-                            <label for="stateFilterEstados" class="form-label fw-bold">Filtrar por Estado:</label>
-                            <select id="stateFilterEstados" class="form-select">
-                                <option value="all">Todos os Estados</option>
-                                <option value="amazonia_legal">Amazônia Legal</option>  <!-- nova opção -->
-                                <option value="AC">Acre</option>
-                                <option value="AP">Amapá</option>
-                                <option value="AM">Amazonas</option>
-                                <option value="MA">Maranhão</option>
-                                <option value="MT">Mato Grosso</option>
-                                <option value="PA">Pará</option>
-                                <option value="RO">Rondônia</option>
-                                <option value="RR">Roraima</option>
-                                <option value="TO">Tocantins</option>
-                                
-                            </select>
-                        </div>`;
-                    specificFiltersContainer.style.display = 'block';
-                }
+               if (territoryType === 'assentamentos') {
+    specificFiltersContent.innerHTML = `
+        <div class="col-md-6">
+            <label for="stateFilterAssent" class="form-label fw-bold">Estado:</label>
+            <select id="stateFilterAssent" class="form-select">
+                <option value="all">Todos</option>
+                <option value="AC">AC</option><option value="AP">AP</option>
+                <option value="AM">AM</option><option value="MA">MA</option>
+                <option value="MT">MT</option><option value="PA">PA</option>
+                <option value="RO">RO</option><option value="RR">RR</option>
+                <option value="TO">TO</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Selecionar Assentamentos:</label><br>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assentModal">
+                <i class="fas fa-home me-2"></i>Selecionar
+            </button>
+            <div id="assentResumo" class="mt-2 small text-muted">Nenhum selecionado.</div>
+        </div>
+
+        <!-- Modal Assentamentos -->
+        <div class="modal fade" id="assentModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Selecionar Assentamentos (máx. 10)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" id="assentSearch" class="form-control mb-3"
+                               placeholder="Buscar assentamento…">
+                        <div class="small mb-2"><span id="assentCount">0</span> de 10 selecionados</div>
+                        <div id="assentList" style="max-height:400px;overflow:auto;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" id="apply-assent">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    specificFiltersContainer.style.display = 'block';
+
+    /* =========  JS do modal ========= */
+    setTimeout(async () => {
+        const stateSel  = document.getElementById('stateFilterAssent');
+        const listDiv   = document.getElementById('assentList');
+        const resumo    = document.getElementById('assentResumo');
+        const countEl   = document.getElementById('assentCount');
+        const searchBox = document.getElementById('assentSearch');
+        const applyBtn  = document.getElementById('apply-assent');
+
+        const csvPath = dataSources[getSelectedDataType()].assentamentos.csv;
+        const csvData = await d3.csv(csvPath);
+
+        window.assentSelecionados = [];        // global para filtragem
+
+        const yearRange = () => {
+            const [,sY] = startPeriodInput.value.split('/');
+            const [,eY] = endPeriodInput.value.split('/');
+            return {ini:+sY, fim:+eY};
+        };
+
+        let listaAtual = [];
+
+        // gera lista respeitando ano, estado e busca
+        function carregaLista() {
+            const {ini,fim} = yearRange();
+            const uf   = stateSel.value;
+            const busca= searchBox.value.trim().toLowerCase();
+            const nomes = new Set();
+
+            csvData.forEach(d => {
+                const ano = +d.ANO;
+                if (ano<ini || ano>fim) return;
+                if (uf!=='all' && d.ESTADO!==uf) return;
+                if (!d.ASSENTAMEN.toLowerCase().includes(busca)) return;
+                nomes.add(d.ASSENTAMEN);
+            });
+
+            listaAtual = Array.from(nomes).sort();
+            render();
+        }
+
+        function render() {
+            listDiv.innerHTML = '';
+            listaAtual.forEach(nome => {
+                listDiv.insertAdjacentHTML('beforeend',
+                    `<div class="assent-item ${assentSelecionados.includes(nome)?'selected':''}">
+                        ${nome}
+                     </div>`);
+            });
+            listDiv.querySelectorAll('.assent-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const nome = el.textContent.trim();
+                    if (assentSelecionados.includes(nome)) {
+                        assentSelecionados = assentSelecionados.filter(n => n!==nome);
+                        el.classList.remove('selected');
+                    } else if (assentSelecionados.length < 10) {
+                        assentSelecionados.push(nome);
+                        el.classList.add('selected');
+                    }
+                    countEl.textContent = assentSelecionados.length;
+                });
+            });
+            countEl.textContent = assentSelecionados.length;
+        }
+
+        // eventos
+        stateSel.addEventListener('change', carregaLista);
+        searchBox.addEventListener('input', carregaLista);
+        [startPeriodInput,endPeriodInput].forEach(inp =>
+            inp.addEventListener('blur', carregaLista));
+
+        applyBtn.addEventListener('click', () => {
+            resumo.textContent = assentSelecionados.length
+                ? `${assentSelecionados.length} selecionados`
+                : 'Nenhum selecionado.';
+            bootstrap.Modal.getInstance(document.getElementById('assentModal')).hide();
+            updateDashboard();                // redesenha mapa / gráficos
+        });
+
+        carregaLista();                      
+    },0);
+}
+
                 else if (territoryType === 'municipios') {
-                    // 1) Injeta os selects de Estado e Município no DOM
-                    specificFiltersContent.innerHTML = `
-                        <div class="col-md-4">
-                            <label for="stateFilterMunicipios" class="form-label fw-bold">Filtrar por Estado:</label>
-                            <select id="stateFilterMunicipios" class="form-select">
-                                <option value="all">Todos os Estados</option>
-                                <option value="AC">Acre</option>
-                                <option value="AP">Amapá</option>
-                                <option value="AM">Amazonas</option>
-                                <option value="MA">Maranhão</option>
-                                <option value="MT">Mato Grosso</option>
-                                <option value="PA">Pará</option>
-                                <option value="RO">Rondônia</option>
-                                <option value="RR">Roraima</option>
-                                <option value="TO">Tocantins</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="municipioFilter" class="form-label fw-bold">Filtrar por Município:</label>
-                            <select id="municipioFilter" class="form-select">
-                                <option value="all">Todos os Municípios</option>
-                            </select>
-                        </div>
-                    `;
-                    specificFiltersContainer.style.display = 'block';
+    specificFiltersContent.innerHTML = `
+        <div class="col-md-6">
+            <label for="stateFilterMun" class="form-label fw-bold">Filtrar por Estado:</label>
+            <select id="stateFilterMun" class="form-select">
+                <option value="all">Todos os Estados</option>
+                <option value="AC">Acre</option><option value="AP">Amapá</option>
+                <option value="AM">Amazonas</option><option value="MA">Maranhão</option>
+                <option value="MT">Mato Grosso</option><option value="PA">Pará</option>
+                <option value="RO">Rondônia</option><option value="RR">Roraima</option>
+                <option value="TO">Tocantins</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Selecionar Municípios:</label><br>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#munModal">
+                <i class="fas fa-city me-2"></i>Selecionar
+            </button>
+            <div id="munResumo" class="mt-2 small text-muted">Nenhum selecionado.</div>
+        </div>
 
-                    // 2) Carrega o CSV e popula os selects ANTES de chamar updateDashboard
-                    (async () => {
-                        const estadoSelect   = document.getElementById('stateFilterMunicipios');
-                        const municipioSelect = document.getElementById('municipioFilter');
-                        const dataType        = getSelectedDataType();
-                        const csvPath         = dataSources[dataType]['municipios'].csv;
-                        const csvData         = await d3.csv(csvPath);
+        <!-- Modal Municípios -->
+        <div class="modal fade" id="munModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Selecionar Municípios (máx. 10)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" id="munSearch" class="form-control mb-3"
+                               placeholder="Buscar município…">
+                        <div class="small mb-2"><span id="munCount">0</span> de 10 selecionados</div>
+                        <div id="munList" style="max-height:400px;overflow:auto;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" id="apply-mun">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    specificFiltersContainer.style.display = 'block';
 
-                        function populaMunicipios(uf) {
-                            const nomes = new Set();
-                            csvData.forEach(d => {
-                                if (uf === 'all' || d.ESTADO === uf) {
-                                    nomes.add(d.MUNICIPIO);
-                                }
-                            });
-                            municipioSelect.innerHTML = '<option value="all">Todos os Municípios</option>';
-                            Array.from(nomes).sort().forEach(mun => {
-                                municipioSelect.appendChild(new Option(mun, mun));
-                            });
-                        }
+    /* ========== JS para o modal de Municípios ========== */
+    setTimeout(async () => {
+        const stateSel = document.getElementById('stateFilterMun');
+        const listDiv  = document.getElementById('munList');
+        const resumo   = document.getElementById('munResumo');
+        const countEl  = document.getElementById('munCount');
+        const search   = document.getElementById('munSearch');
+        const applyBtn = document.getElementById('apply-mun');
 
-                        // 3) Ao mudar o estado, repopula os municípios e atualiza o dashboard
-                        estadoSelect.addEventListener('change', () => {
-                            populaMunicipios(estadoSelect.value);
-                            updateDashboard();
-                        });
+        const csvPath  = dataSources[getSelectedDataType()].municipios.csv;
+        const csvData  = await d3.csv(csvPath);
 
-                        // 4) Inicializa com "all" e desenha o dashboard uma única vez
-                        populaMunicipios('all');
-                        updateDashboard();
-                    })();
+        // array global para aplicar no filtro
+        window.munSelecionados = [];
+
+        const yearRange = () => {
+            const [,sY] = startPeriodInput.value.split('/');
+            const [,eY] = endPeriodInput.value.split('/');
+            return {ini:+sY, fim:+eY};
+        };
+
+        let listaAtual = [];
+
+        function carregaLista(uf='all', busca='') {
+            const {ini,fim} = yearRange();
+            const nomes = new Set();
+            csvData.forEach(d => {
+                const ano = +d.ANO;
+                if (ano>=ini && ano<=fim && (uf==='all'||d.ESTADO===uf)) {
+                    if (d.MUNICIPIO.toLowerCase().includes(busca)) nomes.add(d.MUNICIPIO);
                 }
+            });
+            listaAtual = Array.from(nomes).sort();
+            render();
+        }
+
+        function render() {
+            listDiv.innerHTML = '';
+            listaAtual.forEach(nome => {
+                listDiv.insertAdjacentHTML('beforeend',
+                    `<div class="muni-item ${munSelecionados.includes(nome)?'selected':''}">
+                        ${nome}
+                     </div>`);
+            });
+            listDiv.querySelectorAll('.muni-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const nome = el.textContent.trim();
+                    if (munSelecionados.includes(nome)) {
+                        munSelecionados = munSelecionados.filter(n => n!==nome);
+                        el.classList.remove('selected');
+                    } else if (munSelecionados.length < 10) {
+                        munSelecionados.push(nome);
+                        el.classList.add('selected');
+                    }
+                    countEl.textContent = munSelecionados.length;
+                });
+            });
+            countEl.textContent = munSelecionados.length;
+        }
+
+        // eventos
+        stateSel.addEventListener('change', () =>
+            carregaLista(stateSel.value, search.value.toLowerCase()));
+        search.addEventListener('input', () =>
+            carregaLista(stateSel.value, search.value.trim().toLowerCase()));
+        [startPeriodInput,endPeriodInput].forEach(inp =>
+            inp.addEventListener('blur', () =>
+                carregaLista(stateSel.value, search.value.toLowerCase()))
+        );
+
+        applyBtn.addEventListener('click', () => {
+            resumo.textContent = munSelecionados.length
+                ? `${munSelecionados.length} selecionados`
+                : 'Nenhum selecionado.';
+            bootstrap.Modal.getInstance(document.getElementById('munModal')).hide();
+            updateDashboard();               // aplica no mapa / gráficos
+        });
+
+        // primeira renderização
+        carregaLista();
+    },0);
+}
+
                 else if (territoryType === 'terrasIndigenas') {
-                    specificFiltersContent.innerHTML = `
-                        <div class="col-md-6">
-                            <label for="stateFilterTerrasIndigenas" class="form-label fw-bold">Filtrar por Estado:</label>
-                            <select id="stateFilterTerrasIndigenas" class="form-select">
-                                <option value="all">Todos os Estados</option>
-                                <option value="AC">Acre</option>
-                                <option value="AP">Amapá</option>
-                                <option value="AM">Amazonas</option>
-                                <option value="MA">Maranhão</option>
-                                <option value="MT">Mato Grosso</option>
-                                <option value="PA">Pará</option>
-                                <option value="RO">Rondônia</option>
-                                <option value="RR">Roraima</option>
-                                <option value="TO">Tocantins</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Selecionar Terras Indígenas:</label><br>
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#terraModal">
-                                <i class="fas fa-mountain me-2"></i>Selecionar Terras
-                            </button>
-                            <div id="terraSelecionadasResumo" class="mt-2 small text-muted">Nenhuma selecionada.</div>
-                        </div>
+    specificFiltersContent.innerHTML = `
+        <div class="col-md-6">
+            <label for="stateFilterTI" class="form-label fw-bold">Filtrar por Estado:</label>
+            <select id="stateFilterTI" class="form-select">
+                <option value="all">Todos os Estados</option>
+                <option value="AC">Acre</option><option value="AP">Amapá</option>
+                <option value="AM">Amazonas</option><option value="MA">Maranhão</option>
+                <option value="MT">Mato Grosso</option><option value="PA">Pará</option>
+                <option value="RO">Rondônia</option><option value="RR">Roraima</option>
+                <option value="TO">Tocantins</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Selecionar Terras Indígenas:</label><br>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#terraModal">
+                <i class="fas fa-campground me-2"></i>Selecionar
+            </button>
+            
+        </div>
 
-                        <!-- Modal para Seleção de Terras Indígenas -->
-                        <div class="modal fade modal-terras-indigenas" id="terraModal" tabindex="-1">
-                            <div class="modal-dialog modal-lg">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Selecionar Terras Indígenas (máx. 10)</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="search-box mb-3">
-                                            <input type="text" id="terraSearchInput" class="form-control" placeholder="Buscar terra indígena...">
-                                        </div>
-                                        <div class="selection-info">
-                                            <span id="contagemSelecionados">0</span> de 10 selecionadas
-                                        </div>
-                                        <div id="checkboxContainer" class="settlement-list mt-2" style="max-height: 400px; overflow-y: auto;"></div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                        <button type="button" class="btn btn-primary" id="apply-terras-selection">Aplicar</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    specificFiltersContainer.style.display = 'block';
+        <!-- Modal Terras Indígenas -->
+        <div class="modal fade" id="terraModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Selecionar Terras Indígenas (máx. 10)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" id="tiSearch" class="form-control mb-3"
+                               placeholder="Buscar terra indígena…">
+                        <div class="small mb-2"><span id="tiCount">0</span> de 10 selecionadas</div>
+                        <div id="tiList" style="max-height:400px;overflow:auto;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" id="apply-ti">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    specificFiltersContainer.style.display = 'block';
 
-                    // Aguarda para carregar terras
-                    setTimeout(async () => {
-                        const estadoSelect = document.getElementById('stateFilterTerrasIndigenas');
-                        const container = document.getElementById('checkboxContainer');
-                        const resumoSelecionadas = document.getElementById('terraSelecionadasResumo');
-                        const contagemEl = document.getElementById('contagemSelecionados');
+    /* ==========  JS do modal ========== */
+    setTimeout(async () => {
+        const stateSel = document.getElementById('stateFilterTI');
+        const listDiv  = document.getElementById('tiList');
+        const resumo   = document.getElementById('tiResumo');
+        const countEl  = document.getElementById('tiCount');
+        const search   = document.getElementById('tiSearch');
+        const applyBtn = document.getElementById('apply-ti');
 
-                        const csvPath = dataSources[getSelectedDataType()].terrasIndigenas.csv;
-                        const csvData = await d3.csv(csvPath);
+        const csvPath  = dataSources[getSelectedDataType()].terrasIndigenas.csv;
+        const csvData  = await d3.csv(csvPath);
 
-                        let terrasDisponiveis = [];
-                        let terrasFiltradas = [];
-                        function drawCheckboxes(lista) {
-                            container.innerHTML = '';
-                            lista.forEach(nome => {
-                                const col = document.createElement('div');
-                                col.className = 'col-md-4 mb-2';
-                                col.innerHTML = `
-                                    <div class="form-check">
-                                        <input class="form-check-input terra-checkbox" type="checkbox" value="${nome}" id="${nome}">
-                                        <label class="form-check-label" for="${nome}">${nome}</label>
-                                    </div>`;
-                                container.appendChild(col);
-                            });
+        // array global para o filtro
+        window.tiSelecionadas = [];
 
-                            // Lógica de limite
-                            const checkboxes = container.querySelectorAll('.terra-checkbox');
-                            checkboxes.forEach(cb => {
-                                cb.addEventListener('change', () => {
-                                    const selecionados = container.querySelectorAll('.terra-checkbox:checked');
-                                    if (selecionados.length > 10) {
-                                        cb.checked = false;
-                                        alert('Você só pode selecionar até 10 terras.');
-                                    }
-                                    updateContagem();
-                                });
-                            });
+        // helpers
+        const yearRange = () => {
+            const [,sY] = startPeriodInput.value.split('/');
+            const [,eY] = endPeriodInput.value.split('/');
+            return {ini:+sY, fim:+eY};
+        };
 
-                            updateContagem();
-                        }
+        let listaAtual = [];
 
-                        function renderCheckboxes(estadoSelecionado = 'all') {
-                            const nomes = new Set();
-                            container.innerHTML = '';
-                            csvData.forEach(d => {
-                                if (estadoSelecionado === 'all' || d.ESTADO === estadoSelecionado) {
-                                    nomes.add(d.TERRA_INDI);
-                                }
-                            });
-
-                            terrasDisponiveis = Array.from(nomes).sort();
-                            terrasFiltradas = [...terrasDisponiveis]; // inicia com todas
-
-                            drawCheckboxes(terrasFiltradas);
-
-                            terrasDisponiveis.forEach(nome => {
-                                const col = document.createElement('div');
-                                col.className = 'col-md-4 mb-2';
-                                col.innerHTML = `
-                                    <div class="form-check">
-                                        <input class="form-check-input terra-checkbox" type="checkbox" value="${nome}" id="${nome}">
-                                        <label class="form-check-label" for="${nome}">${nome}</label>
-                                    </div>`;
-                                container.appendChild(col);
-                            });
-
-                            // Limitar seleção
-                            const checkboxes = container.querySelectorAll('.terra-checkbox');
-                            checkboxes.forEach(cb => {
-                                cb.addEventListener('change', () => {
-                                    const selecionados = container.querySelectorAll('.terra-checkbox:checked');
-                                    if (selecionados.length > 10) {
-                                        cb.checked = false;
-                                        alert('Você só pode selecionar até 10 terras.');
-                                    }
-                                    updateContagem();
-                                });
-                            });
-
-                            updateContagem();
-                        }
-
-                        function updateContagem() {
-                            const selecionados = container.querySelectorAll('.terra-checkbox:checked');
-                            contagemEl.textContent = `${selecionados.length} selecionadas`;
-                            resumoSelecionadas.textContent = selecionados.length
-                                ? Array.from(selecionados).map(el => el.value).join(', ')
-                                : 'Nenhuma selecionada.';
-                        }
-
-                        estadoSelect.addEventListener('change', () => {
-                            renderCheckboxes(estadoSelect.value);
-                        });
-
-                        renderCheckboxes('all');
-                        const searchInput = document.getElementById('terraSearchInput');
-                        searchInput.addEventListener('input', () => {
-                            const termo = searchInput.value.trim().toLowerCase();
-                            const filtradas = terrasDisponiveis.filter(nome =>
-                                nome.toLowerCase().includes(termo)
-                            );
-                            drawCheckboxes(filtradas);
-                        });
-
-                    }, 0);
+        function carregaLista(uf='all', busca='') {
+            const {ini,fim} = yearRange();
+            const nomes = new Set();
+            csvData.forEach(d => {
+                const ano = +d.ANO;
+                if (ano>=ini && ano<=fim && (uf==='all'||d.ESTADO===uf)) {
+                    if (d.TERRA_INDI.toLowerCase().includes(busca)) nomes.add(d.TERRA_INDI);
                 }
+            });
+            listaAtual = Array.from(nomes).sort();
+            render();
+        }
+
+        function render() {
+            listDiv.innerHTML = '';
+            listaAtual.forEach(nome => {
+                listDiv.insertAdjacentHTML('beforeend',
+                    `<div class="ti-item ${tiSelecionadas.includes(nome)?'selected':''}">
+                        ${nome}
+                     </div>`);
+            });
+            listDiv.querySelectorAll('.ti-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const nome = el.textContent.trim();
+                    if (tiSelecionadas.includes(nome)) {
+                        tiSelecionadas = tiSelecionadas.filter(n => n!==nome);
+                        el.classList.remove('selected');
+                    } else if (tiSelecionadas.length < 10) {
+                        tiSelecionadas.push(nome);
+                        el.classList.add('selected');
+                    }
+                    countEl.textContent = tiSelecionadas.length;
+                });
+            });
+            countEl.textContent = tiSelecionadas.length;
+        }
+
+        // eventos
+        stateSel.addEventListener('change',   () => carregaLista(stateSel.value, search.value.toLowerCase()));
+        search  .addEventListener('input',    () => carregaLista(stateSel.value, search.value.trim().toLowerCase()));
+        [startPeriodInput,endPeriodInput].forEach(inp =>
+            inp.addEventListener('blur', () => carregaLista(stateSel.value, search.value.toLowerCase()))
+        );
+
+        applyBtn.addEventListener('click', () => {
+            bootstrap.Modal.getInstance(document.getElementById('terraModal')).hide();
+            updateDashboard();               // aplica o filtro no mapa/gráficos
+        });
+
+        // inicial
+        carregaLista();
+    },0);
+}
+
                 else if (territoryType === 'unidadesConservacao') {
-                    specificFiltersContent.innerHTML = `
-                        <div class="col-md-3">
-                            <label for="stateFilterUC" class="form-label fw-bold">Filtrar por Estado:</label>
-                            <select id="stateFilterUC" class="form-select">
-                                <option value="all">Todos os Estados</option>
-                                <option value="AC">Acre</option>
-                                <option value="AP">Amapá</option>
-                                <option value="AM">Amazonas</option>
-                                <option value="MA">Maranhão</option>
-                                <option value="MT">Mato Grosso</option>
-                                <option value="PA">Pará</option>
-                                <option value="RO">Rondônia</option>
-                                <option value="RR">Roraima</option>
-                                <option value="TO">Tocantins</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="jurisdicaoFilter" class="form-label fw-bold">Filtrar por Jurisdição:</label>
-                            <select id="jurisdicaoFilter" class="form-select">
-                                <option value="all">Todas</option>
-                                <option value="Federal">Federal</option>
-                                <option value="Estadual">Estadual</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="modalidadeFilter" class="form-label fw-bold">Filtrar por Modalidade:</label>
-                            <select id="modalidadeFilter" class="form-select">
-                                <option value="all">Todas</option>
-                                <option value="Uso Sustentável">Uso Sustentável</option>
-                                <option value="Proteção Integral">Proteção Integral</option>
-                            </select>
-                        </div>`;
-                    specificFiltersContainer.style.display = 'block';
-                }
+    specificFiltersContent.innerHTML = `
+        <div class="col-md-3">
+            <label for="stateFilterUC" class="form-label fw-bold">Estado:</label>
+            <select id="stateFilterUC" class="form-select">
+                <option value="all">Todos</option>
+                <option value="AC">AC</option><option value="AP">AP</option>
+                <option value="AM">AM</option><option value="MA">MA</option>
+                <option value="MT">MT</option><option value="PA">PA</option>
+                <option value="RO">RO</option><option value="RR">RR</option>
+                <option value="TO">TO</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="jurisdicaoFilterUC" class="form-label fw-bold">Jurisdição:</label>
+            <select id="jurisdicaoFilterUC" class="form-select">
+                <option value="all">Todas</option>
+                <option value="Federal">Federal</option>
+                <option value="Estadual">Estadual</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="modalidadeFilterUC" class="form-label fw-bold">Modalidade:</label>
+            <select id="modalidadeFilterUC" class="form-select">
+                <option value="all">Todas</option>
+                <option value="Uso Sustentável">Uso Sustentável</option>
+                <option value="Proteção Integral">Proteção Integral</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex flex-column">
+            <label class="form-label fw-bold">Selecionar UCs:</label>
+            <button class="btn btn-primary mb-2" data-bs-toggle="modal" data-bs-target="#ucModal">
+                <i class="fas fa-tree me-2"></i>Selecionar
+            </button>
+            <div id="ucResumo" class="small text-muted">Nenhuma selecionada.</div>
+        </div>
+
+        <!-- Modal UCs -->
+        <div class="modal fade" id="ucModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Selecionar Unidades de Conservação (máx. 10)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" id="ucSearch" class="form-control mb-3"
+                               placeholder="Buscar UC…">
+                        <div class="small mb-2"><span id="ucCount">0</span> de 10 selecionadas</div>
+                        <div id="ucList" style="max-height:400px;overflow:auto;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" id="apply-uc">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    specificFiltersContainer.style.display = 'block';
+
+    /* =========  JS do modal de UCs ========= */
+    setTimeout(async () => {
+        const stateSel  = document.getElementById('stateFilterUC');
+        const jurisSel  = document.getElementById('jurisdicaoFilterUC');
+        const modaSel   = document.getElementById('modalidadeFilterUC');
+        const listDiv   = document.getElementById('ucList');
+        const resumo    = document.getElementById('ucResumo');
+        const countEl   = document.getElementById('ucCount');
+        const searchBox = document.getElementById('ucSearch');
+        const applyBtn  = document.getElementById('apply-uc');
+
+        const csvPath = dataSources[getSelectedDataType()].unidadesConservacao.csv;
+        const csvData = await d3.csv(csvPath);
+
+        window.ucSelecionadas = [];        // global
+
+        const yearRange = () => {
+            const [,sY] = startPeriodInput.value.split('/');
+            const [,eY] = endPeriodInput.value.split('/');
+            return {ini:+sY, fim:+eY};
+        };
+
+        let listaAtual = [];
+
+        function carregaLista() {
+            const {ini,fim} = yearRange();
+            const uf   = stateSel.value;
+            const jur  = jurisSel.value;
+            const mod  = modaSel.value;
+            const busca= searchBox.value.trim().toLowerCase();
+
+            const nomes = new Set();
+            csvData.forEach(d => {
+                const ano = +d.ANO;
+                if (ano<ini || ano>fim) return;
+                if (uf  !=='all' && d.ESTADO     !== uf ) return;
+                if (jur !=='all' && d.JURISDICAO !== jur) return;
+                if (mod !=='all' && d.USO        !== mod) return;
+                if (!d.UNID_CONSE.toLowerCase().includes(busca)) return;
+                nomes.add(d.UNID_CONSE);
+            });
+            listaAtual = Array.from(nomes).sort();
+            render();
+        }
+
+        function render() {
+            listDiv.innerHTML = '';
+            listaAtual.forEach(nome => {
+                listDiv.insertAdjacentHTML('beforeend',
+                    `<div class="uc-item ${ucSelecionadas.includes(nome)?'selected':''}">
+                        ${nome}
+                     </div>`);
+            });
+            listDiv.querySelectorAll('.uc-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const nome = el.textContent.trim();
+                    if (ucSelecionadas.includes(nome)) {
+                        ucSelecionadas = ucSelecionadas.filter(n => n!==nome);
+                        el.classList.remove('selected');
+                    } else if (ucSelecionadas.length < 10) {
+                        ucSelecionadas.push(nome);
+                        el.classList.add('selected');
+                    }
+                    countEl.textContent = ucSelecionadas.length;
+                });
+            });
+            countEl.textContent = ucSelecionadas.length;
+        }
+
+        // eventos
+        [stateSel,jurisSel,modaSel].forEach(sel =>
+            sel.addEventListener('change', carregaLista));
+        searchBox.addEventListener('input', carregaLista);
+        [startPeriodInput,endPeriodInput].forEach(inp =>
+            inp.addEventListener('blur', carregaLista));
+
+        applyBtn.addEventListener('click', () => {
+            resumo.textContent = ucSelecionadas.length
+                ? `${ucSelecionadas.length} selecionadas`
+                : 'Nenhuma selecionada.';
+            bootstrap.Modal.getInstance(document.getElementById('ucModal')).hide();
+            updateDashboard();              // aplica no mapa / gráficos
+        });
+
+        carregaLista();                     // primeira renderização
+    },0);
+}
+
                 else {
                     specificFiltersContainer.style.display = 'none';
                 }
