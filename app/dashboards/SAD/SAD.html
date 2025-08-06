@@ -21,6 +21,42 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <style>
+        /* Loader */
+        #loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.3s ease;
+        }
+        
+        .loader-content {
+            text-align: center;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            color: var(--primary-color);
+        }
+        
+        .loader-text {
+            margin-top: 15px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            font-size: 1.1rem;
+        }
+
         /* Assentamentos – lista limpa */
 .assent-item          { padding:10px 15px; border-bottom:1px solid #eee;
                         cursor:pointer; transition:background .2s;}
@@ -333,6 +369,7 @@
             background-color: #fff3e6;
             color: #e65100;
         }
+        
 
         /* Estilos para o novo date picker */
         .period-filter-container {
@@ -606,9 +643,20 @@
             font-weight: 600;
             padding: 8px 20px;
         }
+        
     </style>
 </head>
 <body>
+
+<!-- Overlay de Carregamento -->
+<div id="loader-overlay">
+    <div class="loader-content">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Carregando...</span>
+        </div>
+        <div class="loader-text">Carregando dados...</div>
+    </div>
+</div>
 
 <div class="container-fluid">
     <div class="dashboard-header fade-in fade-in-1">
@@ -714,7 +762,7 @@
                 </div>
             </div>
             
-            <!-- Presets de Período -->
+            
             <div class="period-presets">
                 <div class="presets-label">
                     <i class="fas fa-magic"></i>
@@ -725,7 +773,7 @@
                     <button class="preset-btn" data-preset="last-year">Ano Anterior</button>
                     <button class="preset-btn" data-preset="last-6-months">Últimos 6 Meses</button>
                     <button class="preset-btn" data-preset="last-12-months">Últimos 12 Meses</button>
-                    <button class="preset-btn" data-preset="ytd">Ano até Agora</button>
+                    
                 </div>
             </div>
         </div>
@@ -810,8 +858,8 @@
                     <div id="info-panel" class="info-panel" style="display: none;">
                         <h6 id="selected-territory">Território</h6>
                         <div><strong>Área:</strong> <span id="selected-area">0</span> km²</div>
-                         <div><strong>UF:</strong> <span id="selected-state">–</span></div>
-                        <div><strong>%:</strong> <span id="selected-percentage">0</span>%</div>
+                        
+                        
                     </div>
                 </div>
             </div>
@@ -858,6 +906,23 @@
 
 <script>
     Chart.register(ChartDataLabels);
+    const DEGRADACAO_COLOR_STOPS = [
+  { p: 0.00, c: '#F4F2F8' },
+  { p: 0.15, c: '#990FF9' },
+  { p: 0.30, c: '#DAD0ED' },
+  { p: 0.50, c: '#B7A7DB' },
+  { p: 0.65, c: '#8D7CC2' },
+  { p: 0.80, c: '#684EA7' },
+  { p: 0.92, c: '#362563' },
+  { p: 1.00, c: '#1F114D' }
+];
+
+
+function getDegradacaoColorScale(maxVal) {
+  const domain = DEGRADACAO_COLOR_STOPS.map(s => s.p * (maxVal || 1));
+  const range  = DEGRADACAO_COLOR_STOPS.map(s => s.c);
+  return d3.scaleLinear().domain(domain).range(range).clamp(true);
+}
     const estadoNomes = {
         AC: "Acre",
         AL: "Alagoas",
@@ -889,6 +954,23 @@
     };
     // lista de UFs que compõem a Amazônia Legal
     const amazoniaLegalStates = ['AC','AP','AM','MA','MT','PA','RO','RR','TO'];
+
+    // Funções para controle do loader
+    function showLoader(message = "Carregando dados...") {
+        const loader = document.getElementById('loader-overlay');
+        if (loader) {
+            const textEl = loader.querySelector('.loader-text');
+            if (textEl) textEl.textContent = message;
+            loader.style.display = 'flex';
+        }
+    }
+
+    function hideLoader() {
+        const loader = document.getElementById('loader-overlay');
+        if (loader) {
+            loader.style.display = 'none';
+        }
+    }
 
     document.addEventListener('DOMContentLoaded', function () {
         // Elementos da UI
@@ -1011,6 +1093,7 @@ function getSelectedYearRange() {
             [startPeriodInput, endPeriodInput].forEach(inp =>
     inp.addEventListener('blur', updateSpecificFilters)
 );
+
 
         });
         
@@ -1190,57 +1273,64 @@ function getSelectedYearRange() {
         }
 
         async function updateDashboard() {
-            // 1) Carrega dados brutos
-            const { csvData, geojsonData } = await loadData();
-            if (!csvData.length || !geojsonData) return;
+            showLoader("Atualizando dados...");
+            try {
+                // 1) Carrega dados brutos
+                const { csvData, geojsonData } = await loadData();
+                if (!csvData.length || !geojsonData) return;
 
-            const territoryType = getSelectedTerritoryType();
-            const nameKey       = territoryNameMapping[territoryType];
+                const territoryType = getSelectedTerritoryType();
+                const nameKey       = territoryNameMapping[territoryType];
 
-            // 2) Prepara os dados completos para Série Histórica Anual e Mensal
-            const currentYear   = new Date().getFullYear();
-            const allPeriodData = csvData.filter(d => d.ANO >= 2008 && d.ANO <= currentYear - 1);
+                // 2) Prepara os dados completos para Série Histórica Anual e Mensal
+                const currentYear   = new Date().getFullYear();
+                const allPeriodData = csvData.filter(d => d.ANO >= 2008 && d.ANO <= currentYear - 1);
 
-            // 3) Filtra pelo período escolhido nos inputs MM/YYYY
-            const [sMonth, sYear] = startPeriodInput.value.split('/');
-            const [eMonth, eYear] = endPeriodInput.value.split('/');
-            const startDate = new Date(`${sYear}-${sMonth.padStart(2,'0')}-01`);
-            const endDate   = new Date(`${eYear}-${eMonth.padStart(2,'0')}-01`);
+                // 3) Filtra pelo período escolhido nos inputs MM/YYYY
+                const [sMonth, sYear] = startPeriodInput.value.split('/');
+                const [eMonth, eYear] = endPeriodInput.value.split('/');
+                const startDate = new Date(`${sYear}-${sMonth.padStart(2,'0')}-01`);
+                const endDate   = new Date(`${eYear}-${eMonth.padStart(2,'0')}-01`);
 
-            let filteredData = csvData.filter(d => {
-                const dt = new Date(`${d.ANO}-${String(d.MES).padStart(2,'0')}-01`);
-                return dt >= startDate && dt <= endDate;
-            });
+                let filteredData = csvData.filter(d => {
+                    const dt = new Date(`${d.ANO}-${String(d.MES).padStart(2,'0')}-01`);
+                    return dt >= startDate && dt <= endDate;
+                });
 
-            // 4) Aplica filtros específicos de território (inclui estado e município)
-            filteredData = applySpecificFilters(filteredData, territoryType);
+                // 4) Aplica filtros específicos de território (inclui estado e município)
+                filteredData = applySpecificFilters(filteredData, territoryType);
 
-            // 5) Agrega para Ranking e Mapa
-            const aggregatedData = {};
-            filteredData.forEach(d => {
-                const label = d[nameKey];
-                const area  = parseFloat(d.AREAKM2) || 0;
-                if (label) aggregatedData[label] = (aggregatedData[label] || 0) + area;
-            });
-            const sorted = Object.entries(aggregatedData)
-                .sort(([,a],[,b]) => b - a)
-                .slice(0, 10);
-            const labels     = sorted.map(([k]) => territoryType === 'estados' ? estadoNomes[k] || k : k);
-            const dataValues = sorted.map(([,v]) => v);
-            currentTopTerritories = sorted.map(([k]) => k);
+                // 5) Agrega para Ranking e Mapa
+                const aggregatedData = {};
+                filteredData.forEach(d => {
+                    const label = d[nameKey];
+                    const area  = parseFloat(d.AREAKM2) || 0;
+                    if (label) aggregatedData[label] = (aggregatedData[label] || 0) + area;
+                });
+                const sorted = Object.entries(aggregatedData)
+                    .sort(([,a],[,b]) => b - a)
+                    .slice(0, 10);
+                const labels     = sorted.map(([k]) => territoryType === 'estados' ? estadoNomes[k] || k : k);
+                const dataValues = sorted.map(([,v]) => v);
+                currentTopTerritories = sorted.map(([k]) => k);
 
-            // 6) Atualiza estatísticas, ranking e mapa
-            updateStatistics(aggregatedData, filteredData, territoryType);
-            updateBarChart(labels, dataValues);
-            updateMap(geojsonData, aggregatedData, territoryType);
-            updateTitles();
+                // 6) Atualiza estatísticas, ranking e mapa
+                updateStatistics(aggregatedData, filteredData, territoryType);
+                updateBarChart(labels, dataValues);
+                updateMap(geojsonData, aggregatedData, territoryType);
+                updateTitles();
 
-            // 7) **Série Histórica Mensal**: usa todos os anos (2008–atual) MAS filtra apenas pelo território
-            const seriesData = applySpecificFilters(allPeriodData, territoryType);
-            updateLineChart(seriesData, territoryType);
+                // 7) **Série Histórica Mensal**: usa todos os anos (2008–atual) MAS filtra apenas pelo território
+                const seriesData = applySpecificFilters(allPeriodData, territoryType);
+                updateLineChart(seriesData, territoryType);
 
-            // 8) **Série Histórica Anual** mantém todos os anos completos
-            updateYearlyChart(allPeriodData);
+                // 8) **Série Histórica Anual** mantém todos os anos completos
+                updateYearlyChart(allPeriodData);
+            } catch (error) {
+                console.error("Erro ao atualizar dashboard:", error);
+            } finally {
+                setTimeout(() => hideLoader(), 500); // Pequeno delay para evitar piscar
+            }
         }
 
         // Atualizar estatísticas
@@ -1291,6 +1381,11 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
     if (varLabelEl) varLabelEl.textContent = `em relação a ${anoAnterior}`;
 }
 
+function getUF(rec) {
+    return (rec.ESTADO ?? rec.UF ?? rec.SIGLA ?? rec.UF_SIGLA ?? '')
+            .trim().toUpperCase();
+}
+
 
         // Função para aplicar filtros específicos
         function applySpecificFilters(data, territoryType) {
@@ -1300,67 +1395,118 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
             if (dataType === 'desmatamento' || dataType === 'degradacao') {
                 if (territoryType === 'assentamentos') {
     const stateSel = document.getElementById('stateFilterAssent');
-    if (stateSel && stateSel.value !== 'all')
-        filteredData = filteredData.filter(d => d.ESTADO === stateSel.value);
 
+    /* ❶ – Amazônia Legal */
+    if (stateSel.value === 'amazonia_legal') {
+        filteredData = filteredData.filter(d =>
+            amazoniaLegalStates.includes(getUF(d))
+        );
+    }
+
+    
+    if (stateSel && stateSel.value !== 'all' && stateSel.value !== 'amazonia_legal')
+        filteredData = filteredData.filter(d => getUF(d) === stateSel.value);
+
+    
     if (window.assentSelecionados?.length)
         filteredData = filteredData.filter(d =>
-            window.assentSelecionados.includes(d.ASSENTAMEN));
+            window.assentSelecionados.includes(d.ASSENTAMEN)
+        );
 }
+
                 else if (territoryType === 'estados') {
-                    // pegamos o select de estados (onde já existe a opção "amazonia_legal")
-                    const stateFilter = document.getElementById('stateFilterEstados');
-                    if (stateFilter) {
-                        if (stateFilter.value === 'amazonia_legal') {
-                            // se escolheu Amazônia Legal, filtra pelas UFs definidas
-                            filteredData = filteredData.filter(d =>
-                                amazoniaLegalStates.includes(d.ESTADO)
-                            );
-                        }
-                        else if (stateFilter.value !== 'all') {
-                            // se escolheu um estado específico ou combinação, filtra por ele
-                            filteredData = filteredData.filter(d =>
-                                d.ESTADO === stateFilter.value
-                            );
-                        }
-                        // se for "all", não faz nada (mantém todos)
-                    }
-                }
+  if (window.estadosSelecionados?.length) {
+
+    // Se incluir “amazonia_legal”, converte para as 9 UFs que a compõem
+    const sel = new Set(window.estadosSelecionados);
+    if (sel.has('amazonia_legal')) {
+      amazoniaLegalStates.forEach(uf => sel.add(uf));
+      sel.delete('amazonia_legal');          // não é UF real
+    }
+
+    filteredData = filteredData.filter(d => sel.has(d.ESTADO));
+  }
+}
+
+
+
+
                 else if (territoryType === 'municipios') {
     const stateFilter = document.getElementById('stateFilterMun');
-    if (stateFilter && stateFilter.value !== 'all')
-        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
 
+    /* ❶ Amazônia Legal  */
+    if (stateFilter.value === 'amazonia_legal') {
+        filteredData = filteredData.filter(d =>
+            amazoniaLegalStates.includes(getUF(d))
+        );
+    }
+
+    /* ❷ UF individual   */
+    if (stateFilter && stateFilter.value !== 'all')
+        filteredData = filteredData.filter(d =>
+            getUF(d) === stateFilter.value
+        );
+
+    
     if (window.munSelecionados?.length)
         filteredData = filteredData.filter(d =>
-            window.munSelecionados.includes(d.MUNICIPIO));
+            window.munSelecionados.includes(d.MUNICIPIO)
+        );
 }
 
-                else if (territoryType === 'terrasIndigenas') {
+           else if (territoryType === 'terrasIndigenas') {
     const stateFilter = document.getElementById('stateFilterTI');
-    if (stateFilter && stateFilter.value !== 'all')
-        filteredData = filteredData.filter(d => d.ESTADO === stateFilter.value);
 
+    
+    if (stateFilter.value === 'amazonia_legal') {
+        filteredData = filteredData.filter(d =>
+            amazoniaLegalStates.includes(getUF(d))
+        );
+    }
+
+    
+    if (stateFilter && stateFilter.value !== 'all')
+        filteredData = filteredData.filter(d =>
+            getUF(d) === stateFilter.value
+        );
+
+    
     if (window.tiSelecionadas?.length)
         filteredData = filteredData.filter(d =>
-            window.tiSelecionadas.includes(d.TERRA_INDI));
+            window.tiSelecionadas.includes(d.TERRA_INDI)
+        );
 }
 
-                else if (territoryType === 'unidadesConservacao') {
+
+             else if (territoryType === 'unidadesConservacao') {
     const stateSel = document.getElementById('stateFilterUC');
     const jurisSel = document.getElementById('jurisdicaoFilterUC');
     const modaSel  = document.getElementById('modalidadeFilterUC');
 
-    if (stateSel && stateSel.value !== 'all')
-        filteredData = filteredData.filter(d => d.ESTADO === stateSel.value);
+    /* ❶ – Amazônia Legal */
+    if (stateSel.value === 'amazonia_legal') {
+        filteredData = filteredData.filter(d =>
+            amazoniaLegalStates.includes(getUF(d))
+        );
+    }
+
+    /* ❷ – UF individual */
+    if (stateSel && stateSel.value !== 'all' && stateSel.value !== 'amazonia_legal')
+        filteredData = filteredData.filter(d => getUF(d) === stateSel.value);
+
+    /* ❸ – Jurisdição */
     if (jurisSel && jurisSel.value !== 'all')
         filteredData = filteredData.filter(d => d.JURISDICAO === jurisSel.value);
+
+    /* ❹ – Modalidade */
     if (modaSel && modaSel.value !== 'all')
         filteredData = filteredData.filter(d => d.USO === modaSel.value);
 
+    /* ❺ – UCs escolhidas no modal */
     if (window.ucSelecionadas?.length)
         filteredData = filteredData.filter(d =>
-            window.ucSelecionadas.includes(d.UNID_CONSE));
+            window.ucSelecionadas.includes(d.UNID_CONSE)
+        );
 }
 
             }
@@ -1369,116 +1515,122 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
         }
 
         // Função para atualizar o gráfico de barras
-        function updateBarChart(labels, dataValues) {
-            const ctx = document.getElementById('barChart').getContext('2d');
-            if (barChart) {
-                barChart.destroy();
-            }
+        // ==========================
+//   Gráfico de Barras
+// ==========================
+// ===============================
+//   Gráfico de Barras (Ranking)
+// ===============================
+function updateBarChart(labels, dataValues) {
+    const ctx = document.getElementById('barChart').getContext('2d');
+    if (barChart) barChart.destroy();
 
-            const dataType = getSelectedDataType();
-            const maxVal = Math.max(...dataValues);
+    const dataType = getSelectedDataType();
+    const maxVal   = Math.max(...dataValues, 1);          // evita domínio 0
 
-            // Escala de cores gradiente (como no mapa)
-            const colorScale = d3.scaleSequential()
-                .domain([0, maxVal])
-                .interpolator(dataType === 'desmatamento' ? d3.interpolateReds : d3.interpolateOranges);
+    /* ---------- Paleta dinâmica ---------- */
+    const colorScale = (dataType === 'desmatamento')
+        ? d3.scaleSequential()
+              .domain([0, maxVal])
+              .interpolator(d3.interpolateReds)          // tons de vermelho
+        : getDegradacaoColorScale(maxVal);               // tons de roxo
 
-            const barColors = dataValues.map(v => colorScale(v));
+    const barColors = dataValues.map(v => colorScale(v));
 
-            barChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Área (km²)',
-                        data: dataValues,
-                        backgroundColor: barColors,
-                        borderColor: barColors,
-                        borderWidth: 1,
-                        borderRadius: 4,
-                        borderSkipped: false
-                    }]
+    /* ---------- Mapeia labels → chaves reais ----------
+       labels podem estar com nomes completos (“Pará”) enquanto
+       currentTopTerritories tem as chaves originais (“PA”).          */
+    const rawKeys = currentTopTerritories.slice(0, labels.length);
+
+    barChart = new Chart(ctx, {
+        type : 'bar',
+        data : {
+            labels,
+            datasets: [{
+                label           : 'Área (km²)',
+                data            : dataValues,
+                backgroundColor : barColors,
+                borderColor     : barColors,
+                borderWidth     : 1,
+                borderRadius    : 4,
+                borderSkipped   : false
+            }]
+        },
+        options: {
+            indexAxis           : 'y',
+            responsive          : true,
+            maintainAspectRatio : false,
+            layout: {
+                padding: { right: 40 }
+            },
+            plugins: {
+                legend: { display: false },
+                datalabels: {
+                    anchor : 'end',
+                    align  : 'right',
+                    offset : 8,
+                    color  : '#111',
+                    font   : { weight: 'bold', size: 12 },
+                    formatter: v => v.toLocaleString('pt-BR', {
+                        maximumFractionDigits: 2
+                    })
                 },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    layout: {
-                        padding: {
-                            right: 40  // espaço para texto fora da barra
-                        }
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor     : '#fff',
+                    bodyColor      : '#fff',
+                    borderColor    : '#444',
+                    borderWidth    : 1,
+                    callbacks: {
+                        label: ctx => `Área: ${ctx.parsed.x.toLocaleString('pt-BR', {
+                            maximumFractionDigits: 2
+                        })} km²`
+                    }
+                }
+            },
+
+            /* ---------- Zoom no mapa ---------- */
+            onClick(e, el) {
+                if (!el.length) return;
+                const idx = el[0].index;
+                const key = rawKeys[idx];                 // chave original
+                if (territoryBounds[key]) {
+                    map.fitBounds(territoryBounds[key], {
+                        padding : [50, 50],
+                        animate : true,
+                        duration: 1.5
+                    });
+                }
+            },
+
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text   : 'Área (km²)',
+                        font   : { weight: 'bold' }
                     },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'right',
-                            offset: 8,
-                            clamp: true,
-                            clip: false,
-                            color: '#111',
-                            font: {
-                                weight: 'bold',
-                                size: 12
-                            },
-                            formatter: value =>
-                                `${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white',
-                            borderColor: '#444',
-                            borderWidth: 1,
-                            callbacks: {
-                                label: context =>
-                                    `Área: ${context.parsed.x.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} km²`
-                            }
-                        }
-                    },
-                    onClick: (e, elements) => {
-                        if (elements.length > 0) {
-                            const index = elements[0].index;
-                            const territoryName = labels[index];
-                            if (territoryBounds[territoryName]) {
-                                map.fitBounds(territoryBounds[territoryName], {
-                                    padding: [50, 50],
-                                    animate: true,
-                                    duration: 1.5
-                                });
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Área (km²)',
-                                font: { weight: 'bold' }
-                            },
-                            grid: { display: false },
-                            ticks: {
-                                callback: value => value.toLocaleString('pt-BR')
-                            }
-                        },
-                        y: {
-                            grid: { display: false },
-                            ticks: {
-                                font: { size: 11 }
-                            }
-                        }
-                    },
-                    animation: {
-                        duration: 1000,
-                        easing: 'easeInOutQuart'
+                    grid : { display: false },
+                    ticks: {
+                        callback: v => v.toLocaleString('pt-BR')
                     }
                 },
-                plugins: [ChartDataLabels]
-            });
-        }
+                y: {
+                    grid : { display: false },
+                    ticks: { font: { size: 11 } }
+                }
+            },
+            animation: {
+                duration: 1000,
+                easing  : 'easeInOutQuart'
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+}
+
+
 
        function updateLineChart(csvData, territoryType) {
     const ctx = document.getElementById('lineChart').getContext('2d');
@@ -1608,9 +1760,14 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
 
             const values = years.map(year => yearlyData[year] || 0);
             
-            const dataType = getSelectedDataType();
-            const bgColor = dataType === 'desmatamento' ? 'rgba(198, 40, 40, 0.7)' : 'rgba(255, 109, 0, 0.7)';
-            const borderColor = dataType === 'desmatamento' ? 'rgba(198, 40, 40, 1)' : 'rgba(255, 109, 0, 1)';
+           const dataType = getSelectedDataType();
+const bgColor = (dataType === 'desmatamento')
+  ? 'rgba(198, 40, 40, 0.7)'
+  : 'rgba(104, 78, 167, 0.70)';   
+
+const borderColor = (dataType === 'desmatamento')
+  ? 'rgba(198, 40, 40, 1)'
+  : 'rgba(31, 17, 77, 1)';        
 
             yearlyChart = new Chart(ctx, {
         plugins: [ChartDataLabels],
@@ -1693,119 +1850,100 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
         }
 
         // Função para atualizar o mapa
-        function updateMap(geojsonData, aggregatedData, territoryType) {
-            if (geoJsonLayer) {
-                map.removeLayer(geoJsonLayer);
-            }
-            
-            // Remover legenda anterior se existir
-            if (legend) {
-                legend.remove();
-            }
+        // ======================================================
+//   MAPA  (inclui paleta roxa e legenda dinâmica)
+// ======================================================
+function updateMap(geojsonData, aggregatedData, territoryType) {
+    // Remove camada anterior, se existir
+    if (geoJsonLayer) map.removeLayer(geoJsonLayer);
+    if (legend) legend.remove();               // remove legenda antiga
 
-            const nameKey = territoryNameMapping[territoryType];
-            const values = Object.values(aggregatedData).filter(v => v > 0);
-            const maxVal = values.length ? Math.max(...values) : 1;
-            
-            // Criar escala de cores
-            const dataType = getSelectedDataType();
-            const colorScale = d3.scaleSequential()
-                .domain([0, maxVal])
-                .interpolator(dataType === 'desmatamento' ? d3.interpolateReds : d3.interpolateOranges);
+    const nameKey = territoryNameMapping[territoryType];
+    const values  = Object.values(aggregatedData).filter(v => v > 0);
+    const maxVal  = values.length ? Math.max(...values) : 1;
 
-            // Filtrar apenas os territórios que estão no top 15
-            const filteredGeojson = {
-                ...geojsonData,
-                features: geojsonData.features.filter(feature => {
-                    const name = feature.properties[nameKey];
-                    return currentTopTerritories.includes(feature.properties[nameKey]);
-                })
+    // ---------- Escala de cores ----------
+    const dataType   = getSelectedDataType();
+    const colorScale = (dataType === 'desmatamento')
+        ? d3.scaleSequential()
+              .domain([0, maxVal])
+              .interpolator(d3.interpolateReds)       // vermelho
+        : getDegradacaoColorScale(maxVal);            // roxo (imagem)
+
+    // ---------- Filtrar GeoJSON p/ top-15 ----------
+    const filteredGeojson = {
+        ...geojsonData,
+        features: geojsonData.features.filter(f =>
+            currentTopTerritories.includes(f.properties[nameKey])
+        )
+    };
+
+    // Zera bounds para zoom
+    territoryBounds = {};
+
+    // ---------- Camada GeoJSON ----------
+    geoJsonLayer = L.geoJSON(filteredGeojson, {
+        style: feature => {
+            const name  = feature.properties[nameKey];
+            const value = aggregatedData[name] || 0;
+            return {
+                fillColor   : colorScale(value),
+                weight      : 1.2,
+                opacity     : 1,
+                color       : '#555',
+                fillOpacity : 0.75,
+                dashArray   : (territoryType === 'estados' || territoryType === 'municipios') ? '' : '3'
             };
+        },
+        onEachFeature: (feature, layer) => {
+            const name       = feature.properties[nameKey];
+            const value      = aggregatedData[name] || 0;
+            const rank       = currentTopTerritories.indexOf(name) + 1;
+            territoryBounds[name] = layer.getBounds();   // guarda p/ zoom
 
-            // Resetar bounds
-            territoryBounds = {};
+            layer.bindPopup(`
+                <div style="font-family:Montserrat,sans-serif;min-width:200px;">
+                    <h6 style="margin:0 0 8px;color:#008055;font-weight:bold;">
+                        ${name || 'Sem nome'}
+                    </h6>
+                    <p style="margin:0;font-size:14px;">
+                        <strong>Posição:</strong> ${rank}º<br>
+                        <strong>Área:</strong> ${value.toLocaleString('pt-BR',
+                            { maximumFractionDigits: 2 })} km²
+                    </p>
+                </div>`);
 
-            geoJsonLayer = L.geoJSON(filteredGeojson, {
-                style: feature => {
-                    const name = feature.properties[nameKey];
-                    const value = aggregatedData[name] || 0;
-                    return {
-                        fillColor: colorScale(value),
-                        weight: 1.2,
-                        opacity: 1,
-                        color: '#555',
-                        fillOpacity: 0.75,
-                        dashArray: territoryType === 'estados' || territoryType === 'municipios' ? '' : '3',
-                    };
+            // hover / click
+            layer.on({
+                mouseover(e) {
+                    const l = e.target;
+                    l.setStyle({ weight: 3, color: '#000', dashArray: '', fillOpacity: 0.9 });
+                    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) l.bringToFront();
+                    l.openPopup();
+                    selectedTerritoryEl.textContent = name || 'Território';
+                    selectedAreaEl.textContent      = value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+                    infoPanel.style.display = 'block';
                 },
-                onEachFeature: (feature, layer) => {
-                    const name = feature.properties[nameKey];
-                    const value = aggregatedData[name] || 0;
-                    const state = feature.properties.ESTADO || feature.properties.ESTADO1 || 'Não disponível';
-                    const percentage = maxVal > 0 ? (value / maxVal * 100).toFixed(2) : 0;
-                    
-                    // Armazenar bounding box para zoom
-                    territoryBounds[name] = layer.getBounds();
-                    
-                    // Popup com informações detalhadas
-                    const rankPosition = currentTopTerritories.findIndex(t => t === name) + 1;
-                    const popupContent = `
-                        <div style="font-family: 'Montserrat', sans-serif; min-width: 200px;">
-                            <h6 style="margin: 0 0 8px 0; color: #008055; font-weight: bold;">${name || 'Nome não disponível'}</h6>
-                            <p style="margin: 0; font-size: 14px;">
-                                <strong>Posição no Ranking:</strong> ${rankPosition}º<br>
-                                <strong>Área:</strong> ${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} km²
-                            </p>
-                        </div>
-                    `;
-
-                    
-                    layer.bindPopup(popupContent);
-                    
-                    // Eventos de hover
-                    layer.on({
-                        mouseover: function(e) {
-                            const layer = e.target;
-                            layer.setStyle({
-                                weight: 3,
-                                color: '#000',
-                                dashArray: '',
-                                fillOpacity: 0.9
-                            });
-                            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-                                layer.bringToFront();
-                            }
-
-                            // Exibe popup ao passar o mouse
-                            layer.openPopup();
-
-                            selectedTerritoryEl.textContent = name || 'Território';
-                            selectedAreaEl.textContent = value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
-                            
-                            infoPanel.style.display = 'block';
-                        },
-
-                        mouseout: function(e) {
-                            geoJsonLayer.resetStyle(e.target);
-                            infoPanel.style.display = 'none';
-                        },
-                        click: function(e) {
-                            map.fitBounds(e.target.getBounds(), {
-                                padding: [50, 50],
-                                animate: true,
-                                duration: 1.5
-                            });
-                            e.target.openPopup(); // <-- aqui está a linha que exibe o popup ao clicar
-                        }
-                    });
+                mouseout(e) {
+                    geoJsonLayer.resetStyle(e.target);
+                    infoPanel.style.display = 'none';
+                },
+                click(e) {
+                    map.fitBounds(e.target.getBounds(), { padding:[50,50], animate:true, duration:1.5 });
+                    e.target.openPopup();
                 }
-            }).addTo(map);
-
-            // Ajustar visualização do mapa
-            if (geoJsonLayer.getBounds().isValid()) {
-                map.fitBounds(geoJsonLayer.getBounds(), { padding: [20, 20] });
-            }
+            });
         }
+    }).addTo(map);
+
+    // ---------- Ajusta view ----------
+    if (geoJsonLayer.getBounds().isValid()) {
+        map.fitBounds(geoJsonLayer.getBounds(), { padding: [20, 20] });
+    }
+
+   
+   
+}
 
         const territoryNaming = {
             estados:             { nome: 'Estados',               preposicao: 'nos', genero: 'm' },
@@ -1913,24 +2051,32 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
 
         applyFiltersButton.addEventListener('click', updateDashboard);
         const clearFiltersButton = document.getElementById('clear-filters');
-            clearFiltersButton.addEventListener('click', () => {
-            // Limpar todos os filtros específicos, se existirem
-            const selects = specificFiltersContent.querySelectorAll('select');
-            selects.forEach(select => {
-                if (select) select.value = 'all';
-            });
-        
-            // Atualiza checkboxes do modal (se existirem)
-            const checkboxes = document.querySelectorAll('.terra-checkbox');
-            checkboxes.forEach(cb => cb.checked = false);
-        
-            // Atualiza resumo e contagem, se existirem
-            const resumo = document.getElementById('terraSelecionadasResumo');
-            const contagem = document.getElementById('contagemSelecionados');
-            
-        
-            // Atualizar dashboard com filtros limpos
-            updateDashboard();
+           
+clearFiltersButton.addEventListener('click', () => {
+    /* 1. Selects simples */
+    specificFiltersContent.querySelectorAll('select')
+        .forEach(sel => sel.value = 'all');
+
+    /* 2. Zera arrays globais usados em applySpecificFilters() */
+    window.assentSelecionados   = [];
+    window.munSelecionados      = [];
+    window.estadosSelecionados  = [];
+    window.tiSelecionadas       = [];
+    window.ucSelecionadas       = [];
+
+    /* 3. Limpa resumos (se existirem) */
+    [
+      'assentResumo','munResumo','estadoResumo',
+      'tiResumo','ucResumo','terraSelecionadasResumo'
+    ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = 'Nenhum selecionado.';
+    });
+
+    /* 4. Atualiza dashboard */
+    updateDashboard();
+
+
         });
 
         // Função para atualizar os filtros específicos
@@ -1940,6 +2086,7 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
             specificFiltersContent.innerHTML = '';
 
             if (dataType === 'desmatamento' || dataType === 'degradacao') {
+                
                if (territoryType === 'assentamentos') {
     specificFiltersContent.innerHTML = `
         <div class="col-md-6">
@@ -1950,7 +2097,8 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
                 <option value="AM">AM</option><option value="MA">MA</option>
                 <option value="MT">MT</option><option value="PA">PA</option>
                 <option value="RO">RO</option><option value="RR">RR</option>
-                <option value="TO">TO</option>
+                <option value="TO">TO</option><option value="TO">TO</option>
+                <option value="amazonia_legal">Amazônia Legal</option>
             </select>
         </div>
         <div class="col-md-6">
@@ -1984,6 +2132,8 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
         </div>
     `;
     specificFiltersContainer.style.display = 'block';
+    document.getElementById('stateFilterAssent')
+        .addEventListener('change', updateDashboard);
 
     /* =========  JS do modal ========= */
     setTimeout(async () => {
@@ -2017,7 +2167,12 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
             csvData.forEach(d => {
                 const ano = +d.ANO;
                 if (ano<ini || ano>fim) return;
-                if (uf!=='all' && d.ESTADO!==uf) return;
+                if (uf === 'amazonia_legal') {
+    if (!amazoniaLegalStates.includes(getUF(d))) return;
+} else if (uf !== 'all' && getUF(d) !== uf) {
+    return;
+}
+
                 if (!d.ASSENTAMEN.toLowerCase().includes(busca)) return;
                 nomes.add(d.ASSENTAMEN);
             });
@@ -2068,6 +2223,7 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
     },0);
 }
 
+
                 else if (territoryType === 'municipios') {
     specificFiltersContent.innerHTML = `
         <div class="col-md-6">
@@ -2079,6 +2235,8 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
                 <option value="MT">Mato Grosso</option><option value="PA">Pará</option>
                 <option value="RO">Rondônia</option><option value="RR">Roraima</option>
                 <option value="TO">Tocantins</option>
+                <option value="amazonia_legal">Amazônia Legal</option>
+                
             </select>
         </div>
         <div class="col-md-6">
@@ -2195,6 +2353,116 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
         carregaLista();
     },0);
 }
+else if (territoryType === 'estados') {
+    specificFiltersContent.innerHTML = `
+        <div class="col-md-12">
+            <label class="form-label fw-bold">Selecionar Estados:</label><br>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#estadoModal">
+                <i class="fas fa-map-marked-alt me-2"></i>Selecionar
+            </button>
+            <div id="estadoResumo" class="mt-2 small text-muted">
+                Nenhum selecionado 
+            </div>
+        </div>
+
+        <!-- Modal Estados -->
+        <div class="modal fade" id="estadoModal" tabindex="-1">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Selecionar Estados (máx. 10)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" id="estadoSearch" class="form-control mb-3"
+                               placeholder="Buscar estado…">
+                        <div class="small mb-2">
+                            <span id="estadoCount">0</span> de 10 selecionados
+                        </div>
+                        <div id="estadoList" style="max-height:400px;overflow:auto;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" id="apply-estados">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    specificFiltersContainer.style.display = 'block';
+
+    /* ========= JS do modal Estados ========= */
+    setTimeout(() => {
+        const listDiv   = document.getElementById('estadoList');
+        const resumo    = document.getElementById('estadoResumo');
+        const searchBox = document.getElementById('estadoSearch');
+        const countEl   = document.getElementById('estadoCount');
+        const applyBtn  = document.getElementById('apply-estados');
+
+        
+        window.estadosSelecionados = [];
+
+        
+        const amazoniaLegalObj = { sigla: 'amazonia_legal', nome: 'Amazônia Legal' };
+
+        const allEstados = [amazoniaLegalObj]             
+  .concat(
+    Object.entries(estadoNomes)
+           .map(([sigla,nome]) => ({sigla,nome}))
+  )
+  .sort((a,b) => a.nome.localeCompare(b.nome));
+
+        function renderLista(filtro='') {
+            listDiv.innerHTML = '';
+            allEstados
+              .filter(e => e.nome.toLowerCase().includes(filtro))
+              .forEach(e => {
+                listDiv.insertAdjacentHTML('beforeend', 
+                   ` <div class="ti-item ${estadosSelecionados.includes(e.sigla)?'selected':''}"
+      data-sigla="${e.sigla}">
+       ${e.nome}${e.sigla!=='amazonia_legal' ? ` (${e.sigla})` : ''}
+   </div>`
+                );
+            });
+
+            // clique p/ selecionar
+            listDiv.querySelectorAll('.ti-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const sigla = el.dataset.sigla;
+                    if (estadosSelecionados.includes(sigla)) {
+                        estadosSelecionados = estadosSelecionados.filter(s => s!==sigla);
+                        el.classList.remove('selected');
+                    } else if (estadosSelecionados.length < 10) {
+                        estadosSelecionados.push(sigla);
+                        el.classList.add('selected');
+                    }
+                    countEl.textContent = estadosSelecionados.length;
+                });
+            });
+
+            countEl.textContent = estadosSelecionados.length;
+        }
+
+        // busca
+        searchBox.addEventListener('input', () =>
+            renderLista(searchBox.value.trim().toLowerCase()));
+
+        // aplicar
+        applyBtn.addEventListener('click', () => {
+           const temAL = estadosSelecionados.includes('amazonia_legal');
+resumo.textContent = temAL
+  ? 'Amazônia Legal selecionada'
+  : (estadosSelecionados.length
+        ? `${estadosSelecionados.length} selecionados`
+        : 'Nenhum selecionado (todos serão considerados)');
+            bootstrap.Modal.getInstance(document.getElementById('estadoModal')).hide();
+            updateDashboard();
+        });
+
+        renderLista();           
+    },0);
+}
+
 
                 else if (territoryType === 'terrasIndigenas') {
     specificFiltersContent.innerHTML = `
@@ -2207,14 +2475,16 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
                 <option value="MT">Mato Grosso</option><option value="PA">Pará</option>
                 <option value="RO">Rondônia</option><option value="RR">Roraima</option>
                 <option value="TO">Tocantins</option>
+                <option value="amazonia_legal">Amazônia Legal</option>
             </select>
         </div>
         <div class="col-md-6">
             <label class="form-label fw-bold">Selecionar Terras Indígenas:</label><br>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#terraModal">
                 <i class="fas fa-campground me-2"></i>Selecionar
+                
             </button>
-            
+            <div id="tiResumo" class="small text-muted">Nenhuma selecionada.</div>
         </div>
 
         <!-- Modal Terras Indígenas -->
@@ -2325,11 +2595,12 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
             <label for="stateFilterUC" class="form-label fw-bold">Estado:</label>
             <select id="stateFilterUC" class="form-select">
                 <option value="all">Todos</option>
-                <option value="AC">AC</option><option value="AP">AP</option>
-                <option value="AM">AM</option><option value="MA">MA</option>
-                <option value="MT">MT</option><option value="PA">PA</option>
-                <option value="RO">RO</option><option value="RR">RR</option>
-                <option value="TO">TO</option>
+                <option value="AC">Acre</option><option value="AP">AP</option>
+                <option value="AM">Amazonas</option><option value="MA">MA</option>
+                <option value="MT">Mato Grosso</option><option value="PA">PA</option>
+                <option value="RO">Rondônia</option><option value="RR">RR</option>
+                <option value="TO">Tocantins</option>
+                <option value="amazonia_legal">Amazônia Legal</option>
             </select>
         </div>
         <div class="col-md-3">
@@ -2478,8 +2749,11 @@ function updateStatistics(aggregatedData, filteredData, territoryType) {
         }
 
         // Inicialização
-        updateSpecificFilters();
-        updateDashboard();
+        showLoader("Iniciando dashboard...");
+        setTimeout(() => {
+            updateSpecificFilters();
+            updateDashboard();
+        }, 500);
     });
 </script>
 <!-- Adicione este modal genérico no final do body -->
