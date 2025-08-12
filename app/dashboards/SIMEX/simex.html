@@ -201,11 +201,7 @@
             font-size: 0.95rem;
         }
 
-        .category-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
+        
 
         .category-btn {
             flex: 1;
@@ -486,21 +482,35 @@
             }
         }
 
-        /* NOVO: Container para ambos os grupos de botões */
-        .filters-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .filter-group-container {
-            flex: 1;
-            min-width: 300px;
-            background: var(--card-color);
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-        }
+        /* PRIMEIRA LINHA: dois blocos lado a lado e SEM quebra de linha */
+/* Empilhar os dois grupos da primeira faixa (um em cima do outro) */
+.filters-row {
+  display: flex;
+  flex-direction: column;  /* empilha */
+  gap: 20px;
+  overflow: visible;       /* remove scroll horizontal */
+  padding-bottom: 0;
+  
+}
+
+/* Cada cartão ocupa 100% da largura */
+.filter-group-container {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;            /* remove min-width antigo */
+}
+
+/* Dentro de cada grupo, deixe os botões quebrarem linha naturalmente */
+.category-buttons,
+.filter-buttons {
+  display: flex;
+  flex-wrap: wrap;         /* permite múltiplas linhas */
+  gap: 8px;
+  overflow: visible;
+  padding-bottom: 0;
+}
+
+
         
         /* Botões de download - MAIS DISCRETOS */
         .download-buttons {
@@ -558,6 +568,41 @@
             border-radius: 50%;
             margin-right: 8px;
         }
+        /* Divisão entre os dois filtros do dashboard (Categoria x Território) */
+.filters-row .filter-group-container + .filter-group-container {
+  position: relative;
+  margin-top: 8px;       /* separa visualmente */
+  padding-top: 18px;     /* espaço para a linha */
+  border-top: 0;         /* garante que não há borda prévia */
+}
+
+/* Linha divisória discreta */
+.filters-row .filter-group-container + .filter-group-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 8px;
+  right: 8px;
+  height: 1px;
+  border-radius: 999px;
+}
+
+/* Um pouco mais de respiro antes dos botões Ano/Aplicar/Remover */
+.filters-row {
+  margin-bottom: 18px;
+}
+/* Grupo de botões de download por card */
+.download-group{
+  display:flex;
+  gap:6px;
+}
+.download-group.d-none{ display:none !important; }
+
+/* Botão de toggle dentro do header do card */
+.dl-toggle{
+  margin-left:8px; /* não encostar nos botões */
+}
+
     </style>
 </head>
 <body>
@@ -577,78 +622,70 @@
     </div>
 
     <div class="filter-section">
-        <!-- Container único para ambos os grupos de botões -->
         <div class="filters-row">
-            <!-- Grupo de botões de tipo de território -->
-            <div class="filter-group-container">
-                <div class="filter-group">
-                    <div class="filter-group-title">
-                        <i class="fas fa-map-marked-alt me-2"></i>Selecione o tipo de território:
-                    </div>
-                    <div class="filter-buttons">
-                        <div class="filter-btn active" data-type="assentamentos">
-                            <div class="filter-icon"><i class="fas fa-users"></i></div>
-                            <div class="filter-label">Assentamentos</div>
-                        </div>
-                        <div class="filter-btn" data-type="imoveis">
-                            <div class="filter-icon"><i class="fas fa-tractor"></i></div>
-                            <div class="filter-label">Imóveis Rurais</div>
-                        </div>
-                        <div class="filter-btn" data-type="municipios">
-                            <div class="filter-icon"><i class="fas fa-city"></i></div>
-                            <div class="filter-label">Municípios</div>
-                        </div>
-                        <div class="filter-btn" data-type="terras">
-                            <div class="filter-icon"><i class="fas fa-mountain"></i></div>
-                            <div class="filter-label">Terras Indígenas</div>
-                        </div>
-                        <div class="filter-btn" data-type="terras_sem_destinacao">
-                            <div class="filter-icon"><i class="fas fa-globe-americas"></i></div>
-                            <div class="filter-label">Terras Sem Destinação</div>
-                        </div>
-                        <div class="filter-btn" data-type="uc">
-                            <div class="filter-icon"><i class="fas fa-tree"></i></div>
-                            <div class="filter-label">Unidades de Conservação</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Grupo de botões de categoria de exploração -->
-            <div class="filter-group-container">
-                <div class="category-group">
-                    <div class="category-group-title">
-                        <i class="fas fa-filter me-2"></i>Filtrar por categoria de exploração:
-                    </div>
-                    <div class="category-buttons">
-                        <div class="category-btn active" id="all-categories-btn" data-category="all">
-                            <div class="filter-icon">
-                                <i class="fas fa-layer-group"></i>
-                            </div>
-                            <div class="filter-label">Todas</div>
-                        </div>
-                        <div class="category-btn authorized" id="authorized-btn" data-category="autorizada">
-                            <div class="filter-icon">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                            <div class="filter-label">Autorizada</div>
-                        </div>
-                        <div class="category-btn unauthorized" id="unauthorized-btn" data-category="não autorizada">
-                            <div class="filter-icon">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                            <div class="filter-label">Não Autorizada</div>
-                        </div>
-                        <div class="category-btn analysis" id="analysis-btn" data-category="análise">
-                            <div class="filter-icon">
-                                <i class="fas fa-search"></i>
-                            </div>
-                            <div class="filter-label">Em Análise</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  <!-- Grupo de botões de categoria de exploração (AGORA PRIMEIRO) -->
+  <div class="filter-group-container">
+    <div class="category-group">
+      <div class="category-group-title">
+        <i class="fas fa-filter me-2"></i>Filtrar por categoria de exploração:
+      </div>
+      <div class="category-buttons">
+        <div class="category-btn active" id="all-categories-btn" data-category="all">
+          <div class="filter-icon"><i class="fas fa-layer-group"></i></div>
+          <div class="filter-label">Todas</div>
         </div>
+        <div class="category-btn authorized" id="authorized-btn" data-category="autorizada">
+          <div class="filter-icon"><i class="fas fa-check-circle"></i></div>
+          <div class="filter-label">Autorizada</div>
+        </div>
+        <div class="category-btn unauthorized" id="unauthorized-btn" data-category="não autorizada">
+          <div class="filter-icon"><i class="fas fa-exclamation-triangle"></i></div>
+          <div class="filter-label">Não Autorizada</div>
+        </div>
+        <div class="category-btn analysis" id="analysis-btn" data-category="análise">
+          <div class="filter-icon"><i class="fas fa-search"></i></div>
+          <div class="filter-label">Em Análise</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grupo de botões de tipo de território (AGORA DEPOIS) -->
+  <div class="filter-group-container">
+    <div class="filter-group">
+      <div class="filter-group-title">
+        <i class="fas fa-map-marked-alt me-2"></i>Selecione o tipo de território:
+      </div>
+      <div class="filter-buttons">
+        <div class="filter-btn active" data-type="assentamentos">
+          <div class="filter-icon"><i class="fas fa-users"></i></div>
+          <div class="filter-label">Assentamentos</div>
+        </div>
+        <div class="filter-btn" data-type="imoveis">
+          <div class="filter-icon"><i class="fas fa-tractor"></i></div>
+          <div class="filter-label">Imóveis Rurais</div>
+        </div>
+        <div class="filter-btn" data-type="municipios">
+          <div class="filter-icon"><i class="fas fa-city"></i></div>
+          <div class="filter-label">Municípios</div>
+        </div>
+        <div class="filter-btn" data-type="terras">
+          <div class="filter-icon"><i class="fas fa-mountain"></i></div>
+          <div class="filter-label">Terras Indígenas</div>
+        </div>
+        <div class="filter-btn" data-type="terras_sem_destinacao">
+          <div class="filter-icon"><i class="fas fa-globe-americas"></i></div>
+          <div class="filter-label">Terras Sem Destinação</div>
+        </div>
+        <div class="filter-btn" data-type="uc">
+          <div class="filter-icon"><i class="fas fa-tree"></i></div>
+          <div class="filter-label">Unidades de Conservação</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
         
         <div class="row g-3 align-items-end">
             <div class="col-md-3">
@@ -743,39 +780,45 @@
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-header">
-                    <div class="chart-header-container">
-                        <div class="chart-title"><i class="fas fa-chart-bar me-2"></i>Ranking</div>
-                        <div>
-                            <button class="btn btn-sm btn-outline-secondary download-btn" id="download-bar-csv">
-                                <i class="fas fa-file-csv me-1"></i>CSV
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary download-btn" id="download-bar-png">
-                                <i class="fas fa-image me-1"></i>PNG
-                            </button>
-                        </div>
-                    </div>
-                </div>
+  <div class="chart-header-container">
+    <div class="chart-title"><i class="fas fa-chart-bar me-2"></i>Ranking</div>
+    <div class="d-flex align-items-center">
+      <div class="download-group">
+        <button class="btn btn-sm btn-outline-secondary download-btn" id="download-bar-csv">
+          <i class="fas fa-file-csv me-1"></i>CSV
+        </button>
+        <button class="btn btn-sm btn-outline-secondary download-btn" id="download-bar-png">
+          <i class="fas fa-image me-1"></i>PNG
+        </button>
+      </div>
+      <button class="btn btn-sm btn-outline-secondary dl-toggle" aria-pressed="false" title="Ocultar downloads">
+        <i class="fas fa-eye-slash me-1"></i>Ocultar
+      </button>
+    </div>
+  </div>
+</div>
+
                 <div class="card-body"><div class="chart-container"><canvas id="barChart"></canvas></div></div>
             </div>
         </div>
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-header">
-                    <div class="chart-header-container">
-                        <div class="chart-title"><i class="fas fa-map me-2"></i>Mapa</div>
-                        <button class="btn btn-sm btn-outline-secondary download-btn" id="download-map-png">
-                            <i class="fas fa-image me-1"></i>PNG
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body position-relative p-2">
-                    <div id="map"></div>
-                    <div class="info-panel" id="info-panel">
-                        <h6 id="selected-name"></h6>
-                        <div><strong>Ranking:</strong> <span id="selected-rank">-</span></div>
-                        <div><strong>Área:</strong> <span id="selected-area">0</span></div>
-                    </div>
-                </div>
+  <div class="chart-header-container">
+    <div class="chart-title"><i class="fas fa-map me-2"></i>Mapa</div>
+    <div class="d-flex align-items-center">
+      <div class="download-group">
+        <button class="btn btn-sm btn-outline-secondary download-btn" id="download-map-png">
+          <i class="fas fa-image me-1"></i>PNG
+        </button>
+      </div>
+      <button class="btn btn-sm btn-outline-secondary dl-toggle" aria-pressed="false" title="Ocultar downloads">
+        <i class="fas fa-eye-slash me-1"></i>Ocultar
+      </button>
+    </div>
+  </div>
+</div>
+
             </div>
         </div>
     </div>
@@ -784,36 +827,48 @@
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-header">
-                    <div class="chart-header-container">
-                        <div class="chart-title"><i class="fas fa-chart-line me-2"></i>Série Histórica (Top 10)</div>
-                        <div>
-                            <button class="btn btn-sm btn-outline-secondary download-btn" id="download-line-csv">
-                                <i class="fas fa-file-csv me-1"></i>CSV
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary download-btn" id="download-line-png">
-                                <i class="fas fa-image me-1"></i>PNG
-                            </button>
-                        </div>
-                    </div>
-                </div>
+  <div class="chart-header-container">
+    <div class="chart-title"><i class="fas fa-chart-line me-2"></i>Série Histórica (Top 10)</div>
+    <div class="d-flex align-items-center">
+      <div class="download-group">
+        <button class="btn btn-sm btn-outline-secondary download-btn" id="download-line-csv">
+          <i class="fas fa-file-csv me-1"></i>CSV
+        </button>
+        <button class="btn btn-sm btn-outline-secondary download-btn" id="download-line-png">
+          <i class="fas fa-image me-1"></i>PNG
+        </button>
+      </div>
+      <button class="btn btn-sm btn-outline-secondary dl-toggle" aria-pressed="false" title="Ocultar downloads">
+        <i class="fas fa-eye-slash me-1"></i>Ocultar
+      </button>
+    </div>
+  </div>
+</div>
+
                 <div class="card-body"><div class="chart-container"><canvas id="lineChart"></canvas></div></div>
             </div>
         </div>
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-header">
-                    <div class="chart-header-container">
-                        <div class="chart-title"><i class="fas fa-chart-area me-2"></i>Série Histórica Anual</div>
-                        <div>
-                            <button class="btn btn-sm btn-outline-secondary download-btn" id="download-yearly-csv">
-                                <i class="fas fa-file-csv me-1"></i>CSV
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary download-btn" id="download-yearly-png">
-                                <i class="fas fa-image me-1"></i>PNG
-                            </button>
-                        </div>
-                    </div>
-                </div>
+  <div class="chart-header-container">
+    <div class="chart-title"><i class="fas fa-chart-area me-2"></i>Série Histórica Anual</div>
+    <div class="d-flex align-items-center">
+      <div class="download-group">
+        <button class="btn btn-sm btn-outline-secondary download-btn" id="download-yearly-csv">
+          <i class="fas fa-file-csv me-1"></i>CSV
+        </button>
+        <button class="btn btn-sm btn-outline-secondary download-btn" id="download-yearly-png">
+          <i class="fas fa-image me-1"></i>PNG
+        </button>
+      </div>
+      <button class="btn btn-sm btn-outline-secondary dl-toggle" aria-pressed="false" title="Ocultar downloads">
+        <i class="fas fa-eye-slash me-1"></i>Ocultar
+      </button>
+    </div>
+  </div>
+</div>
+
                 <div class="card-body"><div class="chart-container"><canvas id="yearlyChart"></canvas></div></div>
             </div>
         </div>
@@ -957,6 +1012,9 @@
 </div>
 
 <script>
+  // Estados da Amazônia Legal
+  const AMAZONIA_LEGAL_UF = ['AC', 'AP', 'AM', 'MT', 'PA', 'RO', 'RR', 'TO', 'MA'];
+  
   // Funções para controle do loader
   function showLoader(message = "Carregando dados...") {
       const loader = document.getElementById('loader-overlay');
@@ -1190,18 +1248,20 @@ function normalizeCategory(raw = '') {
   mapInit();
 
   // Funções auxiliares
-  const populateYearFilter = (years) => {
-    yearFilter.innerHTML = '';
-    years.forEach(y => {
-      const opt = document.createElement('option');
-      opt.value = y;
-      opt.textContent = y;
-      yearFilter.appendChild(opt);
-    });
-    yearFilter.value = Math.max(...years);
-  };
+const populateYearFilter = (years) => {
+  yearFilter.innerHTML = '';
+  years.forEach(y => {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    yearFilter.appendChild(opt);
+  });
+  // Define sempre o máximo encontrado
+  const maxYear = Math.max(...years);
+  yearFilter.value = String(maxYear);
+};
 
-  // Atualizar botões de categoria baseado nos dados
+
   const updateCategoryButtons = (categories) => {
     // Assegurar que todos os botões estejam visíveis
     authorizedBtn.style.display = 'flex';
@@ -1234,6 +1294,11 @@ function normalizeCategory(raw = '') {
       d.normalizedCategory = normalizeCategory(d.category);
     });
     
+    // Filtrar municípios pela Amazônia Legal
+    if (currentDataset === 'municipios') {
+      csvData = csvData.filter(d => AMAZONIA_LEGAL_UF.includes(d.state));
+    }
+    
     // Obter categorias únicas
     const uniqueCategories = [...new Set(csvData.map(d => d.normalizedCategory))];
     
@@ -1242,7 +1307,7 @@ function normalizeCategory(raw = '') {
     
     // Lista de anos
     const years = [...new Set(csvData.map(d => d.year))].sort((a, b) => a - b);
-    populateYearFilter(years);
+    populateYearFilter(years, 2025);
     
     // Mostrar/ocultar controles específicos
     faseFilterGroup.style.display = currentDataset === 'terras' ? 'block' : 'none';
@@ -1298,11 +1363,11 @@ const updateBarChart = (labels, values) => {
   // Destroi instância anterior, se existir
   if (barChart) barChart.destroy();
 
-  // Escala para as cores
+  // Escala para as cores (invertida: maior valor = cor mais forte)
   const max   = Math.max(...values);
   const scale = d3.scaleSequential()
                   .domain([0, max])
-                  .interpolator(d3.interpolateReds);
+                  .interpolator(d => d3.interpolateReds(1 - d)); // Invertido
 
   // Guarda dados para eventual download
   currentBarData = { labels, values };
@@ -1436,14 +1501,13 @@ const updateYearlyChart = () => {
   });
 };
 
-
-  /* ----------  SÉRIE HISTÓRICA (Top-10)  ---------- */
+/* ----------  SÉRIE HISTÓRICA (Top-10)  ---------- */
 const updateLineChart = (year, topNames) => {
   const ctx = document.getElementById('lineChart').getContext('2d');
   if (lineChart) lineChart.destroy();
 
   const years = [...new Set(csvData.map(d => d.year))].sort((a, b) => a - b);
-  const colors = d3.schemeTableau10;          // 10 cores prontas
+  const colors = d3.schemeTableau10;
 
   const datasets = topNames.map((nm, i) => {
     const color = colors[i % colors.length];
@@ -1454,10 +1518,10 @@ const updateLineChart = (year, topNames) => {
           .filter(d => d.year === y && d.name === nm)
           .reduce((s, d) => s + d.area, 0)
       ),
-      borderColor:       color,
-      backgroundColor:   color,   // ← cor de preenchimento da linha (não visível pois fill=false)
-      pointBorderColor:  color,   // ← borda do marcador
-      pointBackgroundColor: color,/* ← **preenchimento do marcador**  */
+      borderColor: color,
+      backgroundColor: color,
+      pointBorderColor: color,
+      pointBackgroundColor: color,
       pointStyle: 'circle',
       pointRadius: 5,
       pointHoverRadius: 7,
@@ -1476,16 +1540,19 @@ const updateLineChart = (year, topNames) => {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: {
-          position: 'top',
-          labels: {
-            usePointStyle: true,
-            pointStyle: 'circle',
-            padding: 20
-          }
-        },
-        datalabels: false
-      },
+  legend: {
+    position: 'top',
+    align: 'center',   // ← centralizado
+    labels: {
+      usePointStyle: true,
+      pointStyle: 'circle',
+      padding: 20,
+      boxWidth: 15
+    }
+  },
+  datalabels: false
+}
+,
       scales: {
         y: {
           beginAtZero: true,
@@ -1502,6 +1569,7 @@ const updateLineChart = (year, topNames) => {
 };
 
 
+
   const updateMap = (aggData, namesToShow) => {
     if (geoLayer) geoLayer.remove();
   
@@ -1512,7 +1580,11 @@ const updateLineChart = (year, topNames) => {
     if (!features.length) return;
   
     const max = Math.max(...namesToShow.map(n => aggData[n] || 0));
-    const scale = d3.scaleSequential().domain([0, max]).interpolator(d3.interpolateReds);
+    
+    // Escala invertida: maior valor = cor mais forte
+    const scale = d3.scaleSequential()
+                  .domain([0, max])
+                  .interpolator(d => d3.interpolateReds(1 - d)); // Invertido
   
     geoLayer = L.geoJSON(features, {
       style: f => {
@@ -1756,26 +1828,31 @@ const updateLineChart = (year, topNames) => {
     });
     
     clearBtn.addEventListener('click', () => {
-      // Resetar filtros
-      currentCategoryFilter = 'all';
-      yearFilter.value = Math.max(...[...yearFilter.options].map(o => +o.value));
-      faseFilter.value = 'all';
-      
-      // Limpar seleções
-      selectedTerras = [];
-      selectedMunicipios = [];
-      selectedImoveis = [];
-      selectedAssentamentos = [];
-      selectedTerrasSemDestinacao = [];
-      selectedUCs = [];
-      
-      // Atualizar botões de categoria
-      document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-      allCategoriesBtn.classList.add('active');
-      
-      showLoader("Limpando filtros...");
-      setTimeout(updateDashboard, 100);
-    });
+  // Resetar filtros
+  currentCategoryFilter = 'all';
+
+  // Seleciona o MAIOR ano disponível no próprio select
+  const yearsInSelect = Array.from(yearFilter.options).map(o => +o.value).filter(Boolean);
+  const maxYear = yearsInSelect.length ? Math.max(...yearsInSelect) : new Date().getFullYear();
+  yearFilter.value = String(maxYear);
+
+  faseFilter.value = 'all';
+
+  // Limpar seleções
+  selectedTerras = [];
+  selectedMunicipios = [];
+  selectedImoveis = [];
+  selectedAssentamentos = [];
+  selectedTerrasSemDestinacao = [];
+  selectedUCs = [];
+
+  // Atualizar botões de categoria
+  document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+  allCategoriesBtn.classList.add('active');
+
+  showLoader("Limpando filtros...");
+  setTimeout(updateDashboard, 100);
+});
 
     // Event listeners para modais
     document.getElementById('open-terras-modal').addEventListener('click', () => {
@@ -1854,5 +1931,19 @@ const updateLineChart = (year, topNames) => {
   }
 
   init();
+  // Toggle local dos botões de download em cada card
+document.querySelectorAll('.dl-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const header = btn.closest('.card-header');
+    const group  = header.querySelector('.download-group');
+    const hidden = group.classList.toggle('d-none');
+
+    btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+    btn.innerHTML = hidden
+      ? '<i class="fas fa-eye me-1"></i>Mostrar'
+      : '<i class="fas fa-eye-slash me-1"></i>Ocultar';
+  });
+});
+
 </script>
 </html>
