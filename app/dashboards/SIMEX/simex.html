@@ -1370,10 +1370,10 @@ const updateBarChart = (labels, values) => {
   if (barChart) barChart.destroy();
 
   // Escala para as cores (invertida: maior valor = cor mais forte)
-  const max   = Math.max(...values);
-  const scale = d3.scaleSequential()
-                  .domain([0, max])
-                  .interpolator(d => d3.interpolateReds(1 - d)); // Invertido
+  const max = Math.max(...values, 0);
+const scale = d3
+  .scaleSequential(d3.interpolateReds)
+  .domain([0, max || 1]); // evita domínio [0,0]
 
   // Guarda dados para eventual download
   currentBarData = { labels, values };
@@ -1585,12 +1585,14 @@ const updateLineChart = (year, topNames) => {
     });
     if (!features.length) return;
   
-    const max = Math.max(...namesToShow.map(n => aggData[n] || 0));
-    
-    // Escala invertida: maior valor = cor mais forte
-    const scale = d3.scaleSequential()
-                  .domain([0, max])
-                  .interpolator(d => d3.interpolateReds(1 - d)); // Invertido
+    const max = Math.max(...namesToShow.map(n => aggData[n] || 0), 0);
+
+// Escala (maior valor = mais escuro)
+const scale = d3
+  .scaleSequential(d3.interpolateReds)
+  .domain([0, max || 1]);
+
+
   
     geoLayer = L.geoJSON(features, {
       style: f => {
