@@ -149,6 +149,52 @@
       .date-input-group{ flex-direction:column; }
       .date-separator{ transform:rotate(90deg); margin:5px 0; }
     }
+    :root{
+  --chart-h-desktop: 450px;
+  --chart-h-tablet: 360px;
+  --chart-h-phone: 300px;
+  --map-h-desktop: 500px;
+  --map-h-tablet: 380px;
+  --map-h-phone: 320px;
+}
+
+/* Garante que cabeçalhos com botões quebrem linha sem esmagar conteúdo */
+.chart-header-container{
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+/* Alturas reativas para gráficos e mapa */
+.chart-container{ height: var(--chart-h-desktop); }
+#map{ height: var(--map-h-desktop); }
+
+/* Em telas grandes, limite a largura do conteúdo para melhor leitura */
+@media (min-width:1400px){
+  .container-fluid{ max-width: 1400px; }
+}
+
+/* Tablets */
+@media (max-width:992px){
+  .chart-container{ height: var(--chart-h-tablet); }
+  #map{ height: var(--map-h-tablet); }
+}
+
+/* Celulares */
+@media (max-width:576px){
+  .chart-container{ height: var(--chart-h-phone); }
+  #map{ height: var(--map-h-phone); }
+  /* Dê mais respiro entre itens da lista em modais */
+  .assent-item,.muni-item,.uc-item,.ti-item{ padding:12px 14px; }
+}
+
+/* Evita overflow horizontal em títulos longos */
+.chart-title{ min-width: 200px; overflow-wrap: anywhere; }
+
+/* Melhor espaçamento entre barras (também ajustado no JS) */
+#barChart{ padding-top: 8px; padding-bottom: 8px; }
+
+/* Botões de download: permitem quebra sem estourar header */
+.download-group{ flex-wrap: wrap; }
   </style>
 </head>
 <body>
@@ -227,7 +273,7 @@
         <div class="date-separator"><i class="fas fa-arrow-right"></i></div>
         <div class="date-input-wrapper">
           <div class="date-label">Data Final</div>
-          <input type="text" id="endPeriod" class="date-input" value="12/2025" placeholder="MM/AAAA"
+          <input type="text" id="endPeriod" class="date-input" value="05/2025" placeholder="MM/AAAA"
                  pattern="^(0[1-9]|1[0-2])/(200[8-9]|20(1[0-9]|2[0-5]))$" title="Formato: MM/AAAA (ex: 12/2025)">
           <div class="status-indicator" id="end-status"></div>
         </div>
@@ -426,7 +472,7 @@ function getDegradacaoColorScale(maxVal){
   const range =DEGRADACAO_COLOR_STOPS.map(s=>s.c);
   return d3.scaleLinear().domain(domain).range(range).clamp(true);
 }
-const estadoNomes={AC:"Acre",AL:"Alagoas",AM:"Amazonas",AP:"Amapá",BA:"Bahia",CE:"Ceará",DF:"Distrito Federal",ES:"Espírito Santo",GO:"Goiás",MA:"Maranhão",MG:"Minas Gerais",MS:"Mato Grosso do Sul",MT:"Mato Grosso",PA:"Pará",PB:"Paraíba",PE:"Pernambuco",PI:"Piauí",PR:"Paraná",RJ:"Rio de Janeiro",RN:"Rio Grande do Norte",RO:"Rondônia",RR:"Roraima",RS:"Rio Grande do Sul",SC:"Santa Catarina",SE:"Sergipe",SP:"São Paulo",TO:"Tocantins"};
+const estadoNomes={AC:"Acre",AM:"Amazonas",AP:"Amapá",MA:"Maranhão",MT:"Mato Grosso",PA:"Pará",RO:"Rondônia",RR:"Roraima",TO:"Tocantins"};
 const amazoniaLegalStates=['AC','AP','AM','MA','MT','PA','RO','RR','TO'];
 
 function showLoader(msg="Carregando dados..."){ const l=document.getElementById('loader-overlay'); if(!l) return; const t=l.querySelector('.loader-text'); if(t) t.textContent=msg; l.style.display='flex'; }
@@ -436,6 +482,50 @@ document.addEventListener('DOMContentLoaded',function(){
   const startPeriodInput=document.getElementById('startPeriod');
   const endPeriodInput=document.getElementById('endPeriod');
   const periodDisplay=document.getElementById('period-display');
+    // ===== INIT PERÍODO AUTOMÁTICO =====
+  let userSetPeriod = false; // fica true se o usuário mexer nas datas ou presets
+
+  const pad2 = n => String(n).padStart(2, '0');
+function computeInitialPeriod(csvData){
+  const curYear = new Date().getFullYear();
+
+  let latestYear = null;
+  let latestMonth = null;
+
+  for (const d of csvData){
+    const y = Number(d.ANO);
+    const m = Number(d.MES);
+    if (!Number.isFinite(y) || !Number.isFinite(m)) continue;
+    if (m < 1 || m > 12) continue;
+
+    if (latestYear === null || y > latestYear || (y === latestYear && m > latestMonth)){
+      latestYear = y;
+      latestMonth = m;
+    }
+  }
+
+  // Caso não ache nada válido, fica no ano atual e mês atual
+  if (latestYear === null){
+    const now = new Date();
+    return { startMonth: 1, startYear: curYear, endMonth: now.getMonth()+1, endYear: curYear };
+  }
+
+  // Se existir qualquer dado no ano atual, início em 01/anoAtual; senão 01/último ano com dado
+  const hasCurrent = csvData.some(d => Number(d.ANO) === curYear);
+  const startYear = hasCurrent ? curYear : latestYear;
+
+  // Usa exatamente o último mês/ano encontrados — sem fallback para 12
+  return { startMonth: 1, startYear, endMonth: latestMonth, endYear: latestYear };
+}
+
+  function setPeriodInputs(startMonth, startYear, endMonth, endYear){
+    startPeriodInput.value = `${pad2(startMonth)}/${startYear}`;
+    endPeriodInput.value = `${pad2(endMonth)}/${endYear}`;
+    validateDateInput(startPeriodInput);
+    validateDateInput(endPeriodInput);
+    updatePeriodDisplay();
+  }
+
 
   function validateDateInput(input){
     const value=input.value;
@@ -455,17 +545,25 @@ document.addEventListener('DOMContentLoaded',function(){
       periodDisplay.innerHTML=`<small><i class="fas fa-calendar-alt me-2"></i>Período: ${sName} ${sy} até ${eName} ${ey} (${monthsDiff} ${monthsDiff===1?'mês':'meses'})</small>`;
     }
   }
-  function applyPreset(p){
-    const now=new Date(); const cm=String(now.getMonth()+1).padStart(2,'0'); const cy=now.getFullYear(); let s,e;
+    function applyPreset(p){
+    userSetPeriod = true; // <- usuário escolheu um preset
+    const now = new Date(); const cm = String(now.getMonth()+1).padStart(2,'0'); const cy = now.getFullYear(); let s,e;
     if(p==='current-year'){ s=`01/${cy}`; e=`12/${cy}`; }
     else if(p==='last-year'){ s=`01/${cy-1}`; e=`12/${cy-1}`; }
     else if(p==='last-6-months'){ const d=new Date(now.getFullYear(),now.getMonth()-5,1); s=`${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; e=`${cm}/${cy}`; }
     else if(p==='last-12-months'){ const d=new Date(now.getFullYear(),now.getMonth()-11,1); s=`${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; e=`${cm}/${cy}`; }
     document.getElementById('startPeriod').value=s; document.getElementById('endPeriod').value=e; validateDateInput(startPeriodInput); validateDateInput(endPeriodInput); updatePeriodDisplay();
   }
-  [startPeriodInput,endPeriodInput].forEach(inp=>{
-    inp.addEventListener('input',function(){ formatDateInput(this); validateDateInput(this); updatePeriodDisplay(); });
+
+    [startPeriodInput, endPeriodInput].forEach(inp => {
+    inp.addEventListener('input', function(){
+      userSetPeriod = true;                 
+      formatDateInput(this);
+      validateDateInput(this);
+      updatePeriodDisplay();
+    });
   });
+
   document.querySelectorAll('.preset-btn').forEach(btn=>btn.addEventListener('click',function(){ applyPreset(this.dataset.preset);}));
 
   // Filter buttons
@@ -533,6 +631,16 @@ document.addEventListener('DOMContentLoaded',function(){
     try{
       const csvData=await d3.csv(dataSources[dataType][territoryType].csv);
       csvData.forEach(d=> d.AREAKM2=+d.AREAKM2||0 );
+      // Normaliza ANO e MES como inteiros em 1..12
+const toInt = v => {
+  const n = parseInt(String(v ?? '').trim().replace(/[^\d-]/g, ''), 10);
+  return Number.isFinite(n) ? n : NaN;
+};
+csvData.forEach(d => {
+  d.ANO = toInt(d.ANO);
+  d.MES = toInt(d.MES);
+});
+
       const geojson=await fetch(dataSources[dataType][territoryType].geojson).then(r=>r.json());
       return {csvData,geojsonData:geojson};
     }catch(e){ console.error('Erro ao carregar dados:',e); return {csvData:[],geojsonData:null}; }
@@ -595,36 +703,104 @@ document.addEventListener('DOMContentLoaded',function(){
     const varLabelEl=annualChangeEl.nextElementSibling; if(varLabelEl) varLabelEl.textContent=`em relação a ${anoAnterior}`;
   }
 
-  function updateBarChart(labels,dataValues){
-    const ctx=document.getElementById('barChart').getContext('2d');
-    if(barChart) barChart.destroy();
-    const dataType=getSelectedDataType();
-    const maxVal=Math.max(...dataValues,1);
-    let barColors;
-    if(dataType==='desmatamento'){
-      const reds=d3.scaleSequential().domain([0,maxVal]).interpolator(d3.interpolateReds);
-      barColors=dataValues.map(v=>reds(v));
-    }else{
-      const n=dataValues.length; const t=d3.scaleLinear().domain([0,n-1]).range([1,0.25]);
-      barColors=dataValues.map((_,i)=>d3.interpolatePurples(t(i)));
-    }
-    const rawKeys=currentTopTerritories.slice(0,labels.length);
-    barChart=new Chart(ctx,{
-      type:'bar',
-      data:{ labels, datasets:[{ label:'Área (km²)', data:dataValues, backgroundColor:barColors, borderColor:barColors, borderWidth:1, borderRadius:4, borderSkipped:false }]},
-      options:{
-        indexAxis:'y', responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{display:false}, datalabels:{ anchor:'end', align:'right', offset:8, color:'#111', font:{weight:'bold',size:12}, formatter:v=>v.toLocaleString('pt-BR',{maximumFractionDigits:2}) },
-                  tooltip:{ backgroundColor:'rgba(0,0,0,.8)', titleColor:'#fff', bodyColor:'#fff', borderColor:'#444', borderWidth:1,
-                    callbacks:{ label:ctx=>`Área: ${ctx.parsed.x.toLocaleString('pt-BR',{maximumFractionDigits:2})} km²` } } },
-        onClick(e,el){ if(!el.length) return; const idx=el[0].index; const key=rawKeys[idx]; if(territoryBounds[key]) map.fitBounds(territoryBounds[key],{padding:[50,50],animate:true,duration:1.2}); },
-        scales:{ x:{ beginAtZero:true, title:{display:true,text:'Área (km²)',font:{weight:'bold'}}, grid:{display:false}, ticks:{ callback:v=>v.toLocaleString('pt-BR') } },
-                 y:{ grid:{display:false}, ticks:{ font:{size:11} } } },
-        animation:{ duration:900, easing:'easeInOutQuart' }
-      },
-      plugins:[ChartDataLabels]
-    });
+function updateBarChart(labels, dataValues){
+  const ctx = document.getElementById('barChart').getContext('2d');
+  if (barChart) barChart.destroy();
+
+  const dataType = getSelectedDataType();
+  const maxVal = Math.max(...dataValues, 1);
+
+  // Paletas coerentes com o restante do dashboard (mantidas)
+  let barColors;
+  if (dataType === 'desmatamento') {
+    const reds = d3.scaleSequential().domain([0, maxVal]).interpolator(d3.interpolateReds);
+    barColors = dataValues.map(v => reds(v));
+  } else {
+    const n = dataValues.length; 
+    const t = d3.scaleLinear().domain([0, n-1]).range([1, 0.25]);
+    barColors = dataValues.map((_, i) => d3.interpolatePurples(t(i)));
   }
+
+  // Mantém chave bruta para fitBounds no click
+  const rawKeys = currentTopTerritories.slice(0, labels.length);
+
+  barChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Área (km²)',
+        data: dataValues,
+        backgroundColor: barColors,
+        borderColor: barColors,
+        borderWidth: 1,
+        borderRadius: 4,
+        borderSkipped: false,
+        categoryPercentage: 0.72,
+        barPercentage: 0.72,
+        maxBarThickness: 32,
+        minBarLength: 2
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      resizeDelay: 120,
+      // um pouco mais de respiro para os rótulos acima das barras
+      layout: { padding: { right: 12, left: 6, top: 16, bottom: 6 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,.8)',
+          titleColor: '#fff',
+          bodyColor: '#fff',
+          borderColor: '#444',
+          borderWidth: 1,
+          callbacks: {
+            label: (ctx) => `Área: ${ctx.parsed.x.toLocaleString('pt-BR',{maximumFractionDigits:2})} km²`
+          }
+        },
+        // >>> DATALABELS FORA DA BARRA <<<
+        datalabels: {
+          // posiciona fora da barra: "em cima" (para barras horizontais, é acima no eixo Y)
+          anchor: 'end',      // ancora no fim da barra
+          align: 'top',       // coloca acima da barra
+          offset: 6,          // distância da barra
+          clamp: false,
+          clip: false,
+          color: '#111111',   // fora da barra, então cor escura
+          textAlign: 'center',
+          font: { weight: 'bold', size: 12 },
+          formatter: (v) => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
+        }
+      },
+      onClick(e, el) {
+        if (!el.length) return;
+        const idx = el[0].index;
+        const key = rawKeys[idx];
+        if (territoryBounds[key]) {
+          map.fitBounds(territoryBounds[key], { padding: [50,50], animate: true, duration: 1.2 });
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          title: { display: true, text: 'Área (km²)', font: { weight: 'bold' } },
+          grid: { display: false },
+          ticks: { callback: v => v.toLocaleString('pt-BR') }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { font: { size: 11 } }
+        }
+      },
+      animation: { duration: 900, easing: 'easeInOutQuart' }
+    },
+    plugins: [ChartDataLabels]
+  });
+}
+
 
   function updateLineChart(csvData,territoryType){
     const ctx=document.getElementById('lineChart').getContext('2d');
@@ -661,7 +837,6 @@ document.addEventListener('DOMContentLoaded',function(){
       }
     });
   }
-
   function updateYearlyChart(csvData){
     const ctx=document.getElementById('yearlyChart').getContext('2d');
     if(yearlyChart) yearlyChart.destroy();
@@ -676,11 +851,11 @@ document.addEventListener('DOMContentLoaded',function(){
     yearlyChart=new Chart(ctx,{
       plugins:[ChartDataLabels],
       type:'bar',
-      data:{ labels:years, datasets:[{ label:'Área Total (km²)', data:values, backgroundColor:bg, borderColor:border, borderWidth:1, borderRadius:4, borderSkipped:false, barPercentage:.89, categoryPercentage:.89 }]},
+      data:{ labels:years, datasets:[{ label:'Área Total (km²)', data:values, backgroundColor:bg, borderColor:border, borderWidth:2, borderRadius:4, borderSkipped:false, barPercentage:.99, categoryPercentage:.99 }]},
       options:{
         responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{display:false},
-                  datalabels:{ anchor:'end', align:'top', color:'#333', font:{weight:'bold',size:10}, formatter:v=>v.toLocaleString('pt-BR',{maximumFractionDigits:2}) },
+                  datalabels:{ anchor:'end', align:'top', color:'#333', font:{weight:'bold',size:10}, formatter:v=>v.toLocaleString('pt-BR',{maximumFractionDigits:0}) },
                   tooltip:{ backgroundColor:'rgba(0,0,0,.8)', titleColor:'#fff', bodyColor:'#fff', borderColor:border, borderWidth:1,
                     callbacks:{ label:c=>`Área: ${c.parsed.y.toLocaleString('pt-BR',{maximumFractionDigits:2})} km²` } } },
         scales:{ y:{ beginAtZero:true, title:{display:true,text:'Área (km²)',font:{weight:'bold'}}, grid:{display:false}, ticks:{ callback:v=>v.toLocaleString('pt-BR') } },
@@ -688,7 +863,41 @@ document.addEventListener('DOMContentLoaded',function(){
         animation:{ duration:900, easing:'easeInOutQuart' }
       }
     });
+
+
+  // --------- Função auxiliar: calcula se precisa girar o rótulo ---------
+  function decidePlacement(ctxDL){
+    const chart = ctxDL.chart;
+    const v = ctxDL.dataset.data[ctxDL.dataIndex] || 0;
+
+    // Área útil do gráfico
+    const area = chart.chartArea;
+    const catWidth = area ? (area.width / years.length) : 40;
+    const barWidth = Math.max(2, catWidth * CAT_PCT * BAR_PCT); // px
+
+    // Texto que será renderizado + fonte efetiva
+    const text = (typeof ctxDL.formattedValue === 'string')
+      ? ctxDL.formattedValue
+      : (v.toLocaleString('pt-BR', { maximumFractionDigits: 2 }));
+
+    const fontSize = (chart.width < 420) ? 10 : 11;
+    // Estimativa conservadora da largura do texto em px
+    const textWidth = text.length * (fontSize * 0.62);
+
+    // Regra:
+    // - Se o texto for MAIOR que a largura da barra -> rotaciona 90° e centraliza
+    // - Caso contrário -> coloca no topo interno com offset negativo
+    if (textWidth > (barWidth - 4)) {
+      return { anchor: 'center', align: 'center', offset: 0, rotation: -90 };
+    } else {
+      // dentro do topo da barra
+      const ratio = v / maxVal;
+      const off = ratio >= 0.14 ? -6 : -4; // puxa pra dentro
+      return { anchor: 'end', align: 'end', offset: off, rotation: 0 };
+    }
   }
+}
+
 
   function updateMap(geojsonData,aggregatedData,territoryType){
     if(geoJsonLayer) map.removeLayer(geoJsonLayer);
@@ -753,6 +962,8 @@ document.addEventListener('DOMContentLoaded',function(){
   async function updateDashboard(){
     showLoader("Atualizando dados...");
     try{
+
+
       const {csvData,geojsonData}=await loadData(); if(!csvData.length || !geojsonData) return;
       const territoryType=getSelectedTerritoryType(); const nameKey=territoryNameMapping[territoryType];
       const currentYear=new Date().getFullYear();
@@ -877,9 +1088,9 @@ document.addEventListener('DOMContentLoaded',function(){
           <label for="stateFilterAssent" class="form-label fw-bold">Estado:</label>
           <select id="stateFilterAssent" class="form-select">
             <option value="all">Todos</option>
-            <option value="AC">AC</option><option value="AP">AP</option><option value="AM">AM</option>
-            <option value="MA">MA</option><option value="MT">MT</option><option value="PA">PA</option>
-            <option value="RO">RO</option><option value="RR">RR</option><option value="TO">TO</option>
+            <option value="AC">Acre</option><option value="AP">Amapá</option><option value="AM">Amazonas</option>
+            <option value="MA">Maranhão</option><option value="MT">Mato  Grosso </option><option value="PA">Pará</option>
+            <option value="RO">Rondônia</option><option value="RR">Roraima</option><option value="TO">Tocantins</option>
             <option value="amazonia_legal">Amazônia Legal</option>
           </select>
         </div>
@@ -1256,6 +1467,19 @@ document.addEventListener('DOMContentLoaded',function(){
   });
 
   // Init
+  // Reflow suave em resize/orientação (melhora responsividade do canvas)
+let __resizeTO;
+window.addEventListener('resize', () => {
+  clearTimeout(__resizeTO);
+  __resizeTO = setTimeout(() => {
+    if (barChart) barChart.resize();
+    if (lineChart) lineChart.resize();
+    if (yearlyChart) yearlyChart.resize();
+    // Leaflet ajusta o mapa ao container
+    if (map) map.invalidateSize();
+  }, 120);
+});
+
   showLoader("Iniciando dashboard...");
   setTimeout(()=>{ updateSpecificFilters(); updateDashboard(); },400);
 });
