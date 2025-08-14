@@ -195,6 +195,18 @@
 
 /* Botões de download: permitem quebra sem estourar header */
 .download-group{ flex-wrap: wrap; }
+/* >>> Quebra nomes longos em popups e no painel do mapa <<< */
+.leaflet-popup-content,
+#selected-territory{
+  white-space: normal;
+  word-break: break-word;     /* permite quebrar palavras longas */
+  overflow-wrap: anywhere;    /* quebra mesmo sem espaço */
+}
+
+.leaflet-popup-content-wrapper{
+  max-width: 320px;           /* deixa o popup um pouco mais largo */
+}
+
   </style>
 </head>
 <body>
@@ -478,7 +490,19 @@ const amazoniaLegalStates=['AC','AP','AM','MA','MT','PA','RO','RR','TO'];
 function showLoader(msg="Carregando dados..."){ const l=document.getElementById('loader-overlay'); if(!l) return; const t=l.querySelector('.loader-text'); if(t) t.textContent=msg; l.style.display='flex'; }
 function hideLoader(){ const l=document.getElementById('loader-overlay'); if(l) l.style.display='none'; }
 
+// Insere "pontos de quebra invisíveis" em nomes muito longos
+function softWrap(s){
+  if (!s) return '';
+  const zwsp = '\u200B'; // zero-width space
+  // cria ponto de quebra após /, -, _
+  let t = String(s).replace(/([\/\-_])/g, '$1' + zwsp);
+  // se ainda existirem trechos gigantes sem espaço, injeta quebra a cada 14 chars
+  t = t.replace(/(\S{14})(?=\S)/g, '$1' + zwsp);
+  return t;
+}
+
 document.addEventListener('DOMContentLoaded',function(){
+  
   const startPeriodInput=document.getElementById('startPeriod');
   const endPeriodInput=document.getElementById('endPeriod');
   const periodDisplay=document.getElementById('period-display');
@@ -918,12 +942,38 @@ function updateBarChart(labels, dataValues){
       onEachFeature:(feat,layer)=>{
         const name=feat.properties[nameKey]; const v=aggregatedData[name]||0; const rank=currentTopTerritories.indexOf(name)+1;
         territoryBounds[name]=layer.getBounds();
-        layer.bindPopup(`<div style="font-family:Montserrat,sans-serif;min-width:200px;"><h6 style="margin:0 0 8px;color:#008055;font-weight:bold;">${name||'Sem nome'}</h6><p style="margin:0;font-size:14px;"><strong>Posição:</strong> ${rank}º<br><strong>Área:</strong> ${v.toLocaleString('pt-BR',{maximumFractionDigits:2})} km²</p></div>`);
-        layer.on({
-          mouseover(e){ const l=e.target; l.setStyle({weight:3,color:'#000',dashArray:'',fillOpacity:.9}); l.openPopup(); selectedTerritoryEl.textContent=name||'Território'; selectedAreaEl.textContent=(v||0).toLocaleString('pt-BR',{maximumFractionDigits:2}); infoPanel.style.display='block'; },
-          mouseout(e){ geoJsonLayer.resetStyle(e.target); infoPanel.style.display='none'; },
-          click(e){ map.fitBounds(e.target.getBounds(),{padding:[50,50],animate:true,duration:1.2}); e.target.openPopup(); }
-        });
+        layer.bindPopup(
+  `<div style="font-family:Montserrat,sans-serif;min-width:200px;">
+     <h6 style="margin:0 0 8px;color:#008055;font-weight:bold;">
+       ${softWrap(name) || 'Sem nome'}
+     </h6>
+     <p style="margin:0;font-size:14px;">
+       <strong>Posição:</strong> ${rank}º<br>
+       <strong>Área:</strong> ${v.toLocaleString('pt-BR',{maximumFractionDigits:2})} km²
+     </p>
+   </div>`,
+  { maxWidth: 320, autoPanPadding: [24,24] }
+);
+
+layer.on({
+  mouseover(e){
+    const l=e.target;
+    l.setStyle({weight:3,color:'#000',dashArray:'',fillOpacity:.9});
+    l.openPopup();
+    selectedTerritoryEl.textContent = softWrap(name) || 'Território';
+    selectedAreaEl.textContent = (v||0).toLocaleString('pt-BR',{maximumFractionDigits:2});
+    infoPanel.style.display='block';
+  },
+  mouseout(e){
+    geoJsonLayer.resetStyle(e.target);
+    infoPanel.style.display='none';
+  },
+  click(e){
+    map.fitBounds(e.target.getBounds(),{padding:[50,50],animate:true,duration:1.2});
+    e.target.openPopup();
+  }
+});
+
       }
     }).addTo(map);
     if(geoJsonLayer.getBounds().isValid()) map.fitBounds(geoJsonLayer.getBounds(),{padding:[20,20]});
