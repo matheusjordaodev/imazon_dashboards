@@ -570,6 +570,27 @@
       </div>
     </div></div>
   </div>
+  
+  <div class="modal fade modal-terras-indigenas" id="assentamentosModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title">Selecionar Assentamentos (máx. 10)</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="assentamentos-search" class="form-control mb-3" placeholder="Buscar assentamento...">
+      <div class="selection-info">
+        <span id="selected-assentamentos-count">0</span> de 10 selecionados
+      </div>
+      <div id="assentamentos-list" class="settlement-list mt-2" style="max-height:400px;overflow-y:auto;"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="apply-assentamentos-selection">Aplicar</button>
+    </div>
+  </div></div>
+</div>
+
 
   <!-- JS libs -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -712,6 +733,7 @@ function ufFromGeoCode(geo){
         }
       }
     };
+    
 
     // Normalizadores
     function normalizeCategory(raw=''){
@@ -747,11 +769,12 @@ function ufFromGeoCode(geo){
     }
     // Converte geocódigo em sigla UF
     function getUfSiglaFromFeature(props){
-      const code = getGeocodeFromProps(props);
-      if(!code) return null;
-      const uf2 = code.slice(0,2);
-      return UF_CODE_TO_SIGLA[uf2] || null;
-    }
+  const code = getGeocodeFromProps(props);
+  if(!code) return null;
+  const uf2 = code.slice(0,2);
+  return geoPrefixToUF[uf2] || null;
+}
+
 
     // UI
     const yearFilter=document.getElementById('yearFilter');
@@ -869,14 +892,21 @@ function ufFromGeoCode(geo){
 
     const loadData=async ()=>{
       showLoader("Carregando dados...");
-      const spec=DATASETS[currentDataset];
+      const spec = DATASETS[currentDataset];
 
-      const geoResponse=await fetch(spec.geo);
-      try {
-        geojson=await geoResponse.json();
-      } catch(e){
-        geojson={type:'FeatureCollection',features:[]};
-      }
+let geojsonRaw = { type:'FeatureCollection', features:[] };
+try {
+  // Para 'estados', use o mesmo GEO de municípios como base
+  const geoUrl = spec.geo || DATASETS.municipios.geo;
+  if (geoUrl) {
+    const resp = await fetch(geoUrl);
+    geojsonRaw = await resp.json();
+  }
+} catch(e){
+  geojsonRaw = { type:'FeatureCollection', features:[] };
+}
+geojson = geojsonRaw;
+
 
       featureMap.clear();
 
@@ -1274,29 +1304,52 @@ const updateDashboard = () => {
 };
 
 
-    const populateList=(listId, searchId, selectedList, countId)=>{
-      const listEl=document.getElementById(listId);
-      const term=document.getElementById(searchId).value.toLowerCase();
-      const year=+document.getElementById('yearFilter').value;
+    function populateList(listId, searchId, selectedList, countId){
+  const listEl = document.getElementById(listId);
+  const searchEl = document.getElementById(searchId);
 
-      const names=[...new Set(csvData.filter(d=>d.year===year).map(d=>d.name))].sort();
+  const normalize = s => (s||'').toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'');
 
-      listEl.innerHTML='';
-      names.filter(n=>n.toLowerCase().includes(term)).forEach(name=>{
-        const sel=selectedList.includes(name);
-        const item=document.createElement('div');
-        item.className=`settlement-item ${sel?'selected':''}`;
-        item.textContent=name;
-        item.onclick=()=>{
-          if(!sel && selectedList.length>=10){ alert('Máximo 10 selecionados'); return; }
-          if(sel){ selectedList.splice(selectedList.indexOf(name),1); }
-          else { selectedList.push(name); }
-          populateList(listId, searchId, selectedList, countId);
-        };
-        listEl.appendChild(item);
-      });
-      document.getElementById(countId).textContent=selectedList.length;
-    };
+  const term = normalize(searchEl.value);
+
+  // ← agora SEM filtrar por ano: usa todos os registros carregados no CSV
+  const names = Array.from(
+    new Set(
+      csvData.map(d => d.name).filter(Boolean)
+    )
+  ).sort((a,b)=> a.localeCompare(b,'pt-BR',{sensitivity:'base'}));
+
+  listEl.innerHTML = '';
+
+  names
+    .filter(n => normalize(n).includes(term))
+    .forEach(name=>{
+      const sel = selectedList.includes(name);
+      const item = document.createElement('div');
+      item.className = `settlement-item ${sel?'selected':''}`;
+      item.textContent = name;
+      item.onclick = ()=>{
+        if(!sel && selectedList.length >= 10){
+          alert('Máximo 10 selecionados');
+          return;
+        }
+        if(sel){
+          selectedList.splice(selectedList.indexOf(name),1);
+        }else{
+          selectedList.push(name);
+        }
+        // re-renderiza para refletir seleção
+        populateList(listId, searchId, selectedList, countId);
+      };
+      listEl.appendChild(item);
+    });
+
+  document.getElementById(countId).textContent = selectedList.length;
+}
+
 
     const init=async ()=>{
       showLoader("Iniciando dashboard...");
@@ -1401,30 +1454,42 @@ const updateDashboard = () => {
       document.querySelectorAll('.modal-backdrop').forEach(b=>b.remove());
     }
     function setUpModalListeners(){
-      const CONFIG=[
-        ['open-terras-modal','terrasModal','terras-list','terras-search','selected-terras-count',selectedTerras],
-        ['open-municipios-modal','municipiosModal','municipios-list','municipios-search','selected-municipios-count',selectedMunicipios],
-        ['open-imoveis-modal','imoveisModal','imoveis-list','imoveis-search','selected-imoveis-count',selectedImoveis],
-        ['open-assentamentos-modal','assentamentosModal','assentamentos-list','assentamentos-search','selected-assentamentos-count',selectedAssentamentos],
-      ];
-      CONFIG.forEach(([openId,modalId,listId,searchId,countId,store])=>{
-        const openBtn=document.getElementById(openId);
-        const modalEl=document.getElementById(modalId);
-        const applyBtn=document.getElementById(`apply-${modalId.replace('Modal','')}-selection`);
-        if(!openBtn||!modalEl||!applyBtn) return;
+  const CONFIG = [
+    { openId:'open-terras-modal',                  modalId:'terrasModal',               listId:'terras-list',                 searchId:'terras-search',                 countId:'selected-terras-count',                   store:selectedTerras,             applyId:'apply-terras-selection' },
+    { openId:'open-municipios-modal',              modalId:'municipiosModal',           listId:'municipios-list',             searchId:'municipios-search',             countId:'selected-municipios-count',               store:selectedMunicipios,         applyId:'apply-municipios-selection' },
+    { openId:'open-imoveis-modal',                 modalId:'imoveisModal',              listId:'imoveis-list',                searchId:'imoveis-search',                countId:'selected-imoveis-count',                  store:selectedImoveis,            applyId:'apply-imoveis-selection' },
+    { openId:'open-assentamentos-modal',           modalId:'assentamentosModal',        listId:'assentamentos-list',          searchId:'assentamentos-search',          countId:'selected-assentamentos-count',            store:selectedAssentamentos,      applyId:'apply-assentamentos-selection' },
+    { openId:'open-terras-sem-destinacao-modal',   modalId:'terrasSemDestinacaoModal',  listId:'terras-sem-destinacao-list',  searchId:'terras-sem-destinacao-search',  countId:'selected-terras-sem-destinacao-count',    store:selectedTerrasSemDestinacao, applyId:'apply-terras-sem-destinacao-selection' },
+    { openId:'open-uc-modal',                      modalId:'ucModal',                   listId:'uc-list',                     searchId:'uc-search',                     countId:'selected-uc-count',                        store:selectedUCs,                applyId:'apply-uc-selection' },
+  ];
 
-        openBtn.addEventListener('click',()=>{
-          populateList(listId,searchId,store,countId);
-          new bootstrap.Modal(modalEl).show();
-        });
-        applyBtn.addEventListener('click',()=>{
-          lastFilterChanged='selection';
-          modalEl.addEventListener('hidden.bs.modal',()=>{ updateDashboard(); liberarScroll(); },{once:true});
-          const inst=bootstrap.Modal.getInstance(modalEl);
-          if(inst) inst.hide();
-        });
+  CONFIG.forEach(({openId, modalId, listId, searchId, countId, store, applyId})=>{
+    const openBtn = document.getElementById(openId);
+    const modalEl = document.getElementById(modalId);
+    const applyBtn = document.getElementById(applyId);
+
+    if(!openBtn || !modalEl) return; // deixa abrir mesmo que o botão "Aplicar" não exista
+
+    openBtn.addEventListener('click', ()=>{
+      populateList(listId, searchId, store, countId);
+      new bootstrap.Modal(modalEl).show();
+    });
+
+    if(applyBtn){
+      applyBtn.addEventListener('click', ()=>{
+        lastFilterChanged = 'selection';
+        modalEl.addEventListener('hidden.bs.modal', ()=>{
+          updateDashboard();
+          liberarScroll();
+        }, { once:true });
+        const inst = bootstrap.Modal.getInstance(modalEl);
+        if(inst) inst.hide();
       });
     }
+  });
+}
+
+
 
     // Toggle downloads
     document.addEventListener('DOMContentLoaded',()=>{
