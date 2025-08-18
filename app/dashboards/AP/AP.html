@@ -965,56 +965,106 @@
         }
 
         function buildDonut(canvasId, legendId, labels, values, total) {
-            const ctx = document.getElementById(canvasId).getContext('2d');
+    const ctx = document.getElementById(canvasId).getContext('2d');
 
-            if (charts[canvasId]) {
-                charts[canvasId].destroy();
-                charts[canvasId] = null;
-            }
+    if (charts[canvasId]) {
+        charts[canvasId].destroy();
+        charts[canvasId] = null;
+    }
 
-            const colorScale = d3.scaleSequential()
-                .domain([0, labels.length])
-                .interpolator(d3.interpolateRainbow);
+    const colorScale = d3.scaleSequential()
+        .domain([0, labels.length])
+        .interpolator(d3.interpolateRainbow);
 
-            const chart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels,
-                    datasets: [{
-                        data: values,
-                        backgroundColor: labels.map((_, i) => colorScale(i)),
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '65%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: (context) => {
-                                    const v = Number(context.raw || 0);
-                                    const pct = total ? Math.round((v / total) * 100) : 0;
-                                    return `${context.label}: ${v.toFixed(0)} células (${pct}%)`;
-                                }
-                            }
-                        },
-                        datalabels: {
-                            formatter: v => (v > 0 ? Number(v).toFixed(0) : ''),
-                            color: '#333',
-                            font: { weight: 'bold', size: 10 }
-                        },
-                        centerText: { text: `${total.toFixed(0)} células`, color:'#28a745', fontSize: 22, fontFamily:'Montserrat', fontWeight:'700' },
-                        htmlLegend: { containerID: legendId, columns: 2 }
+    const bgColors = labels.map((_, i) => colorScale(i));
+
+    // Função util para cor de contraste (preto/branco) baseada no background
+    const contrastColor = (bg) => {
+        const c = d3.color(bg);
+        const yiq = (c.r * 299 + c.g * 587 + c.b * 114) / 1000;
+        return yiq >= 150 ? '#111' : '#fff';
+    };
+
+    const chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data: values,
+                backgroundColor: bgColors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            // Um pouco menos de “buraco” para aumentar área das fatias
+            cutout: '60%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            const v = Number(context.raw || 0);
+                            const totalLocal = (context.dataset.data || []).reduce((a,b)=>a+Number(b||0),0);
+                            const pct = totalLocal ? Math.round((v / totalLocal) * 100) : 0;
+                            return `${context.label}: ${v.toFixed(0)} células (${pct}%)`;
+                        }
                     }
-                }
-            });
-
-            charts[canvasId] = chart;
+                },
+                // === Melhoria de legibilidade dos números nas fatias ===
+                datalabels: {
+                    // só exibe se a fatia tiver pelo menos 3% para não poluir
+                    display: (ctx) => {
+                        const data = ctx.dataset.data || [];
+                        const sum = data.reduce((a,b)=>a+Number(b||0),0);
+                        const val = Number(data[ctx.dataIndex] || 0);
+                        const pct = sum ? (val / sum) * 100 : 0;
+                        return pct >= 3;
+                    },
+                    formatter: (v) => Number(v || 0).toFixed(0),
+                    // tamanho de fonte responsivo
+                    font: (ctx) => {
+                        const w = ctx.chart.width || 300;
+                        // entre 12 e 16 px conforme largura
+                        const size = Math.max(12, Math.min(16, Math.round(w * 0.02)));
+                        return { weight: 'bold', size };
+                    },
+                    // cor de texto com alto contraste com a fatia
+                    color: (ctx) => {
+                        const bg = ctx.dataset.backgroundColor?.[ctx.dataIndex] || '#666';
+                        return contrastColor(bg);
+                    },
+                    // contorno (stroke) para destacar sobre cores claras/escuras
+                    textStrokeColor: (ctx) => {
+                        const fg = (ctx) => {
+                            const bg = ctx.dataset.backgroundColor?.[ctx.dataIndex] || '#666';
+                            return contrastColor(bg);
+                        };
+                        return fg(ctx) === '#fff' ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.85)';
+                    },
+                    textStrokeWidth: 3,
+                    // mantém o texto no centro da fatia
+                    anchor: 'center',
+                    align: 'center',
+                    offset: 0,
+                    clip: false,
+                    padding: 2
+                },
+                centerText: {
+                    text: `${total.toFixed(0)} células`,
+                    color:'#28a745',
+                    fontSize: 22,
+                    fontFamily:'Montserrat',
+                    fontWeight:'700'
+                },
+                htmlLegend: { containerID: legendId, columns: 2 }
+            }
         }
+    });
 
+    charts[canvasId] = chart;
+}
         // ---------- Donuts (5) alinhados com legenda rolável ----------
         function updateDonutCharts(features) {
             ['donutChart1', 'donutChart2', 'donutChart3', 'donutChart4'].forEach(id => {
