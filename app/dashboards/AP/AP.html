@@ -1,1329 +1,790 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard SAD - Desmatamento (Ameaça & Pressão)</title>
-    
-    <!-- Bibliotecas CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.0.1/css/buttons.dataTables.min.css">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard Ameaça & Pressão - GeoJSON</title>
 
-    <style>
-        /* ===============================
-           Alinhamento de colunas por classes
-           =============================== */
-        .text-left   { text-align: left  !important; padding-left: 15px !important; }
-        .text-center { text-align: center!important; }
-        .text-right  { text-align: right !important; padding-right: 15px !important; }
+  <!-- CSS libs -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.0.1/css/buttons.dataTables.min.css">
 
-        :root {
-            --primary-color: #008055;
-            --primary-dark: #003300;
-            --accent-color: #FF6D00;
-            --text-color: #212121;
-            --background-color: #F5F5F5;
-            --card-color: #FFFFFF;
-            --border-radius: 12px;
-            --box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
-            --pressao-red: #c62828;
-        }
+  <style>
+    :root{
+      --primary-color:#008055; --primary-dark:#003300; --accent-color:#FF6D00;
+      --text-color:#212121; --background-color:#F5F5F5; --card-color:#FFFFFF;
+      --border-radius:12px; --box-shadow:0 6px 24px rgba(0,0,0,.08);
+      --pressao-red:#c62828; --ameaca-orange:#FF6D00;
+    }
+    body,.btn,.form-select,.form-control,.stat-card,.card-header{font-family:'Montserrat',sans-serif!important}
+    body{background:var(--background-color);color:var(--text-color);padding:1rem;margin:0;min-width:320px}
+    .dashboard-header{ text-align:center;margin-bottom:1rem;background:var(--card-color);padding:1.25rem;border-radius:var(--border-radius);box-shadow:var(--box-shadow) }
+    .card{border-radius:var(--border-radius);box-shadow:var(--box-shadow);border:none;height:100%;transition:.3s}
+    .card:hover{transform:translateY(-5px)}
+    .card-header{background:var(--card-color)!important;color:var(--primary-dark)!important;font-weight:700!important;border-bottom:2px solid var(--accent-color)!important;padding:1.1rem;min-height:56px;display:flex;align-items:center}
 
-        body, .btn, .form-select, .form-control, .stat-card, .card-header, .filter-btn, .filter-label, 
-        #info-panel, #data-table, .donut-total, .donut-label, .filter-group-title, .filter-group-title {
-            font-family: 'Montserrat', sans-serif !important;
-        }
+    .dash-controls{background:var(--card-color);padding:1rem;border-radius:var(--border-radius);box-shadow:var(--box-shadow);margin-bottom:1rem}
+    .current-dashboard{background:var(--primary-color);color:#fff;padding:6px 14px;border-radius:22px;font-weight:700;text-align:center;margin-bottom:10px}
 
-        body {
-            background-color: var(--background-color);
-            color: var(--text-color);
-            padding: 1rem;
-            margin: 0;
-            min-width: 320px;
-        }
+    /* 3 botões principais */
+    .dashboard-buttons{display:flex;gap:10px;justify-content:center;align-items:stretch;flex-wrap:nowrap}
+    .dashboard-btn{
+      flex:0 0 120px; max-width:140px; min-height:64px;
+      padding:8px 10px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      border:2px solid #e9ecef; border-radius:10px; background:linear-gradient(135deg,#f8f9fa 0%,#e9ecef 100%);
+      cursor:pointer; transition:.2s; text-align:center;
+    }
+    .dashboard-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.12);border-color:var(--primary-color)}
+    .dashboard-btn .dashboard-icon{font-size:18px;margin-bottom:4px}
+    .dashboard-btn .dashboard-title{font-size:13px;font-weight:700;line-height:1.1}
+    .dashboard-btn.ameaca{background:linear-gradient(135deg,#fff3e0 0%,#ffe0b2 100%);border-color:var(--ameaca-orange)}
+    .dashboard-btn.ameaca .dashboard-icon{color:var(--ameaca-orange)}
+    .dashboard-btn.pressao{background:linear-gradient(135deg,#ffebee 0%,#ffcdd2 100%);border-color:var(--pressao-red)}
+    .dashboard-btn.pressao .dashboard-icon{color:var(--pressao-red)}
+    .dashboard-btn.active{outline:2px solid var(--primary-color)}
 
-        .dashboard-header {
-            text-align: center;
-            margin-bottom: 2rem;
-            background: var(--card-color);
-            padding: 2rem;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-        }
+    /* Filtros (TI / UC) + subfiltros UC + tempo */
+    .filters-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin-top:8px}
+    .filter-btn{
+      background:#fff;border:1px solid #e0e0e0;padding:6px 14px;font-size:13px;border-radius:999px;
+      cursor:pointer;transition:.2s;box-shadow:0 3px 10px rgba(0,0,0,.06);font-weight:700;display:inline-flex;align-items:center;gap:8px;
+    }
+    .filter-btn:hover{background:#f3fff9;border-color:var(--primary-color)}
+    .filter-btn.active{background:var(--primary-color);color:#fff;border-color:var(--primary-color)}
+    .filter-btn i{font-size:14px}
 
-        .card {
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            border: none;
-            height: 100%;
-            transition: transform 0.3s ease;
-        }
+    .uc-subfilter{
+      display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border:1px solid #e9ecef;border-radius:999px;
+    }
+    .uc-subfilter .label{font-size:12px;font-weight:700;opacity:.8}
+    .btn-pill-group .btn{
+      --bs-btn-padding-y:.2rem; --bs-btn-padding-x:.6rem; --bs-btn-font-size:.75rem; border-radius:999px;
+      border:1px solid #d0d0d0; background:#fff; font-weight:700;
+    }
+    .btn-pill-group .btn.active{background:var(--primary-color);color:#fff;border-color:var(--primary-color)}
+    .uc-subfilter.disabled{opacity:.5; pointer-events:none}
 
-        .card:hover { transform: translateY(-5px); }
+    .time-filter .btn{ --bs-btn-padding-y:.25rem; --bs-btn-padding-x:.6rem; --bs-btn-font-size:.8rem; border-radius:999px; font-weight:700 }
+    .dropdown-menu{max-height:240px; overflow:auto}
 
-        .card-header {
-            background-color: var(--card-color) !important;
-            color: var(--primary-dark) !important;
-            font-weight: 700 !important;
-            border-bottom: 2px solid var(--accent-color) !important;
-            padding: 1.25rem;
-            font-size: 1.1em;
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-        }
+    /* mapa/charts/tabela */
+    #map{height:520px;width:100%;border-radius:var(--border-radius);box-shadow:inset 0 0 10px rgba(0,0,0,.1)}
+    .chart-container{position:relative;height:460px;width:100%}
+    .stat-card{background:var(--primary-color);color:#fff;border-radius:10px;padding:15px;margin-bottom:15px;box-shadow:0 4px 8px rgba(0,0,0,.1)}
+    .stat-label{font-size:.9rem;opacity:.9}.stat-value{font-size:1.8rem;font-weight:700;margin:5px 0}
+    .data-table-container{overflow-x:auto;border-radius:var(--border-radius);box-shadow:0 2px 10px rgba(0,0,0,.05)}
+    #data-table{width:100%}
+    #data-table th{background:var(--primary-dark);color:#fff;font-weight:600;padding:12px}
+    #data-table td{padding:12px;border-bottom:1px solid #eee}
+    #data-table tr:nth-child(even){background:#f9f9f9}
+    #data-table tr:hover{background:#f0faf7}
 
-        .filter-section {
-            background: var(--card-color);
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            margin-bottom: 2rem;
-        }
+    /* donuts */
+    .donut-card .card-body{display:flex;flex-direction:column;gap:8px;height:420px}
+    .donut-card .legend-grid{flex:0 0 auto;max-height:140px;overflow:auto;padding-right:4px}
+    .donut-card .donut-chart-container{flex:1 1 auto;min-height:0;position:relative}
+    .legend-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:4px;width:100%}
+    .legend-item{background:#f8f9fa;border:1px solid #e9ecef;border-radius:8px;padding:6px 10px;font-size:12px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;transition:.2s;width:100%;text-align:left}
+    .legend-item:hover{background:#eef7f3}.legend-box{width:12px;height:12px;border-radius:2px;display:inline-block}
 
-        .form-select, .form-control {
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            transition: all 0.3s ease;
-        }
-        .form-select:focus, .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(0, 128, 85, 0.2);
-        }
-
-        #map { height: 500px; width: 100%; border-radius: var(--border-radius); box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
-
-        /* Altura um pouco maior para comportar labels longas */
-        .chart-container { position: relative; height: 520px; width: 100%; }
-        
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            padding: 10px 20px;
-        }
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-            border-color: var(--primary-dark);
-            transform: translateY(-2px);
-        }
-
-        /* Botões de filtro */
-        .filter-buttons-container { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
-        .filter-group { flex: 1; min-width: 300px; }
-        .filter-group-title { font-weight: 600; margin-bottom: 8px; color: var(--primary-dark); font-size: 0.95rem; }
-        .filter-buttons { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-        .filter-btn {
-            flex: 1; min-width: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 15px 10px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: center;
-        }
-        .filter-btn:hover { background: #e9f7f0; border-color: var(--primary-color); }
-        .filter-btn.active { background: var(--card-color); border-color: var(--primary-color); color: var(--text-color); }
-        .filter-icon { font-size: 1.8rem; margin-bottom: 8px; color: var(--primary-color); transition: all 0.3s ease; }
-        .filter-btn.active .filter-icon { transform: scale(1.1); }
-        .filter-label { font-size: 0.9rem; font-weight: 500; }
-
-        /* 1) Ícone do botão de Pressão em vermelho (sempre) */
-        .filter-btn[data-type="pressao"] .filter-icon { color: var(--pressao-red) !important; }
-        .filter-btn.active[data-type="pressao"] .filter-icon { color: var(--pressao-red) !important; }
-
-        /* Filtros específicos */
-        .specific-filters { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-top: 1rem; border: 1px solid #e9ecef; }
-
-        /* Painel de informações */
-        .info-panel {
-            position: absolute; top: 20px; right: 20px; z-index: 1000; background: white; padding: 15px;
-            border-radius: 8px; box-shadow: var(--box-shadow); font-size: 0.9rem; max-width: 300px;
-        }
-
-        .stat-card { background: var(--primary-color); color: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .stat-value { font-size: 1.8rem; font-weight: bold; margin: 5px 0; }
-        .stat-label { font-size: 0.9rem; opacity: 0.9; }
-
-        .loading-spinner {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8);
-            display: flex; align-items: center; justify-content: center; z-index: 1000;
-        }
-        .spinner-border { width: 3rem; height: 3rem; color: var(--primary-color); }
-
-        /* ===== Donuts: legenda em cima, donut embaixo e cartões alinhados ===== */
-        .donut-card .card-body {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            height: 420px;            /* altura fixa para alinhar os 4 cartões */
-        }
-        .donut-card .legend-grid {
-            flex: 0 0 auto;
-            max-height: 140px;        /* legenda rola dentro do cartão se crescer */
-            overflow: auto;
-            padding-right: 4px;       /* evita sumir scrollbar sob borda */
-        }
-        .donut-card .donut-chart-container {
-            flex: 1 1 auto;           /* donut ocupa o restante do espaço */
-            min-height: 0;            /* permite o flex encolher corretamente */
-            position: relative;
-        }
-        /* Ajustes responsivos para telas menores */
-        @media (max-width: 1024px) {
-            .donut-card .card-body { height: 360px; }
-            .donut-card .legend-grid { max-height: 110px; }
-        }
-        @media (max-width: 768px) {
-            .donut-card .card-body { height: 320px; }
-            .donut-card .legend-grid { max-height: 90px; }
-        }
-
-        /* Legenda dos donuts (2 colunas) */
-        .legend-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 8px;
-            margin-bottom: 4px;
-            width: 100%;
-        }
-        .legend-item {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 6px 10px;
-            font-size: 12px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            transition: .2s ease;
-            width: 100%;
-            text-align: left;
-        }
-        .legend-item:hover { background: #eef7f3; }
-        .legend-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
-
-        /* ========= Tabela ========= */
-        .data-table-container {
-            -webkit-overflow-scrolling: touch;
-            border-radius: var(--border-radius);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        #data-table thead th { position: static; top: auto; }
-        .dataTables_wrapper .dataTables_scrollHead table,
-        .dataTables_wrapper .dataTablesScrollBody table {
-            width: 100% !important;
-            table-layout: fixed;
-            border-collapse: collapse;
-        }
-
-        #data-table th, #data-table td { box-sizing: border-box; white-space: nowrap; }
-        #data-table { width: 100%; }
-        #data-table th { background-color: var(--primary-dark); color: #fff; font-weight: 600; padding: 12px 12px; }
-        #data-table td { padding: 12px 15px; border-bottom: 1px solid #eee; }
-        #data-table tr:nth-child(even) { background-color: #f9f9f9; }
-        #data-table tr:hover { background-color: #f0faf7; }
-
-        @media (max-width: 1199.98px) {
-            .data-table-container { overflow-x: auto; }
-            #data-table th, #data-table td { white-space: nowrap; }
-        }
-
-        /* Responsividade geral */
-        @media (max-width: 1024px) { #map{height:400px} .chart-container{height:420px} }
-        @media (max-width: 768px)  { #map{height:350px} .chart-container{height:380px} }
-        @media (max-width: 576px)  { #map{height:300px} .chart-container{height:340px} }
-        @media (min-width: 1025px){ .container-fluid{max-width:1400px;margin:0 auto;} }
-
-        .chart-container canvas { max-height: 500px; }
-    </style>
+    @media (max-width:768px){
+      .dashboard-btn{flex:1 1 32%}
+      #map{height:380px}.chart-container{height:360px}
+      .donut-card .card-body{height:320px}.donut-card .legend-grid{max-height:90px}
+    }
+    @media (max-width:576px){#map{height:320px}.chart-container{height:320px}}
+    @media (min-width:1025px){.container-fluid{max-width:1400px;margin:0 auto}}
+  </style>
 </head>
 <body>
-
 <div class="container-fluid">
-    <div class="dashboard-header">
-        <img src="/../../img/ameaca_e_pressao.png" alt="Logo Aneaca" style="max-width: 150px; display: block; margin: 0 auto;">
-    </div>
-    
-    <!-- Seção de Filtros com Botões -->
-    <div class="filter-section">
-        <div class="filter-buttons-container">
-            <!-- Grupo: Tipo de Dado -->
-            <div class="filter-group">
-                <div class="filter-buttons">
-                    <div class="filter-btn active" data-type="ameaca">
-                        <div class="filter-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                        <div class="filter-label">Ameaça</div>
-                    </div>
-                    <div class="filter-btn" data-type="pressao">
-                        <div class="filter-icon"><i class="fa-solid fa-mountain"></i></div>
-                        <div class="filter-label">Pressão</div>
-                    </div>
-                </div>
-            </div>
-            <!-- Grupo: Escala Territorial -->
-            <div class="filter-group">
-                <div class="filter-buttons">
-                    <div class="filter-btn active" data-type="area_de_protecao">
-                        <div class="filter-icon"><i class="fas fa-map-marked-alt"></i></div>
-                        <div class="filter-label">Áreas de Proteção</div>
-                    </div>
-                    <div class="filter-btn" data-type="terra_indigena">
-                        <div class="filter-icon"><i class="fas fa-city"></i></div>
-                        <div class="filter-label">Terras Indígenas</div>
-                    </div>
-                    <div class="filter-btn" data-type="unidadesConservacao">
-                        <div class="filter-icon"><i class="fas fa-campground"></i></div>
-                        <div class="filter-label">Unidades de Conservação</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="dashboard-header">
+    <h1><i class="fas fa-exclamation-triangle me-3"></i>Dashboard Ameaça & Pressão</h1>
+    <p class="mb-0">Análise de dados geoespaciais de ameaças e pressões</p>
+  </div>
 
-        <!-- Filtros Específicos (2) ORDEM: Estado, Modalidade, Tipo de Uso, Categoria, Jurisdição -->
-        <div id="specific-filters" class="specific-filters">
-            <div class="row g-3">
-                <!-- Estado -->
-                <div class="col-md-4">
-                    <label for="ufFilterGlobal" class="form-label fw-bold">Filtrar por Estado:</label>
-                    <select id="ufFilterGlobal" class="form-select">
-                        <option value="all">Todos</option>
-                        <option value="AC">Acre</option>
-                        <option value="AP">Amapá</option>
-                        <option value="AM">Amazonas</option>
-                        <option value="MA">Maranhão</option>
-                        <option value="MT">Mato Grosso</option>
-                        <option value="PA">Pará</option>
-                        <option value="RO">Rondônia</option>
-                        <option value="RR">Roraima</option>
-                        <option value="TO">Tocantins</option>
-                    </select>
-                </div>
-                <!-- Modalidade (ou Fase para TI) -->
-                <div class="col-md-4">
-                    <label id="modalidade-label" class="form-label fw-bold">Filtrar por Modalidade:</label>
-                    <select id="modalidadeFilterGlobal" class="form-select">
-                        <option value="all">Todas</option>
-                        <option value="Estadual">Estadual</option>
-                        <option value="Federal">Federal</option>
-                    </select>
-                </div>
-                <!-- Tipo de Uso -->
-                <div class="col-md-4">
-                    <label for="usoFilterGlobal" class="form-label fw-bold">Filtrar por Tipo de Uso:</label>
-                    <select id="usoFilterGlobal" class="form-select">
-                        <option value="all">Todos</option>
-                    </select>
-                </div>
-                <!-- Categoria (ou Fase para TI) -->
-                <div class="col-md-4">
-                    <label id="categoria-label" for="categoriaFilterGlobal" class="form-label fw-bold">Filtrar por Categoria:</label>
-                    <select id="categoriaFilterGlobal" class="form-select">
-                        <option value="all">Todas</option>
-                    </select>
-                </div>
-                <!-- Jurisdição -->
-                <div class="col-md-4">
-                    <label for="jurisdicaoFilterGlobal" class="form-label fw-bold">Filtrar por Jurisdição:</label>
-                    <select id="jurisdicaoFilterGlobal" class="form-select">
-                        <option value="all">Todas</option>
-                    </select>
-                </div>
-            </div>
-        </div>
+  <!-- CONTROLES -->
+  <div class="dash-controls">
+    <div id="current-dashboard" class="current-dashboard">Ameaça — Geral</div>
 
-        <!-- Botões de Aplicar/Limpar Filtros -->
-        <div class="row g-3 align-items-end mt-3">
-            <div class="col-md-2 d-grid">
-                <button id="apply-filters" class="btn btn-primary">
-                    <i class="fas fa-filter me-2"></i>Aplicar Filtros
-                </button>
-            </div>
-            <div class="col-md-2 d-grid">
-                <button id="clear-filters" class="btn btn-primary">
-                    <i class="fas fa-eraser me-2"></i>Remover Filtros
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Estatísticas (3) Unidades trocadas para células -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-label">Total</div>
-                <div class="stat-value" id="total-area">0 células</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card" style="background-color: #e65100;">
-                <div class="stat-label">Média</div>
-                <div class="stat-value" id="avg-area">0 células</div>
-                <div>por território</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card" style="background-color: #006064;">
-                <div class="stat-label">Territórios Afetados</div>
-                <div class="stat-value" id="affected-territories">0</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card" style="background-color: #37474f;">
-                <div class="stat-label">Máximo</div>
-                <div class="stat-value" id="max-area">0 células</div>
-                <div>território mais afetado</div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Gráfico de Barras e Mapa -->
-    <div class="row g-4">
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header" id="bar-chart-title">
-                    <i class="fas fa-chart-bar me-2"></i>Ranking dos Territórios Mais Afetados
-                </div>
-                <div class="card-body position-relative">
-                    <div class="chart-container">
-                        <canvas id="barChart"></canvas>
-                    </div>
-                    <div class="loading-spinner" id="bar-chart-spinner" style="display: none;">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Carregando...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header" id="map-title">
-                    <i class="fas fa-map me-2"></i>Mapa de Territórios
-                </div>
-                <div class="card-body p-2 position-relative">
-                    <div id="map"></div>
-                    <div id="info-panel" class="info-panel" style="display: none;">
-                        <h6 id="selected-territory">Território</h6>
-                        <div><strong>Células:</strong> <span id="selected-area">0</span></div>
-                        <div><strong>UF:</strong> <span id="selected-state">-</span></div>
-                    </div>
-                    <div class="loading-spinner" id="map-spinner" style="display: none;">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Carregando...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Gráficos de Donut - 4 cartões -->
-    <div class="row g-4 mt-4" id="donut-charts-container">
-        <!-- Donut 1: Uso -->
-        <div class="col-lg-3 col-md-6" id="donut-col-1">
-            <div class="card donut-card">
-                <div class="card-header">
-                    <i class="fas fa-chart-pie me-2"></i>Distribuição por Uso
-                </div>
-                <div class="card-body position-relative">
-                    <div id="legend-donutChart1" class="legend-grid"></div>
-                    <div class="donut-chart-container">
-                        <canvas id="donutChart1"></canvas>
-                    </div>
-                    <div class="loading-spinner" id="donut1-spinner" style="display: none;">
-                        <div class="spinner-border" role="status"><span class="visually-hidden">Carregando...</span></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Donut 2: Estado -->
-        <div class="col-lg-3 col-md-6" id="donut-col-2">
-            <div class="card donut-card">
-                <div class="card-header">
-                    <i class="fas fa-chart-pie me-2"></i>Distribuição por Estado
-                </div>
-                <div class="card-body position-relative">
-                    <div id="legend-donutChart2" class="legend-grid"></div>
-                    <div class="donut-chart-container">
-                        <canvas id="donutChart2"></canvas>
-                    </div>
-                    <div class="loading-spinner" id="donut2-spinner" style="display: none;">
-                        <div class="spinner-border" role="status"><span class="visually-hidden">Carregando...</span></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Donut 3: Jurisdição -->
-        <div class="col-lg-3 col-md-6" id="donut-col-3">
-            <div class="card donut-card">
-                <div class="card-header">
-                    <i class="fas fa-chart-pie me-2"></i>Distribuição por Jurisdição
-                </div>
-                <div class="card-body position-relative">
-                    <div id="legend-donutChart3" class="legend-grid"></div>
-                    <div class="donut-chart-container">
-                        <canvas id="donutChart3"></canvas>
-                    </div>
-                    <div class="loading-spinner" id="donut3-spinner" style="display: none;">
-                        <div class="spinner-border" role="status"><span class="visually-hidden">Carregando...</span></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Donut 4: Categoria -->
-        <div class="col-lg-3 col-md-6" id="donut-col-4">
-            <div class="card donut-card">
-                <div class="card-header">
-                    <i class="fas fa-chart-pie me-2"></i>Distribuição por Categoria
-                </div>
-                <div class="card-body position-relative">
-                    <div id="legend-donutChart4" class="legend-grid"></div>
-                    <div class="donut-chart-container">
-                        <canvas id="donutChart4"></canvas>
-                    </div>
-                    <div class="loading-spinner" id="donut4-spinner" style="display: none;">
-                        <div class="spinner-border" role="status"><span class="visually-hidden">Carregando...</span></div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- 3 botões principais -->
+    <div class="dashboard-buttons">
+      <button id="btn-ameaca" class="dashboard-btn ameaca active" data-class="ameaca">
+        <div class="dashboard-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="dashboard-title">Ameaça</div>
+      </button>
+      <button id="btn-pressao" class="dashboard-btn pressao" data-class="pressao">
+        <div class="dashboard-icon"><i class="fas fa-fire"></i></div>
+        <div class="dashboard-title">Pressão</div>
+      </button>
+      <button id="btn-geral" class="dashboard-btn" data-class="geral">
+        <div class="dashboard-icon"><i class="fas fa-layer-group"></i></div>
+        <div class="dashboard-title">Geral</div>
+      </button>
     </div>
 
-    <!-- Tabela de Dados (3) Coluna de unidades -> Células -->
-    <div class="row g-4 mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-table me-2"></i>Dados Detalhados
-                </div>
-                <div class="card-body position-relative">
-                    <div class="data-table-container">
-                        <table id="data-table" class="table table-striped">
-                            <thead>
-                                <tr></tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                    <div class="loading-spinner" id="table-spinner" style="display: none;">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Carregando...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- Filtros abaixo -->
+    <div class="filters-row">
+      <button id="btn-ti" class="filter-btn" data-filter="ti">
+        <i class="fas fa-people-group"></i> Terras Indígenas
+      </button>
+      <button id="btn-uc" class="filter-btn" data-filter="uc">
+        <i class="fas fa-tree"></i> Unidades de Conservação
+      </button>
+
+      <!-- Subfiltro UC: Todas / Estaduais / Federais -->
+      <div id="uc-subfilter" class="uc-subfilter disabled" title="Ative o filtro UC para usar">
+        <span class="label">UC:</span>
+        <div class="btn-pill-group btn-group" role="group" aria-label="UC scope">
+          <button type="button" class="btn btn-outline-secondary active" data-uc="all">Todas</button>
+          <button type="button" class="btn btn-outline-secondary" data-uc="uce">Estaduais</button>
+          <button type="button" class="btn btn-outline-secondary" data-uc="ucf">Federais</button>
         </div>
+      </div>
+
+      <!-- Filtros de Tempo: Ano / Trimestre -->
+      <div class="time-filter btn-group">
+        <div class="btn-group" role="group">
+          <button id="btn-ano" type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            Ano: Todos
+          </button>
+          <ul class="dropdown-menu" id="menu-ano"></ul>
+        </div>
+        <div class="btn-group" role="group">
+          <button id="btn-tri" type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            Trimestre: Todos
+          </button>
+          <ul class="dropdown-menu" id="menu-tri">
+            <li><a class="dropdown-item" data-tri="">Todos</a></li>
+            <li><a class="dropdown-item" data-tri="1">T1</a></li>
+            <li><a class="dropdown-item" data-tri="2">T2</a></li>
+            <li><a class="dropdown-item" data-tri="3">T3</a></li>
+            <li><a class="dropdown-item" data-tri="4">T4</a></li>
+          </ul>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- Estatísticas -->
+  <div class="row mb-4">
+    <div class="col-md-3"><div class="stat-card"><div class="stat-label">Total de Registros</div><div class="stat-value" id="total-records">0</div></div></div>
+    <div class="col-md-3"><div class="stat-card" style="background:#FF6D00"><div class="stat-label">Total de Células</div><div class="stat-value" id="total-cells">0</div></div></div>
+    <div class="col-md-3"><div class="stat-card" style="background:#c62828"><div class="stat-label">Registros Filtrados</div><div class="stat-value" id="filtered-records">0</div></div></div>
+    <div class="col-md-3"><div class="stat-card" style="background:#6c757d"><div class="stat-label">Estados Únicos</div><div class="stat-value" id="unique-states">0</div></div></div>
+  </div>
+
+  <!-- Ranking (esquerda) e Mapa (direita) -->
+  <div class="row mb-4">
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header"><i class="fas fa-chart-bar me-2"></i><span id="rank-card-title">Ranking das 10 Áreas Protegidas mais Pressionadas</span></div>
+        <div class="card-body"><div class="chart-container"><canvas id="barChart"></canvas></div></div>
+      </div>
+    </div>
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header"><i class="fas fa-map-marked-alt me-2"></i><span id="map-card-title">Mapa das Áreas Protegidas mais Pressionadas</span></div>
+        <div class="card-body"><div id="map"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Donuts -->
+  <div class="row mb-4">
+    <div id="donut-col-1" class="col-lg-3 col-md-6"><div class="card donut-card"><div class="card-header"><i class="fas fa-chart-pie me-2"></i>Distribuição por Uso</div><div class="card-body"><div id="legend-donutChart1" class="legend-grid"></div><div class="donut-chart-container"><canvas id="donutChart1"></canvas></div></div></div></div>
+    <div id="donut-col-2" class="col-lg-3 col-md-6"><div class="card donut-card"><div class="card-header"><i class="fas fa-chart-pie me-2"></i>Distribuição por Estado</div><div class="card-body"><div id="legend-donutChart2" class="legend-grid"></div><div class="donut-chart-container"><canvas id="donutChart2"></canvas></div></div></div></div>
+    <div id="donut-col-3" class="col-lg-3 col-md-6"><div class="card donut-card"><div class="card-header"><i class="fas fa-chart-pie me-2"></i>Distribuição por Modalidade</div><div class="card-body"><div id="legend-donutChart3" class="legend-grid"></div><div class="donut-chart-container"><canvas id="donutChart3"></canvas></div></div></div></div>
+    <div id="donut-col-4" class="col-lg-3 col-md-6"><div class="card donut-card"><div class="card-header"><i class="fas fa-chart-pie me-2"></i>Distribuição por Categoria</div><div class="card-body"><div id="legend-donutChart4" class="legend-grid"></div><div class="donut-chart-container"><canvas id="donutChart4"></canvas></div></div></div></div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header"><i class="fas fa-table me-2"></i>Dados Detalhados</div>
+        <div class="card-body">
+          <div class="data-table-container">
+            <table id="data-table" class="table table-striped table-hover">
+              <thead>
+                <tr>
+                  <th>Nome</th><th>Classe</th><th>Estado</th><th>Categoria</th><th>Modalidade</th><th>Uso</th><th>Células</th><th>Ano</th><th>Período</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- Bibliotecas JavaScript -->
+<!-- JS libs -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/2.0.3/js/dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.0.1/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/3.0.1/js/buttons.html5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.0.1/js/buttons.html5.min.js"></script>
 
 <script>
-    // Registrar plugins do Chart.js
-    Chart.register(ChartDataLabels);
-
-    /* Texto central no donut */
-    const centerTextPlugin = {
-        id: 'centerText',
-        beforeDraw(chart) {
-            const { ctx, chartArea } = chart;
-            if (!chartArea) return;
-            const opts = chart.config.options.plugins.centerText || {};
-            const text = opts.text || '';
-            const color = opts.color || '#28a745';
-            const base = opts.fontSize || 20;
-            const fam = opts.fontFamily || 'Montserrat';
-            const weight = opts.fontWeight || '700';
-            const w = chartArea.right - chartArea.left;
-            const h = chartArea.bottom - chartArea.top;
-            const size = Math.max(16, Math.min(base, Math.min(w, h) * 0.12));
-            ctx.save();
-            ctx.fillStyle = color;
-            ctx.font = `${weight} ${size}px ${fam}`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(text, chartArea.left + w/2, chartArea.top + h/2);
-            ctx.restore();
-        }
-    };
-
-    /* Legenda HTML (2 colunas), fica acima do donut */
-    const htmlLegendPlugin = {
-        id: 'htmlLegend',
-        afterUpdate(chart, args, options) {
-            const containerID = options?.containerID;
-            if (!containerID) return;
-            const container = document.getElementById(containerID);
-            if (!container) return;
-
-            container.innerHTML = '';
-            container.classList.add('legend-grid');
-
-            const columns = options.columns || 2;
-            container.style.gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
-
-            const labels = chart.data.labels || [];
-            const ds = chart.data.datasets[0] || { data: [], backgroundColor: [] };
-            const total = ds.data.reduce((a,b)=>a+Number(b||0),0);
-
-            labels.forEach((label, i) => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'legend-item';
-
-                const box = document.createElement('span');
-                box.className = 'legend-box';
-                box.style.background = ds.backgroundColor?.[i] || '#999';
-
-                const val = Number(ds.data?.[i] || 0);
-                const pct = total ? Math.round((val / total) * 100) : 0;
-
-                const text = document.createElement('span');
-                text.textContent = `${label} — ${val.toFixed(0)} células (${pct}%)`;
-
-                btn.appendChild(box);
-                btn.appendChild(text);
-
-                btn.onclick = () => {
-                    const hidden = chart.getDataVisibility(i) === false;
-                    chart.toggleDataVisibility(i);
-                    btn.style.opacity = hidden ? '1' : '0.5';
-                    chart.update();
-                };
-
-                btn.style.opacity = chart.getDataVisibility(i) === false ? '0.5' : '1';
-                container.appendChild(btn);
-            });
-        }
-    };
-
-    Chart.register(centerTextPlugin, htmlLegendPlugin);
-
-    // Mapeamento de estados
-    const estadoNomes = {
-        AC:"Acre", AL:"Alagoas", AM:"Amazonas", AP:"Amapá", BA:"Bahia", CE:"Ceará", DF:"Distrito Federal", ES:"Espírito Santo",
-        GO:"Goiás", MA:"Maranhão", MG:"Minas Gerais", MS:"Mato Grosso do Sul", MT:"Mato Grosso", PA:"Pará", PB:"Paraíba",
-        PE:"Pernambuco", PI:"Piauí", PR:"Paraná", RJ:"Rio de Janeiro", RN:"Rio Grande do Norte", RO:"Rondônia",
-        RR:"Roraima", RS:"Rio Grande do Sul", SC:"Santa Catarina", SE:"Sergipe", SP:"São Paulo", TO:"Tocantins"
-    };
-
-    // (3) Utilitário para métrica: tenta CELULAS* e fallback para DESMATAM*
-    function getMetricFromProps(p){
-        const cand = ['CELULAS','CELULAS_QTD','QTD_CELULAS','CELS','CELULAS_TOTAL','CELULAS_TOT'];
-        for (const k of cand){ if (p && p[k] != null && p[k] !== '') return Number(p[k]) || 0; }
-        return Number(p?.DESMATAM_1 || p?.DESMATAMEN || 0) || 0;
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        // Elementos
-        const applyFiltersButton = document.getElementById('apply-filters');
-        const clearFiltersButton = document.getElementById('clear-filters');
-        const modalidadeFilter = document.getElementById('modalidadeFilterGlobal');
-        const ufFilter = document.getElementById('ufFilterGlobal');
-        const modalidadeLabel = document.getElementById('modalidade-label');
-
-        const jurisdicaoFilter = document.getElementById('jurisdicaoFilterGlobal');
-        const usoFilter = document.getElementById('usoFilterGlobal');
-        const categoriaFilter = document.getElementById('categoriaFilterGlobal');
-        const categoriaLabel = document.getElementById('categoria-label');
-
-        const dataTypeButtons = document.querySelectorAll('[data-type="ameaca"], [data-type="pressao"]');
-        const territoryTypeButtons = document.querySelectorAll('[data-type="area_de_protecao"], [data-type="terra_indigena"], [data-type="unidadesConservacao"]');
-        const totalAreaEl = document.getElementById('total-area');
-        const avgAreaEl = document.getElementById('avg-area');
-        const affectedTerritoriesEl = document.getElementById('affected-territories');
-        const maxAreaEl = document.getElementById('max-area');
-        const selectedTerritoryEl = document.getElementById('selected-territory');
-        const selectedAreaEl = document.getElementById('selected-area');
-        const selectedStateEl = document.getElementById('selected-state');
-
-        // Colunas dos donuts
-        const donutCol1 = document.getElementById('donut-col-1');
-        const donutCol2 = document.getElementById('donut-col-2');
-        const donutCol3 = document.getElementById('donut-col-3');
-        const donutCol4 = document.getElementById('donut-col-4');
-
-        // Variáveis globais
-        let barChart, map, geoJsonLayer;
-        let dataTable = null;
-        let dtScrollX = null; // controle do modo scrollX atual
-        let top10Features = [];
-        const charts = {};
-
-        // Debounce utilitário
-        function debounce(fn, t=200){ let id; return (...args)=>{ clearTimeout(id); id=setTimeout(()=>fn(...args), t); }; }
-
-        // Fontes de dados (iguais ao original)
-        const dataSources = {
-            ameaca: {
-                area_de_protecao: { geojson: "/dataset/ap/geojson/AMEACA_GERAL_Area_de_Protecao.geojson" },
-                terra_indigena:   { geojson: "/dataset/ap/geojson/AMEACA_GERAL_Terra_indigena.geojson" },
-                unidadesConservacao:{geojson: "/dataset/ap/geojson/AMEACA_GERAL_UCs.geojson"}
-            },
-            pressao:{
-                area_de_protecao: { geojson: "https://raw.githubusercontent.com/imazon-cgi/ap/main/dataset/geojson/PRESSAO_GERAL_Area_de_Protecao.geojson" },
-                terra_indigena:   { geojson: "https://raw.githubusercontent.com/imazon-cgi/ap/main/dataset/geojson/PRESSAO_GERAL_Terra_indigena.geojson" },
-                unidadesConservacao:{geojson: "https://raw.githubusercontent.com/imazon-cgi/ap/main/dataset/geojson/PRESSAO_GERAL_UCs.geojson" }
-            }
-        };
-
-        // Inicia o mapa
-        function initMap() {
-            map = L.map('map').setView([-5, -55], 4);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
-            L.control.zoom({ position: 'bottomright' }).addTo(map);
-        }
-
-        function showLoading(id) { const el = document.getElementById(id); if (el) el.style.display = 'flex'; }
-        function hideLoading(id) { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
-
-        function getSelectedDataType() {
-            const el = document.querySelector('.filter-btn.active[data-type="ameaca"], .filter-btn.active[data-type="pressao"]');
-            return el ? el.getAttribute('data-type') : 'ameaca';
-        }
-        function getSelectedTerritoryType() {
-            const el = document.querySelector('.filter-btn.active[data-type="area_de_protecao"], .filter-btn.active[data-type="terra_indigena"], .filter-btn.active[data-type="unidadesConservacao"]');
-            return el ? el.getAttribute('data-type') : 'area_de_protecao';
-        }
-        function updateActiveButtons() {
-            const dt = getSelectedDataType(), tt = getSelectedTerritoryType();
-            dataTypeButtons.forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-type')===dt));
-            territoryTypeButtons.forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-type')===tt));
-        }
-
-        // Atualiza o filtro específico baseado no território selecionado
-        function updateSpecificFilter() {
-            const tt = getSelectedTerritoryType();
-            if (tt === 'terra_indigena') {
-                modalidadeLabel.innerHTML = 'Filtrar por Fase:'; // mantém compatibilidade
-                categoriaLabel.innerHTML  = 'Filtrar por Fase:'; // categoria vira Fase para TI
-            } else {
-                modalidadeLabel.innerHTML = 'Filtrar por Modalidade:';
-                categoriaLabel.innerHTML  = 'Filtrar por Categoria:';
-            }
-        }
-
-        async function loadData() {
-            const dt = getSelectedDataType(), tt = getSelectedTerritoryType();
-            const src = dataSources[dt][tt];
-            const res = await fetch(src.geojson);
-            return await res.json();
-        }
-
-        // util para pegar a primeira propriedade disponível
-        function getPropValue(props, keys) {
-            for (const k of keys) {
-                if (props && Object.prototype.hasOwnProperty.call(props, k) && props[k] != null && props[k] !== '') {
-                    return props[k];
-                }
-            }
-            return null;
-        }
-
-        // popula dinamicamente os selects
-        function populateDynamicFilters(features) {
-            const tt = getSelectedTerritoryType();
-
-            const setOptions = (selectEl, values) => {
-                const current = selectEl.value;
-                selectEl.innerHTML = '<option value="all">Todas</option>';
-                Array.from(values).sort((a,b)=>String(a).localeCompare(String(b))).forEach(v=>{
-                    const opt = document.createElement('option');
-                    opt.value = v;
-                    opt.textContent = v;
-                    selectEl.appendChild(opt);
-                });
-                if (current && current !== 'all' && values.has(current)) {
-                    selectEl.value = current;
-                } else {
-                    selectEl.value = 'all';
-                }
-            };
-
-            const jurisdicaoSet = new Set();
-            const usoSet = new Set();
-            const categoriaSet = new Set();
-
-            features.forEach(f => {
-                const p = f.properties || {};
-                const j = getPropValue(p, ['JURISDICAO']);
-                if (j) jurisdicaoSet.add(j);
-
-                const uso = getPropValue(p, ['USO','USO_DOMINANTE','USO_PRINCIPAL','USO_SOLO','USO_COBERTURA']);
-                if (uso) usoSet.add(uso);
-
-                if (tt === 'terra_indigena') {
-                    const fase = getPropValue(p, ['FASE','SITUACAO']);
-                    if (fase) categoriaSet.add(fase);
-                } else {
-                    const cat = getPropValue(p, ['CATEGORIA','MODALIDADE']);
-                    if (cat) categoriaSet.add(cat);
-                }
-            });
-
-            setOptions(jurisdicaoFilter, jurisdicaoSet);
-            setOptions(usoFilter, usoSet);
-            setOptions(categoriaFilter, categoriaSet);
-        }
-
-        function filterFeatures(features) {
-            const tt = getSelectedTerritoryType();
-            const mod = modalidadeFilter.value;
-            const uf  = ufFilter.value;
-
-            const jFilter   = jurisdicaoFilter.value;
-            const usoSel    = usoFilter.value;
-            const catSel    = categoriaFilter.value;
-
-            return features.filter(f => {
-                const p = f.properties || {};
-
-                // Modalidade/Fase
-                if (mod !== 'all') {
-                    if (tt === 'terra_indigena') {
-                        if (p.FASE !== mod && p.SITUACAO !== mod) return false;
-                    } else {
-                        const modal = p.MODALIDADE || p.JURISDICAO || p.CATEGORIA;
-                        if (modal !== mod) return false;
-                    }
-                }
-
-                // UF
-                const ufProp = p.UF || p.ESTADO || '';
-                if (uf !== 'all' && ufProp !== uf) return false;
-
-                // Jurisdição
-                if (jFilter !== 'all') {
-                    if ((p.JURISDICAO || '') !== jFilter) return false;
-                }
-
-                // Uso
-                if (usoSel !== 'all') {
-                    const usoVal = getPropValue(p, ['USO','USO_DOMINANTE','USO_PRINCIPAL','USO_SOLO','USO_COBERTURA']) || '';
-                    if (usoVal !== usoSel) return false;
-                }
-
-                // Categoria (ou Fase para TI)
-                if (catSel !== 'all') {
-                    if (tt === 'terra_indigena') {
-                        const faseVal = p.FASE || p.SITUACAO || '';
-                        if (faseVal !== catSel) return false;
-                    } else {
-                        const catVal = p.CATEGORIA || p.MODALIDADE || '';
-                        if (catVal !== catSel) return false;
-                    }
-                }
-
-                return true;
-            });
-        }
-
-        // ====== GRÁFICO DE BARRAS (4) fontes menores e labels completos ======
-        function updateBarChart(features) {
-            const ctx = document.getElementById('barChart').getContext('2d');
-            if (barChart) barChart.destroy();
-
-            const data = features.map(f => ({
-                feature: f,
-                name: f.properties.NOME,
-                value: getMetricFromProps(f.properties),
-                uf: f.properties.UF || f.properties.ESTADO || ''
-            }));
-            top10Features = data.sort((a,b)=>b.value-a.value).slice(0,10);
-            const labels = top10Features.map(i=>`${i.name || 'N/A'} (${i.uf})`);
-            const values = top10Features.map(i=>i.value);
-            const maxV = Math.max(...values, 0);
-
-            // [COR BARRA]
-            const tt = getSelectedTerritoryType();
-            let interpolator = d3.interpolateReds; // padrão
-            if (tt === 'terra_indigena') interpolator = d3.interpolateYlOrBr;
-            if (tt === 'unidadesConservacao') interpolator = d3.interpolateGreens;
-
-            const colorScale = d3.scaleSequential().domain([0, maxV || 1]).interpolator(interpolator);
-            const colors = values.map(v => colorScale(v));
-
-            barChart = new Chart(ctx,{
-                type:'bar',
-                data:{ labels, datasets:[{ data: values, backgroundColor: colors, borderColor: colors, borderWidth:1, borderRadius:4 }] },
-                options:{
-                    indexAxis:'y',
-                    responsive:true,
-                    maintainAspectRatio:false,
-                    plugins:{
-                        legend:{ display:false },
-                        tooltip:{ callbacks:{ label:ctx=>`Células: ${Number(ctx.parsed.x).toFixed(0)}` } },
-                        datalabels:{ anchor:'end', align:'right', formatter: v=>Number(v).toFixed(0), font:{ weight:'bold', size:9 } }
-                    },
-                    scales:{
-                        x:{ beginAtZero:true, title:{ display:true, text:'Células', font:{ weight:'bold' } }, grid:{ display:false }, suggestedMax: maxV * 1.1 },
-                        y:{ grid:{ display:false }, ticks:{ font:{ size:9 }, autoSkip:false, callback: function(value){ return this.getLabelForValue(value); } } }
-                    },
-                    layout: { padding: { right: 40 } },
-                    onClick: (evt, elements) => {
-                        if (elements.length > 0) {
-                            const index = elements[0].index;
-                            const feature = top10Features[index].feature;
-                            if (geoJsonLayer) {
-                                const layer = geoJsonLayer.getLayers().find(l => l.feature === feature);
-                                if (layer) {
-                                    map.fitBounds(layer.getBounds(), { padding: [50, 50], animate: true });
-                                    layer.openPopup();
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // ====== MAPA (usa a mesma métrica de células) ======
-        function updateMap(features) {
-            if (geoJsonLayer) map.removeLayer(geoJsonLayer);
-
-            const tt = getSelectedTerritoryType();
-            let interpolator = d3.interpolateReds;
-            if (tt === 'terra_indigena') interpolator = d3.interpolateYlOrBr;     // amarelo
-            if (tt === 'unidadesConservacao') interpolator = d3.interpolateGreens; // verde
-
-            const max = Math.max(...features.map(f => getMetricFromProps(f.properties)), 0);
-            const scale = d3.scaleSequential().domain([0, max || 1]).interpolator(interpolator);
-
-            geoJsonLayer = L.geoJSON({ type:'FeatureCollection', features },{
-                style: f => {
-                    const v = getMetricFromProps(f.properties);
-                    return { fillColor: scale(v), weight: 1.2, color: '#555', fillOpacity: 0.75 };
-                },
-                onEachFeature:(f,layer)=>{
-                    const p=f.properties||{};
-                    layer.bindPopup(`<div style="font-family:'Montserrat',sans-serif">
-                        <h6 style="color:#008055;font-weight:bold">${p.NOME||'N/A'}</h6>
-                        <p><strong>UF:</strong> ${p.UF||p.ESTADO||''}<br><strong>Células:</strong> ${getMetricFromProps(p).toFixed(0)}</p>
-                    </div>`);
-                    layer.on({
-                        mouseover:e=>{ e.target.setStyle({ weight:3,color:'#000',fillOpacity:0.9 }); selectedTerritoryEl.textContent=p.NOME||'N/A'; selectedAreaEl.textContent=getMetricFromProps(p).toFixed(0); selectedStateEl.textContent=p.UF||p.ESTADO||''; document.getElementById('info-panel').style.display='block'; },
-                        mouseout:e=>{ geoJsonLayer.resetStyle(e.target); document.getElementById('info-panel').style.display='none'; },
-                        click:e=>map.fitBounds(e.target.getBounds(),{padding:[20,20],animate:true})
-                    });
-                }
-            }).addTo(map);
-
-            if (geoJsonLayer.getBounds().isValid()) {
-                map.fitBounds(geoJsonLayer.getBounds(),{padding:[20,20]});
-            }
-        }
-
-        function updateStatistics(features) {
-            const vals = features.map(f=>getMetricFromProps(f.properties));
-            const total = vals.reduce((a,b)=>a+b,0);
-            totalAreaEl.textContent = total.toFixed(0)+' células';
-            affectedTerritoriesEl.textContent = features.length;
-            avgAreaEl.textContent = (features.length?total/features.length:0).toFixed(0)+' células';
-            maxAreaEl.textContent = (vals.length?Math.max(...vals):0).toFixed(0)+' células';
-        }
-
-        // ---------- Utilitários para donuts ----------
-        function getProp(props, keys, fallback = 'Desconhecido') {
-            for (const k of keys) {
-                if (props && Object.prototype.hasOwnProperty.call(props, k) && props[k] != null && props[k] !== '') {
-                    return props[k];
-                }
-            }
-            return fallback;
-        }
-
-        function makeAgg(features, keyList) {
-            const acc = {};
-            let total = 0;
-            features.forEach(f => {
-                const p = f.properties || {};
-                const cat = getProp(p, keyList);
-                const v = getMetricFromProps(p);
-                acc[cat] = (acc[cat] || 0) + v;
-                total += v;
-            });
-            return { labels: Object.keys(acc), values: Object.values(acc), total };
-        }
-
-        function buildDonut(canvasId, legendId, labels, values, total) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
-
-    if (charts[canvasId]) {
-        charts[canvasId].destroy();
-        charts[canvasId] = null;
-    }
-
-    const colorScale = d3.scaleSequential()
-        .domain([0, labels.length])
-        .interpolator(d3.interpolateRainbow);
-
-    const bgColors = labels.map((_, i) => colorScale(i));
-
-    // Função util para cor de contraste (preto/branco) baseada no background
-    const contrastColor = (bg) => {
-        const c = d3.color(bg);
-        const yiq = (c.r * 299 + c.g * 587 + c.b * 114) / 1000;
-        return yiq >= 150 ? '#111' : '#fff';
-    };
-
-    const chart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels,
-            datasets: [{
-                data: values,
-                backgroundColor: bgColors,
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            // Um pouco menos de “buraco” para aumentar área das fatias
-            cutout: '60%',
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: (context) => {
-                            const v = Number(context.raw || 0);
-                            const totalLocal = (context.dataset.data || []).reduce((a,b)=>a+Number(b||0),0);
-                            const pct = totalLocal ? Math.round((v / totalLocal) * 100) : 0;
-                            return `${context.label}: ${v.toFixed(0)} células (${pct}%)`;
-                        }
-                    }
-                },
-                // === Melhoria de legibilidade dos números nas fatias ===
-                datalabels: {
-                    // só exibe se a fatia tiver pelo menos 3% para não poluir
-                    display: (ctx) => {
-                        const data = ctx.dataset.data || [];
-                        const sum = data.reduce((a,b)=>a+Number(b||0),0);
-                        const val = Number(data[ctx.dataIndex] || 0);
-                        const pct = sum ? (val / sum) * 100 : 0;
-                        return pct >= 3;
-                    },
-                    formatter: (v) => Number(v || 0).toFixed(0),
-                    // tamanho de fonte responsivo
-                    font: (ctx) => {
-                        const w = ctx.chart.width || 300;
-                        // entre 12 e 16 px conforme largura
-                        const size = Math.max(12, Math.min(16, Math.round(w * 0.02)));
-                        return { weight: 'bold', size };
-                    },
-                    // cor de texto com alto contraste com a fatia
-                    color: (ctx) => {
-                        const bg = ctx.dataset.backgroundColor?.[ctx.dataIndex] || '#666';
-                        return contrastColor(bg);
-                    },
-                    // contorno (stroke) para destacar sobre cores claras/escuras
-                    textStrokeColor: (ctx) => {
-                        const fg = (ctx) => {
-                            const bg = ctx.dataset.backgroundColor?.[ctx.dataIndex] || '#666';
-                            return contrastColor(bg);
-                        };
-                        return fg(ctx) === '#fff' ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.85)';
-                    },
-                    textStrokeWidth: 3,
-                    // mantém o texto no centro da fatia
-                    anchor: 'center',
-                    align: 'center',
-                    offset: 0,
-                    clip: false,
-                    padding: 2
-                },
-                centerText: {
-                    text: `${total.toFixed(0)} células`,
-                    color:'#28a745',
-                    fontSize: 22,
-                    fontFamily:'Montserrat',
-                    fontWeight:'700'
-                },
-                htmlLegend: { containerID: legendId, columns: 2 }
-            }
-        }
-    });
-
-    charts[canvasId] = chart;
+// ===== Chart.js plugins
+Chart.register(ChartDataLabels);
+const centerTextPlugin={id:'centerText',beforeDraw(chart){
+  const {ctx,chartArea}=chart;if(!chartArea) return;
+  const opts=chart.config.options.plugins.centerText||{};
+  const text=opts.text||'', color=opts.color||'#28a745', base=opts.fontSize||20, fam=opts.fontFamily||'Montserrat', weight=opts.fontWeight||'700';
+  const w=chartArea.right - chartArea.left, h=chartArea.bottom - chartArea.top, size=Math.max(16,Math.min(base,Math.min(w,h)*.12));
+  ctx.save();ctx.fillStyle=color;ctx.font=`${weight} ${size}px ${fam}`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(text,chartArea.left+w/2,chartArea.top+h/2);ctx.restore();
+}};
+const htmlLegendPlugin={id:'htmlLegend',afterUpdate(chart,args,options){
+  const id=options?.containerID; if(!id) return; const el=document.getElementById(id); if(!el) return;
+  el.innerHTML=''; el.classList.add('legend-grid');
+  const labels=chart.data.labels||[], ds=chart.data.datasets[0]||{data:[],backgroundColor:[]};
+  const total=(ds.data||[]).reduce((a,b)=>a+Number(b||0),0);
+  labels.forEach((label,i)=>{
+    const btn=document.createElement('button'); btn.type='button'; btn.className='legend-item';
+    const box=document.createElement('span'); box.className='legend-box'; box.style.background=ds.backgroundColor?.[i]||'#999';
+    const v=Number(ds.data?.[i]||0); const pct=total?Math.round((v/total)*100):0;
+    const txt=document.createElement('span'); txt.textContent=`${label} — ${v.toFixed(0)} células (${pct}%)`;
+    btn.appendChild(box); btn.appendChild(txt);
+    btn.onclick=()=>{const hidden=chart.getDataVisibility(i)===false; chart.toggleDataVisibility(i); btn.style.opacity=hidden?'1':'0.5'; chart.update();};
+    btn.style.opacity=chart.getDataVisibility(i)===false?'0.5':'1';
+    el.appendChild(btn);
+  });
+}};
+Chart.register(centerTextPlugin, htmlLegendPlugin);
+
+// ===== Variáveis globais
+let map, geojsonLayer=null, geojsonData=null, filteredData=[], dataTable=null, barChart=null;
+const chartsStore={};
+const classColors={ameaca:'#FF6D00', pressao:'#c62828'}; // badge na tabela
+
+// Estado UI
+let currentClass = 'ameaca';          // 'ameaca' | 'pressao' | 'geral'
+let currentFilter = null;             // null | 'ti' | 'uc'
+let ucSubtype = 'all';                // 'all' | 'uce' | 'ucf'
+let selectedYear = 2023;              // null = Todos
+let selectedQuarter = null;           // null | 1..4
+let featureLayerIndex = new Map();    // key -> Leaflet layer (zoom pelo clique)
+let barItems = [];                    // itens (top10) do ranking
+let colorMap = new Map();             // key -> cor (ranking e mapa iguais)
+
+// ===== Helpers de propriedades/chaves/cores
+function getProp(p, ...names){ for(const k of names){ if(p && p[k]!=null && p[k]!=='') return p[k]; } return null; }
+function mkKey(p){ const nome=getProp(p,'nome'); const estado=getProp(p,'estado'); return `${(nome||'').trim()}|${(estado||'').trim()}`; }
+function fallbackColor(){
+  if (currentFilter === 'ti') return d3.interpolateYlOrBr(0.6);
+  if (currentFilter === 'uc') return d3.interpolateGreens(0.6);
+  return d3.interpolateOranges(0.6);
 }
-        // ---------- Donuts (5) alinhados com legenda rolável ----------
-        function updateDonutCharts(features) {
-            ['donutChart1', 'donutChart2', 'donutChart3', 'donutChart4'].forEach(id => {
-                if (charts[id]) { charts[id].destroy(); charts[id] = null; }
-            });
+function getColorFor(p){ const key=mkKey(p||{}); return colorMap.get(key) || fallbackColor(); }
 
-            const tt = getSelectedTerritoryType();
-            const isTI = tt === 'terra_indigena';
+document.addEventListener('DOMContentLoaded', ()=>{
+  initializeMap();
+  setupButtons();
+  populateYears();
+  document.getElementById('btn-ano').textContent = `Ano: ${selectedYear}`;
+  document.getElementById('btn-tri').textContent = `Trimestre: Todos`;
+  loadDashboard(); // carrega já em 2023
+});
 
-            const aggUso       = makeAgg(features, ['USO','USO_DOMINANTE','USO_PRINCIPAL','USO_SOLO','USO_COBERTURA','CATEGORIA']);
-            const aggEstado    = makeAgg(features, ['UF','ESTADO']);
-            const aggJuris     = makeAgg(features, ['JURISDICAO']);
-            const aggCategoria = isTI ? makeAgg(features, ['FASE','SITUACAO']) : makeAgg(features, ['CATEGORIA','MODALIDADE']);
+// ===== UI: anos, nomes e títulos
+function populateYears(){
+  const ul = document.getElementById('menu-ano');
+  ul.innerHTML = '';
+  ul.insertAdjacentHTML('beforeend','<li><a class="dropdown-item" data-ano="">Todos</a></li>');
+  [2023,2022,2021,2020].forEach(y=>ul.insertAdjacentHTML('beforeend',`<li><a class="dropdown-item" data-ano="${y}">${y}</a></li>`));
+}
+function filename(scope, cls, year, ucSub=''){
+  if(scope===null){ return `ameaca_e_pressao_${year}_geral_${cls}.geojson`; }
+  if(scope==='ti'){  return `ameaca_e_pressao_${year}_categ_ti_${cls}.geojson`; }
+  if(scope==='uc'){
+    if(ucSub==='uce') return `ameaca_e_pressao_${year}_categ_uce_${cls}.geojson`;
+    if(ucSub==='ucf') return `ameaca_e_pressao_${year}_categ_ucf_${cls}.geojson`;
+  }
+  return null;
+}
+const dashboardTitle = (scope, cls, ucSub, ano, triNum)=>{
+  const classe = cls==='ameaca' ? 'Ameaça' : (cls==='pressao' ? 'Pressão' : 'Geral');
+  let escopo = 'Áreas Protegidas';
+  if(scope==='ti') escopo = 'Terras Indígenas';
+  if(scope==='uc'){
+    if(ucSub==='uce') escopo = 'UC Estaduais';
+    else if(ucSub==='ucf') escopo = 'UC Federais';
+    else escopo = 'Unidades de Conservação';
+  }
+  let extra = '';
+  if(ano){ extra += ` — ${ano}`; }
+  if(triNum){ extra += ` T${triNum}`; }
+  return `${classe} — ${escopo}${extra}`;
+};
+function setTitles(){
+  const scope = currentFilter;
+  document.getElementById('current-dashboard').textContent =
+    dashboardTitle(scope, currentClass, ucSubtype, selectedYear, selectedQuarter);
 
-            [donutCol1, donutCol2, donutCol3, donutCol4].forEach(col => {
-                col.className = 'col-lg-3 col-md-6';
-                col.style.display = '';
-            });
+  const mapTitleEl = document.getElementById('map-card-title');
+  const rankTitleEl = document.getElementById('rank-card-title');
 
-            if (isTI) {
-                donutCol3.style.display = 'none';       // esconde Jurisdição em TI
-                donutCol4.className = 'col-lg-6 col-md-12';
-            }
+  // Mantive "pressionadas" como no seu código; se quiser, alterno por classe.
+  if(scope==='ti'){
+    mapTitleEl.textContent  = 'Mapa das Terras Indígenas mais pressionadas';
+    rankTitleEl.textContent = 'Ranking das 10 Terras Indígenas mais pressionadas';
+  }else if(scope==='uc'){
+    const ucLabel = ucSubtype==='uce' ? 'Unidades de Conservação Estaduais'
+                   : ucSubtype==='ucf' ? 'Unidades de Conservação Federais'
+                   : 'Unidades de Conservação';
+    mapTitleEl.textContent  = `Mapa das ${ucLabel} mais pressionadas`;
+    rankTitleEl.textContent = `Ranking das 10 ${ucLabel} mais pressionadas`;
+  }else{
+    mapTitleEl.textContent  = 'Mapa das Áreas Protegidas mais Pressionadas';
+    rankTitleEl.textContent = 'Ranking das 10 Áreas Protegidas mais Pressionadas';
+  }
+}
 
-            buildDonut('donutChart1','legend-donutChart1', aggUso.labels, aggUso.values, aggUso.total);
-            buildDonut('donutChart2','legend-donutChart2', aggEstado.labels, aggEstado.values, aggEstado.total);
-            if (!isTI) buildDonut('donutChart3','legend-donutChart3', aggJuris.labels, aggJuris.values, aggJuris.total);
-            buildDonut('donutChart4','legend-donutChart4', aggCategoria.labels, aggCategoria.values, aggCategoria.total);
-        }
+// ===== Mapa
+function initializeMap(){
+  if (map) { try{ map.off(); map.remove(); }catch(e){} }
+  map = L.map('map').setView([-5,-55],5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© OpenStreetMap contributors'
+  }).addTo(map);
+}
 
-        /* ==================== TABELA ==================== */
-        function shouldUseScrollX() {
-            return window.innerWidth < 1200;
-        }
+function paintLayer(layer, color){
+  if (!layer) return;
+  if (layer.setStyle) {
+    layer.setStyle({ color, fillColor: color, weight: 2, opacity: 0.95, fillOpacity: 0.6 });
+  }
+  if (layer.eachLayer) {
+    layer.eachLayer(child => paintLayer(child, color)); // GeometryCollection / LayerGroup
+  }
+}
 
-        function initDataTable(config, features) {
-            dtScrollX = shouldUseScrollX();
+function buildPopupHTML(p){
+  const periodoVal = p.periodo ?? p.Periodo ?? p.PERIODO ?? p['Período'] ?? p['PERÍODO'] ?? '-';
+  return `
+    <div style="font-family:Montserrat,sans-serif;min-width:220px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:4px">${p.nome||'-'}</div>
+      <div><b>Estado:</b> ${p.estado||'-'}</div>
+      <div><b>Categoria:</b> ${p.categoria||'-'}</div>
+      <div><b>Modalidade:</b> ${p.modalidade||'-'}</div>
+      <div><b>Uso:</b> ${p.uso||'-'}</div>
+      <div><b>Células:</b> ${Number(p.celulas||0).toLocaleString('pt-BR')}</div>
+      <div><b>Ano:</b> ${p.ano||'-'} &nbsp; <b>Período:</b> ${periodoVal}</div>
+    </div>`;
+}
 
-            dataTable = new DataTable('#data-table', {
-                paging: true,
-                pagingType: 'full_numbers',
-                pageLength: 10,
-                lengthChange: false,
-                searching: true,
-                info: false,
-                ordering: true,
-                autoWidth: false,
-                scrollX: dtScrollX,
-                responsive: true,
-                order: [[ 3, 'desc' ]],
-                scrollCollapse: true,
-                layout: {
-                    topStart: {
-                        buttons: [
-                            { extend: 'copyHtml5', text: 'Copiar' },
-                            { extend: 'excelHtml5', text: 'Excel' },
-                            { extend: 'csvHtml5', text: 'CSV' }
-                        ]
-                    }
-                },
-                drawCallback: () => {
-                    dataTable.columns.adjust();
-                },
-                initComplete: () => {
-                    dataTable.columns.adjust();
-                },
-                language: { url: 'https://cdn.datatables.net/plug-ins/2.0.3/i18n/pt-BR.json' }
-            });
+function updateMap(){
+  // limpa camada anterior
+  if (geojsonLayer){ try{ geojsonLayer.remove(); }catch(e){} }
+  featureLayerIndex = new Map();
 
-            setTimeout(() => { if (dataTable) dataTable.columns.adjust(); }, 50);
-        }
+  // renderiza apenas os itens do ranking (barItems)
+  const featuresToDraw = barItems.map(r => r._f).filter(Boolean);
+  const mapFeatures = [];
 
-        function updateTable(features) {
-            const territoryType = getSelectedTerritoryType();
-            const columnsConfig = {
-                area_de_protecao: [
-                    { title: 'Nome', keys: ['NOME','Nome','nome','NAME','name','DENOMINACAO','denominacao'], align: 'left' },
-                    { title: 'UF', keys: ['UF','ESTADO','estado'], align: 'center' },
-                    { title: 'Modalidade', keys: ['JURISDICAO','MODALIDADE','modalidade','CATEGORIA','categoria'], align: 'center' },
-                    { title: 'Jurisdição', keys: ['JURISDICAO','jurisdicao'], align: 'center' },
-                    { title: 'Células', keys: ['CELULAS','CELULAS_QTD','QTD_CELULAS','CELS','CELULAS_TOTAL','CELULAS_TOT','DESMATAM_1','DESMATAMEN','desmatamento','area','AREA_KM2','area_km2'], align: 'right', format: v => Number(v||0).toFixed(0) },
-                    { title: 'Focos de Calor', keys: ['FOCOS_DE_C','FOCOS DE C','focos_calor','focos'], align: 'right' },
-                    { title: 'Número de CAR', keys: ['N_DE_CAR','N DE CAR','num_car','car'], align: 'right' }
-                ],
-                terra_indigena: [
-                    { title: 'Nome', keys: ['NOME','Nome','nome'], align: 'left' },
-                    { title: 'UF', keys: ['UF','ESTADO','estado'], align: 'center' },
-                    { title: 'Fase', keys: ['FASE','fase','SITUACAO','situacao'], align: 'center' },
-                    { title: 'Células', keys: ['CELULAS','CELULAS_QTD','QTD_CELULAS','CELS','CELULAS_TOTAL','CELULAS_TOT','DESMATAM_1','DESMATAMEN','desmatamento','area','AREA_KM2','area_km2'], align: 'right', format: v => Number(v||0).toFixed(0) },
-                    { title: 'Focos de Calor', keys: ['FOCOS_DE_C','FOCOS DE C','focos_calor','focos'], align: 'right' }
-                ],
-                unidadesConservacao: [
-                    { title: 'Nome', keys: ['NOME','Nome','nome'], align: 'left' },
-                    { title: 'UF', keys: ['UF','ESTADO','estado'], align: 'center' },
-                    { title: 'Categoria', keys: ['CATEGORIA','categoria','MODALIDADE','modalidade'], align: 'center' },
-                    { title: 'Jurisdição', keys: ['JURISDICAO','jurisdicao'], align: 'center' },
-                    { title: 'Células', keys: ['CELULAS','CELULAS_QTD','QTD_CELULAS','CELS','CELULAS_TOTAL','CELULAS_TOT','DESMATAM_1','DESMATAMEN','desmatamento','area','AREA_KM2','area_km2'], align: 'right', format: v => Number(v||0).toFixed(0) },
-                    { title: 'Focos de Calor', keys: ['FOCOS_DE_C','FOCOS DE C','focos_calor','focos'], align: 'right' }
-                ]
-            };
-            const config = columnsConfig[territoryType] || columnsConfig['area_de_protecao'];
+  geojsonLayer = L.geoJSON(featuresToDraw, {
+    style: f => {
+      const p = f.properties || {};
+      const c = getColorFor(p);
+      return { color:c, fillColor:c, weight:2, opacity:0.95, fillOpacity:0.6 };
+    },
+    pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius:6, weight:1, color:getColorFor(f.properties||{}), fillColor:getColorFor(f.properties||{}), fillOpacity:0.7 }),
+    onEachFeature: (f, layer) => {
+      const p = f.properties || {};
+      const key = mkKey(p);
+      featureLayerIndex.set(key, layer);
+      mapFeatures.push(layer);
+      layer.bindPopup(buildPopupHTML(p));
+      // reforça a cor nos sublayers
+      paintLayer(layer, getColorFor(p));
+    }
+  }).addTo(map);
 
-            if (dataTable) { dataTable.destroy(); dataTable = null; }
-            const table = document.getElementById('data-table');
-            const thead = table.querySelector('thead');
-            const tbody = table.querySelector('tbody');
-            thead.innerHTML = '<tr>' + config.map(col => `<th class="text-${col.align}">${col.title}</th>`).join('') + '</tr>';
-            tbody.innerHTML = '';
+  if (mapFeatures.length > 0) {
+    try { map.fitBounds(geojsonLayer.getBounds(), { padding:[20,20] }); } catch(e){}
+  }
+}
 
-            const pickProp = (props, keys) => {
-                for (let k of keys) {
-                    if (Object.prototype.hasOwnProperty.call(props, k) && props[k] !== undefined && props[k] !== null) {
-                        return props[k];
-                    }
-                }
-                return 'N/A';
-            };
+// ===== Botões
+function setupButtons(){
+  // principais
+  document.getElementById('btn-ameaca').addEventListener('click',()=>selectClass('ameaca'));
+  document.getElementById('btn-pressao').addEventListener('click',()=>selectClass('pressao'));
+  document.getElementById('btn-geral').addEventListener('click',()=>selectClass('geral'));
 
-            features.forEach(f => {
-                const p = f.properties || {};
-                const row = document.createElement('tr');
-                row.innerHTML = config.map(col => {
-                    let val = pickProp(p, col.keys);
-                    if (typeof val === 'number' && col.format) {
-                        val = col.format(val);
-                    } else if (typeof val === 'number') {
-                        val = Number(val).toFixed(0);
-                    }
-                    return `<td class="text-${col.align}">${val}</td>`;
-                }).join('');
-                tbody.appendChild(row);
-            });
+  // filtros (TI/UC)
+  const btnTI = document.getElementById('btn-ti');
+  const btnUC = document.getElementById('btn-uc');
+  const ucBox = document.getElementById('uc-subfilter');
 
-            initDataTable(config, features);
-        }
+  btnTI.addEventListener('click',()=>{
+    if(currentFilter==='ti'){ currentFilter=null; btnTI.classList.remove('active'); }
+    else { currentFilter='ti'; btnTI.classList.add('active'); btnUC.classList.remove('active'); }
+    ucBox.classList.toggle('disabled', currentFilter!=='uc');
+    loadDashboard();
+  });
 
-        function updateTitles() {
-            const dt = getSelectedDataType(), tt = getSelectedTerritoryType();
-            let tBar = '', tMap = '';
-            if (tt==='area_de_protecao') {
-                tBar='Ranking das Áreas de Proteção Mais Afetadas';
-                tMap='Mapa de Áreas de Proteção';
-            } else if (tt==='terra_indigena') {
-                tBar='Ranking das Terras Indígenas Mais Afetadas';
-                tMap='Mapa de Terras Indígenas';
-            } else {
-                tBar='Ranking das Unidades de Conservação Mais Afetadas';
-                tMap='Mapa de Unidades de Conservação';
-            }
-            if (dt==='pressao') {
-                tBar=tBar.replace('Mais Afetadas','Sob Pressão');
-                tMap=tMap.replace('Mapa','Mapa de Pressão');
-            }
-            document.getElementById('bar-chart-title').innerHTML=`<i class="fas fa-chart-bar me-2"></i>${tBar}`;
-            document.getElementById('map-title').innerHTML=`<i class="fas fa-map me-2"></i>${tMap}`;
-        }
+  btnUC.addEventListener('click',()=>{
+    if(currentFilter==='uc'){ currentFilter=null; btnUC.classList.remove('active'); }
+    else { currentFilter='uc'; btnUC.classList.add('active'); btnTI.classList.remove('active'); }
+    ucBox.classList.toggle('disabled', currentFilter!=='uc');
+    loadDashboard();
+  });
 
-        async function updateDashboard() {
-            showLoading('bar-chart-spinner'); 
-            showLoading('map-spinner');
-            showLoading('donut1-spinner');
-            showLoading('donut2-spinner');
-            showLoading('donut4-spinner');
-
-            const tt = getSelectedTerritoryType();
-            const isTI = tt === 'terra_indigena';
-            if (!isTI) showLoading('donut3-spinner');
-            
-            showLoading('table-spinner');
-            
-            try {
-                const raw = await loadData();
-                const allFeats = (raw.features || []);
-
-                // popular selects dinamicamente com TODOS os valores do dataset atual
-                populateDynamicFilters(allFeats);
-
-                // aplica filtros selecionados
-                let feats = filterFeatures(allFeats);
-
-                // Ordena e mantém top 10
-                feats.sort((a, b) => {
-                    const aVal = getMetricFromProps(a.properties);
-                    const bVal = getMetricFromProps(b.properties);
-                    return bVal - aVal;
-                });
-                feats = feats.slice(0, 10);
-                
-                updateBarChart(feats);    // barras
-                updateMap(feats);         // mapa
-                updateStatistics(feats);  // cards
-                updateTitles();           // títulos com "Ranking"
-                updateDonutCharts(feats); // donuts
-                updateTable(feats);       // tabela
-            } catch (err) {
-                console.error(err);
-                alert('Erro ao carregar dados');
-            } finally {
-                hideLoading('bar-chart-spinner'); 
-                hideLoading('map-spinner');
-                hideLoading('donut1-spinner');
-                hideLoading('donut2-spinner');
-                hideLoading('donut4-spinner');
-                hideLoading('table-spinner');
-                
-                const tt2 = getSelectedTerritoryType();
-                const isTI2 = tt2 === 'terra_indigena';
-                if (!isTI2) hideLoading('donut3-spinner');
-            }
-        }
-
-        // Recalibra DataTable ao redimensionar
-        window.addEventListener('resize', debounce(() => {
-            if (!dataTable) return;
-            const needScrollX = shouldUseScrollX();
-            if (dtScrollX !== needScrollX) {
-                dataTable.destroy();
-                dataTable = null;
-                updateTable([]);
-                updateDashboard();
-            } else {
-                dataTable.columns.adjust();
-            }
-        }, 200));
-
-        // Event Listeners
-        dataTypeButtons.forEach(btn=>{
-            btn.addEventListener('click',()=>{
-                dataTypeButtons.forEach(b=>b.classList.remove('active'));
-                btn.classList.add('active');
-                updateDashboard();
-            });
-        });
-        territoryTypeButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                territoryTypeButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                updateSpecificFilter();
-                if (dataTable) { dataTable.destroy(); dataTable = null; }
-                updateDashboard();
-            });
-        });
-        applyFiltersButton.addEventListener('click', updateDashboard);
-        clearFiltersButton.addEventListener('click', ()=>{
-            modalidadeFilter.value='all';
-            ufFilter.value='all';
-            jurisdicaoFilter.value='all';
-            usoFilter.value='all';
-            categoriaFilter.value='all';
-            updateDashboard();
-        });
-
-        // Inicialização
-        initMap();
-        updateActiveButtons();
-        updateSpecificFilter();
-        updateDashboard();
+  // subfiltro UC
+  document.querySelectorAll('#uc-subfilter .btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('#uc-subfilter .btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      ucSubtype = b.getAttribute('data-uc'); // all | uce | ucf
+      loadDashboard();
     });
-</script>
+  });
 
+  // Dropdown Ano
+  document.getElementById('menu-ano').addEventListener('click',(e)=>{
+    const li = e.target.closest('.dropdown-item'); if(!li) return;
+    const val = li.getAttribute('data-ano') || '';
+    selectedYear = val ? parseInt(val,10) : null; // null = Todos
+    document.getElementById('btn-ano').textContent = `Ano: ${selectedYear ?? 'Todos'}`;
+    loadDashboard();
+  });
+
+  // Dropdown Trimestre
+  document.getElementById('menu-tri').addEventListener('click',(e)=>{
+    const li = e.target.closest('.dropdown-item'); if(!li) return;
+    const v = li.getAttribute('data-tri');
+    selectedQuarter = v ? parseInt(v,10) : null; // null = Todos
+    document.getElementById('btn-tri').textContent = `Trimestre: ${selectedQuarter ?? 'Todos'}`;
+    loadDashboard();
+  });
+}
+
+function selectClass(cls){
+  currentClass = cls;
+  document.querySelectorAll('.dashboard-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`[data-class="${cls}"]`).classList.add('active');
+  loadDashboard();
+}
+
+// ===== Loader visual
+function showLoading(){
+  document.querySelectorAll('.card-body').forEach(body=>{
+    if(!body.querySelector('.loading-spinner')){
+      const s=document.createElement('div'); s.className='loading-spinner';
+      s.style.position='absolute'; s.style.inset='0'; s.style.background='rgba(255,255,255,.8)';
+      s.style.display='flex'; s.style.alignItems='center'; s.style.justifyContent='center'; s.style.zIndex='1000';
+      s.innerHTML='<div class="spinner-border" role="status" style="color:#008055"></div>';
+      body.style.position='relative';
+      body.appendChild(s);
+    }
+  });
+}
+function hideLoading(){ document.querySelectorAll('.loading-spinner').forEach(s=>s.remove()); }
+
+// ===== Fetch/merge
+async function safeFetch(url){
+  try{
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  }catch(e){
+    console.warn('Erro ao carregar', url, e.message);
+    return null;
+  }
+}
+function mergeCollections(collections){
+  const all = [];
+  collections.forEach(c => { if(c && Array.isArray(c.features)) all.push(...c.features); });
+  return { type:'FeatureCollection', features: all };
+}
+function targetsFor(scope, cls, year, ucSub){
+  const t = [];
+  if(scope===null){ // geral
+    if(cls==='geral'){ t.push(filename(null,'ameaca',year)); t.push(filename(null,'pressao',year)); }
+    else{ t.push(filename(null,cls,year)); }
+    return t;
+  }
+  if(scope==='ti'){
+    if(cls==='geral'){ t.push(filename('ti','ameaca',year)); t.push(filename('ti','pressao',year)); }
+    else{ t.push(filename('ti',cls,year)); }
+    return t;
+  }
+  if(scope==='uc'){
+    const wantUCE = (ucSub==='all' || ucSub==='uce');
+    const wantUCF = (ucSub==='all' || ucSub==='ucf');
+    if(cls==='geral'){
+      if(wantUCE){ t.push(filename('uc','ameaca',year,'uce')); t.push(filename('uc','pressao',year,'uce')); }
+      if(wantUCF){ t.push(filename('uc','ameaca',year,'ucf')); t.push(filename('uc','pressao',year,'ucf')); }
+    }else{
+      if(wantUCE){ t.push(filename('uc',cls,year,'uce')); }
+      if(wantUCF){ t.push(filename('uc',cls,year,'ucf')); }
+    }
+  }
+  return t;
+}
+
+// ===== Carregar dashboard conforme estado
+async function loadDashboard(){
+  showLoading();
+  try {
+    setTitles();
+
+    const basePath = '../dataset/ap/geojson/';
+    const scope = currentFilter; // null | 'ti' | 'uc'
+    const years = (selectedYear == null) ? [2020,2021,2022,2023] : [selectedYear];
+
+    const allTargets = years.flatMap(y => targetsFor(scope, currentClass, y, ucSubtype));
+    const results = await Promise.all(allTargets.map(f => safeFetch(basePath + f)));
+    geojsonData = mergeCollections(results.filter(Boolean));
+
+    // Filtro por ano e trimestre
+    const feats = geojsonData.features || [];
+    filteredData = feats.filter(f=>{
+      const p = f.properties || {};
+      const anoOK = (selectedYear==null) ? true : (String(p.ano)===String(selectedYear));
+      const periodoVal = p.periodo ?? p.Periodo ?? p.PERIODO ?? p['Período'] ?? p['PERÍODO'] ?? null;
+      let triOK = true;
+      if(selectedQuarter != null){
+        const q = Number(periodoVal);
+        triOK = Number.isFinite(q) && q === selectedQuarter;
+      }
+      return anoOK && triOK;
+    });
+
+    // Renderizações
+    updateBarChart();      // define barItems + colorMap
+    updateMap();           // usa barItems + colorMap (top 10)
+    updateDonutCharts();
+    updateTable();
+    updateStatistics();
+
+  } catch (err) {
+    console.error('Falha ao carregar dashboard:', err);
+  } finally {
+    hideLoading();
+  }
+}
+
+// ===== Ranking (Barra)
+function updateBarChart() {
+  const ctx = document.getElementById('barChart').getContext('2d');
+  if (barChart) barChart.destroy();
+
+  const rows = (filteredData || [])
+    .map(f => ({
+      name:  f.properties?.nome   || '-',
+      state: f.properties?.estado || '-',
+      cells: +f.properties?.celulas || 0,
+      key:   mkKey(f.properties || {}),
+      _f:    f
+    }))
+    .sort((a, b) => b.cells - a.cells)
+    .slice(0, 10);
+
+  const labels = rows.map(d => `${d.name} (${d.state})`);
+  const values = rows.map(d => d.cells);
+  barItems = rows;
+
+  const maxVal = values.reduce((m, v) => Math.max(m, v), 0);
+  const suggestedMax = maxVal > 0 ? Math.ceil(maxVal * 1.15) : 10;
+
+  // Paletas (escuro -> claro)
+  const n = values.length || 1;
+  const tSeq = (from, to, n) =>
+    Array.from({ length: n }, (_, i) => from + (to - from) * (i / Math.max(1, n - 1)));
+
+  let colors;
+  if (currentFilter === 'ti') {
+    colors = tSeq(0.9, 0.35, n).map(t => d3.interpolateYlOrBr(t)); // TI amarelos
+  } else if (currentFilter === 'uc') {
+    colors = tSeq(0.9, 0.4, n).map(t => d3.interpolateGreens(t));  // UC verdes
+  } else {
+    colors = tSeq(0.9, 0.4, n).map(t => d3.interpolateOranges(t)); // Geral laranja
+  }
+
+  // indexa cores por key para o mapa
+  colorMap = new Map();
+  rows.forEach((r, i) => colorMap.set(r.key, colors[i]));
+
+  barChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Células',
+        data: values,
+        backgroundColor: colors,
+        borderColor: colors,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 30, right: 10, left: 10, bottom: 0 } },
+      onHover: (evt, el) => { evt.native.target.style.cursor = el.length ? 'pointer' : 'default'; },
+      onClick: (evt, elements) => {
+        if (!elements.length) return;
+        const idx = elements[0].index;
+        const item = barItems[idx];
+        const layer = featureLayerIndex.get(item.key);
+        if (layer) zoomToLayer(layer);
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.parsed.y.toLocaleString('pt-BR')} células` } },
+        datalabels: {
+          anchor: 'end',
+          align: 'end',
+          offset: 6,
+          clamp: true,
+          clip: false,
+          formatter: v => v.toLocaleString('pt-BR'),
+          color: '#111',
+          font: { weight: '700', size: 12 }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          suggestedMax,
+          ticks: { callback: v => Number(v).toLocaleString('pt-BR') }
+        },
+        x: { ticks: { maxRotation: 45, minRotation: 45, autoSkip: false } }
+      }
+    }
+  });
+}
+
+function zoomToLayer(layer){
+  try{
+    if (typeof layer.getBounds === 'function') {
+      const b = layer.getBounds();
+      if (b && b.isValid && b.isValid()) map.fitBounds(b, { padding:[30,30], maxZoom: 10 });
+      else if (layer.getLatLng) map.setView(layer.getLatLng(), 9);
+    } else if (layer.getLatLng) {
+      map.setView(layer.getLatLng(), 9);
+    }
+    layer.openPopup?.();
+
+    // destaque rápido
+    if (layer.setStyle) {
+      const orig = { color: layer.options.color, weight: layer.options.weight };
+      layer.setStyle({ color: '#000', weight: (orig.weight||2) + 2 });
+      setTimeout(()=> layer.setStyle(orig), 800);
+    }
+  }catch(e){}
+}
+
+// ===== Donuts (oculta Modalidade em TI e alarga Categoria)
+function makeAgg(features,keys){
+  const counts={}; let total=0;
+  (features||[]).forEach(f=>{
+    const p=f.properties||{}; let value=null;
+    for(const k of keys){ if(p[k]!==undefined && p[k]!==null && p[k]!==''){ value=p[k]; break; } }
+    if(value){ const c=parseInt(p.celulas)||0; counts[value]=(counts[value]||0)+c; total+=c; }
+  });
+  return { labels:Object.keys(counts), values:Object.values(counts), total };
+}
+function buildDonut(canvasId,legendId,labels,values,total){
+  const ctx=document.getElementById(canvasId).getContext('2d');
+  if(chartsStore[canvasId]) chartsStore[canvasId].destroy();
+  const rainbow=d3.scaleSequential().domain([0,labels.length]).interpolator(d3.interpolateRainbow);
+  const bg=labels.map((_,i)=>rainbow(i));
+  const contrast=(bg)=>{ const c=d3.color(bg)||{r:128,g:128,b:128}; const yiq=(c.r*299+c.g*587+c.b*114)/1000; return yiq>=150?'#111':'#fff'; };
+  const chart=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data:values,backgroundColor:bg,borderColor:bg,borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:(c)=>{const v=Number(c.raw||0);const tot=(c.dataset.data||[]).reduce((a,b)=>a+Number(b||0),0);const pct=tot?Math.round((v/tot)*100):0;return `${c.label}: ${v.toFixed(0)} células (${pct}%)`;}}},
+      datalabels:{display:(ctx)=>{const d=ctx.dataset.data||[];const sum=d.reduce((a,b)=>a+Number(b||0),0);const v=Number(d[ctx.dataIndex]||0);const pct=sum?(v/sum)*100:0;return pct>=3;},
+        formatter:(v)=>Number(v||0).toFixed(0),
+        font:(ctx)=>{const w=ctx.chart.width||300;const s=Math.max(12,Math.min(16,Math.round(w*.02)));return {weight:'bold',size:s};},
+        color:(ctx)=>{const bgc=ctx.dataset.backgroundColor?.[ctx.dataIndex]||'#666';return contrast(bgc);},
+        textStrokeColor:(ctx)=>{const bgc=ctx.dataset.backgroundColor?.[ctx.dataIndex]||'#666';return contrast(bgc)==='#fff'?'rgba(0,0,0,.7)':'rgba(255,255,255,.85)';},
+        textStrokeWidth:3,anchor:'center',align:'center',offset:0,clip:false,padding:2},
+      centerText:{text:`${(total||0).toFixed(0)} células`,color:'#28a745',fontSize:22,fontFamily:'Montserrat',fontWeight:'700'},
+      htmlLegend:{containerID:legendId,columns:2}
+    }}});
+  chartsStore[canvasId]=chart;
+}
+function updateDonutCharts(){
+  ['donutChart1','donutChart2','donutChart3','donutChart4'].forEach(id=>{ if(chartsStore[id]){chartsStore[id].destroy(); chartsStore[id]=null;} });
+
+  const aggUso=makeAgg(filteredData,['uso','categoria']);
+  const aggEst=makeAgg(filteredData,['estado']);
+  const aggMod=makeAgg(filteredData,['modalidade']);
+  const aggCat=makeAgg(filteredData,['categoria']);
+
+  // layout conforme escopo
+  const col3 = document.getElementById('donut-col-3');
+  const col4 = document.getElementById('donut-col-4');
+
+  if(currentFilter==='ti'){
+    col3.style.display = 'none';
+    col4.classList.remove('col-lg-3'); col4.classList.add('col-lg-6');
+  }else{
+    col3.style.display = '';
+    col4.classList.remove('col-lg-6'); col4.classList.add('col-lg-3');
+  }
+
+  buildDonut('donutChart1','legend-donutChart1',aggUso.labels,aggUso.values,aggUso.total);
+  buildDonut('donutChart2','legend-donutChart2',aggEst.labels,aggEst.values,aggEst.total);
+  if(currentFilter!=='ti'){ buildDonut('donutChart3','legend-donutChart3',aggMod.labels,aggMod.values,aggMod.total); }
+  buildDonut('donutChart4','legend-donutChart4',aggCat.labels,aggCat.values,aggCat.total);
+}
+
+// ===== Tabela + Estatísticas
+function updateTable(){
+  if(dataTable) dataTable.destroy();
+  const tbody=document.querySelector('#data-table tbody'); tbody.innerHTML='';
+  (filteredData||[]).forEach(f=>{
+    const p=f.properties||{}; const tr=tbody.insertRow();
+    const periodoVal = p.periodo ?? p.Periodo ?? p.PERIODO ?? p['Período'] ?? p['PERÍODO'] ?? '-';
+    tr.innerHTML=`<td>${p.nome||'-'}</td>
+      <td><span class="badge" style="background:${classColors[p.class]||'#FF6D00'}">${p.class||'-'}</span></td>
+      <td>${p.estado||'-'}</td><td>${p.categoria||'-'}</td><td>${p.modalidade||'-'}</td>
+      <td>${p.uso||'-'}</td><td>${p.celulas||0}</td><td>${p.ano||'-'}</td><td>${periodoVal}</td>`;
+  });
+
+  dataTable=new DataTable('#data-table',{
+    responsive:true,
+    language:{url:'https://cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json'},
+    pageLength:10,
+    order:[[6,'desc']],
+    dom:'Bfrtip',
+    buttons:[
+      {extend:'csvHtml5',text:'CSV'},
+      {extend:'excelHtml5',text:'Excel'},
+      {extend:'pdfHtml5',text:'PDF'}
+    ]
+  });
+}
+function updateStatistics(){
+  const totalRecords=(filteredData||[]).length;
+  const totalCells=(filteredData||[]).reduce((s,f)=>s+(parseInt(f.properties?.celulas)||0),0);
+  const uniqueStates=new Set((filteredData||[]).map(f=>f.properties?.estado)).size;
+  const base=(geojsonData?.features||[]);
+  document.getElementById('total-records').textContent = base.length;
+  document.getElementById('total-cells').textContent = base.reduce((s,f)=>s+(parseInt(f.properties?.celulas)||0),0).toLocaleString();
+  document.getElementById('filtered-records').textContent = totalRecords;
+  document.getElementById('unique-states').textContent = uniqueStates;
+}
+</script>
 </body>
 </html>
