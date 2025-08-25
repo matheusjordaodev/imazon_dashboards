@@ -829,40 +829,69 @@ window.updateYearlyChart = updateYearlyChart;
     yearlyChartTitle.innerHTML=`<i class="fas fa-chart-area me-2"></i>Série Histórica do ${dataLabel} - Amazônia Legal (2008 - ${currentYear-1})`;
   }
 
-  async function updateDashboard(){
-    showLoader("Atualizando dados...");
-    try{
-      const {csvData,geojsonData}=await loadData(); if(!csvData.length || !geojsonData) return;
-      const territoryType=getSelectedTerritoryType(); const nameKey=territoryNameMapping[territoryType];
-      const currentYear=new Date().getFullYear();
-      const allPeriodData=csvData.filter(d=> d.ANO>=2008 && d.ANO<=currentYear-1 );
-      const [sMonth,sYear]=document.getElementById('startPeriod').value.split('/');
-      const [eMonth,eYear]=document.getElementById('endPeriod').value.split('/');
-      const sDate=new Date(`${sYear}-${String(sMonth).padStart(2,'0')}-01`);
-      const eDate=new Date(`${eYear}-${String(eMonth).padStart(2,'0')}-01`);
-      let filtered=csvData.filter(d=>{ const dt=new Date(`${d.ANO}-${String(d.MES).padStart(2,'0')}-01`); return dt>=sDate && dt<=eDate; });
-      filtered=applySpecificFilters(filtered,territoryType);
+ async function updateDashboard(){
+  showLoader("Atualizando dados...");
+  try{
+    const {csvData,geojsonData}=await loadData(); 
+    if(!csvData.length || !geojsonData) return;
 
-      const aggregated={};
-      filtered.forEach(d=>{ const label=d[nameKey]; const area=+d.AREAKM2||0; if(label) aggregated[label]=(aggregated[label]||0)+area; });
-      const sorted=Object.entries(aggregated).sort(([,a],[,b])=>b-a).slice(0,10);
-      const labels=sorted.map(([k])=> territoryType==='estados' ? (estadoNomes[k]||k) : k);
-      const values=sorted.map(([,v])=>v);
-      currentTopTerritories=sorted.map(([k])=>k);
+    const territoryType=getSelectedTerritoryType(); 
+    const nameKey=territoryNameMapping[territoryType];
+    const currentYear=new Date().getFullYear();
 
-      updateStatistics(aggregated,filtered);
-      updateBarChart(labels,values);
-      updateRankTable(labels, values);
-      updateMap(geojsonData,aggregated,territoryType);
-      updateTitles();
+    const allPeriodData=csvData.filter(d=> d.ANO>=2008 && d.ANO<=currentYear-1 );
 
-      const seriesData=applySpecificFilters(allPeriodData,territoryType);
-      updateLineChart(seriesData,territoryType);
-      window.updateYearlyChart(allPeriodData);
+   const [sMonth,sYear]=document.getElementById('startPeriod').value.split('/');
+const [eMonth,eYear]=document.getElementById('endPeriod').value.split('/');
 
-    }catch(e){ console.error("Erro ao atualizar dashboard:",e); }
-    finally{ setTimeout(hideLoader,400); }
+const startVal = parseInt(sYear + sMonth.padStart(2,'0'));
+const endVal   = parseInt(eYear + eMonth.padStart(2,'0'));
+if (startVal > endVal) {
+  hideLoader();
+  showInvalidPeriodModal(); // <- Modal ao invés de alert
+  return;
+}
+
+
+    const sDate=new Date(`${sYear}-${String(sMonth).padStart(2,'0')}-01`);
+    const eDate=new Date(`${eYear}-${String(eMonth).padStart(2,'0')}-01`);
+
+    let filtered=csvData.filter(d=>{
+      const dt=new Date(`${d.ANO}-${String(d.MES).padStart(2,'0')}-01`);
+      return dt>=sDate && dt<=eDate;
+    });
+    filtered=applySpecificFilters(filtered,territoryType);
+
+    const aggregated={};
+    filtered.forEach(d=>{
+      const label=d[nameKey]; 
+      const area=+d.AREAKM2||0; 
+      if(label) aggregated[label]=(aggregated[label]||0)+area; 
+    });
+
+    const sorted=Object.entries(aggregated).sort(([,a],[,b])=>b-a).slice(0,10);
+    const labels=sorted.map(([k])=> territoryType==='estados' ? (estadoNomes[k]||k) : k);
+    const values=sorted.map(([,v])=>v);
+    currentTopTerritories=sorted.map(([k])=>k);
+
+    updateStatistics(aggregated,filtered);
+    updateBarChart(labels,values);
+    updateRankTable(labels, values);
+    updateMap(geojsonData,aggregated,territoryType);
+    updateTitles();
+
+    const seriesData=applySpecificFilters(allPeriodData,territoryType);
+    updateLineChart(seriesData,territoryType);
+    updateYearlyChart(allPeriodData);
+
+  }catch(e){ 
+    console.error("Erro ao atualizar dashboard:",e); 
   }
+  finally{ 
+    setTimeout(hideLoader,400); 
+  }
+}
+
 
   // Helpers export
   function slugify(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
@@ -883,6 +912,59 @@ window.updateYearlyChart = updateYearlyChart;
     }));
   }
 
+// Guarda último período válido para "voltar" caso o usuário selecione algo inválido
+let lastValidStart = null;
+let lastValidEnd   = null;
+
+function getPeriodStrings(){
+  const [sM,sY] = document.getElementById('startPeriod').value.split('/');
+  const [eM,eY] = document.getElementById('endPeriod').value.split('/');
+  return { sM, sY, eM, eY };
+}
+
+function isPeriodValid(sY,sM,eY,eM){
+  const startVal = parseInt(sY + sM.padStart(2,'0'));
+  const endVal   = parseInt(eY + eM.padStart(2,'0'));
+  return startVal <= endVal;
+}
+
+function showInvalidPeriodModal(){
+  const m = new bootstrap.Modal(document.getElementById('invalidPeriodModal'));
+  m.show();
+}
+
+// Inicializa últimos valores válidos ao carregar
+document.addEventListener('DOMContentLoaded', ()=>{
+  const sp = document.getElementById('startPeriod');
+  const ep = document.getElementById('endPeriod');
+  if (sp && ep){
+    lastValidStart = sp.value;
+    lastValidEnd   = ep.value;
+  }
+
+  // Bloqueio imediato ao alterar INÍCIO
+  sp?.addEventListener('change', ()=>{
+    const {sM,sY,eM,eY} = getPeriodStrings();
+    if (!isPeriodValid(sY,sM,eY,eM)){
+      // Reverte e avisa
+      sp.value = lastValidStart;
+      showInvalidPeriodModal();
+      return;
+    }
+    lastValidStart = sp.value; // ok, mantém
+  });
+
+  // Bloqueio imediato ao alterar FIM
+  ep?.addEventListener('change', ()=>{
+    const {sM,sY,eM,eY} = getPeriodStrings();
+    if (!isPeriodValid(sY,sM,eY,eM)){
+      ep.value = lastValidEnd;
+      showInvalidPeriodModal();
+      return;
+    }
+    lastValidEnd = ep.value;
+  });
+});
 
 // ========= Utilitário para “Todos” com TOGGLE =========
 
@@ -1391,6 +1473,24 @@ function addSelectAllBehavior(containerEl, listSelector, applyAll, clearAll){
   setTimeout(()=>{ updateSpecificFilters(); updateDashboard(); },400);
 });
 </script>
+
+<!-- Modal: Período inválido -->
+<div class="modal fade" id="invalidPeriodModal" tabindex="-1" aria-labelledby="invalidPeriodLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:16px">
+      <div class="modal-header">
+        <h5 class="modal-title" id="invalidPeriodLabel">Período inválido</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        A data inicial não pode ser maior que a data final. Ajuste o período para continuar.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Ok, entendi</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
