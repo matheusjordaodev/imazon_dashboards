@@ -378,6 +378,12 @@ document.addEventListener('DOMContentLoaded',function(){
     attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     crossOrigin:'anonymous'
   }).addTo(map);
+
+  // Expose globals for cross-scope safety
+  window.map = map;
+  window.geoJsonLayer = window.geoJsonLayer || null;
+  window.territoryBounds = window.territoryBounds || {};
+
   let geoJsonLayer,legend;
   let currentTopTerritories=[];
   let territoryBounds={};
@@ -403,6 +409,9 @@ document.addEventListener('DOMContentLoaded',function(){
 
   function getSelectedDataType(){ const el=document.querySelector('.filter-btn.active[data-type="desmatamento"], .filter-btn.active[data-type="degradacao"]'); return el?el.getAttribute('data-type'):'desmatamento'; }
   function getSelectedTerritoryType(){ const el=document.querySelector('.filter-btn.active[data-type="estados"], .filter-btn.active[data-type="municipios"], .filter-btn.active[data-type="terrasIndigenas"], .filter-btn.active[data-type="unidadesConservacao"], .filter-btn.active[data-type="assentamentos"]'); return el?el.getAttribute('data-type'):'estados'; }
+  window.getSelectedDataType = getSelectedDataType;
+  window.getSelectedTerritoryType = getSelectedTerritoryType;
+
   function getUF(rec){ return (rec.ESTADO ?? rec.UF ?? rec.SIGLA ?? rec.UF_SIGLA ?? '').trim().toUpperCase(); }
 
   async function loadData(){
@@ -483,101 +492,287 @@ document.addEventListener('DOMContentLoaded',function(){
   }
 
   function updateBarChart(labels, dataValues){
-    const ctx = document.getElementById('barChart').getContext('2d');
-    if (barChart) barChart.destroy();
+  const canvas = document.getElementById('barChart');
+  if (!canvas) return;
 
-    const dataType = getSelectedDataType();
-    const maxVal = Math.max(...dataValues, 1);
+  // Destroy any existing chart safely
+  const prev = Chart.getChart(canvas);
+  if (prev) prev.destroy();
 
-    let barColors;
-    if (dataType === 'desmatamento') {
-      const reds = d3.scaleSequential().domain([0, maxVal]).interpolator(d3.interpolateReds);
-      barColors = dataValues.map(v => reds(v));
-    } else {
-      const n = dataValues.length; 
-      const t = d3.scaleLinear().domain([0, n-1]).range([1, 0.25]);
-      barColors = dataValues.map((_, i) => d3.interpolatePurples(t(i)));
-    }
+  const ctx = canvas.getContext('2d');
 
-    const rawKeys = currentTopTerritories.slice(0, labels.length);
+  const dataType = (typeof getSelectedDataType === 'function'
+    ? getSelectedDataType()
+    : (document.querySelector('.filter-btn.active[data-type="desmatamento"], .filter-btn.active[data-type="degradacao"]')?.getAttribute('data-type') || 'desmatamento'));
 
-    barChart = new Chart(ctx, {
-      type: 'bar',
-      data: { labels, datasets: [{ label:'Área (km²)', data:dataValues, backgroundColor:barColors, borderColor:barColors, borderWidth:1, borderRadius:4, borderSkipped:false, categoryPercentage:.72, barPercentage:.72, maxBarThickness:32, minBarLength:2 }] },
-      options: {
-        indexAxis: 'y', responsive:true, maintainAspectRatio:false, resizeDelay:120,
-        plugins: {
-          legend: { display:false },
-          tooltip: { backgroundColor:'rgba(0,0,0,.8)', titleColor:'#fff', bodyColor:'#fff', borderColor:'#444', borderWidth:1,
-            callbacks:{ label: ctx => `Área: ${ctx.parsed.x.toLocaleString('pt-BR',{maximumFractionDigits:2})} km²` } },
-          datalabels: { anchor:'end', align:'end', offset:6, color:'#111', font:{ weight:'bold', size:12 }, formatter: v => v.toLocaleString('pt-BR',{maximumFractionDigits:2}) }
+  const maxVal = Math.max(...dataValues, 1);
+
+  let barColors;
+  if (dataType === 'desmatamento') {
+    const reds = d3.scaleSequential().domain([0, maxVal]).interpolator(d3.interpolateReds);
+    barColors = dataValues.map(v => reds(v));
+  } else {
+    const n = dataValues.length;
+    const t = d3.scaleLinear().domain([0, n - 1]).range([1, 0.25]);
+    barColors = dataValues.map((_, i) => d3.interpolatePurples(t(i)));
+  }
+
+  const rawKeys = currentTopTerritories.slice(0, labels.length);
+
+  barChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Área (km²)',
+        data: dataValues,
+        backgroundColor: barColors,
+        borderColor: barColors,
+        borderWidth: 1,
+        borderRadius: 4,
+        borderSkipped: false,
+        categoryPercentage: .72,
+        barPercentage: .72,
+        maxBarThickness: 32,
+        minBarLength: 2
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      resizeDelay: 120,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,.8)',
+          titleColor: '#fff',
+          bodyColor: '#fff',
+          borderColor: '#444',
+          borderWidth: 1,
+          callbacks: {
+            label: ctx => `Área: ${ctx.parsed.x.toLocaleString('pt-BR',{maximumFractionDigits:2})} km²`
+          }
         },
-        onClick(e, el){ if (!el.length) return; const idx=el[0].index; const key=rawKeys[idx]; if (territoryBounds[key]) map.fitBounds(territoryBounds[key], { padding:[50,50], animate:true, duration:1.2 }); },
-        scales: { x:{ beginAtZero:true, grid:{display:false} }, y:{ grid:{display:false} } },
-        animation:{ duration:900, easing:'easeInOutQuart' }
+        datalabels: {
+          anchor: 'end',
+          align: 'end',
+          offset: 6,
+          color: '#111',
+          font: { weight: 'bold', size: 12 },
+          formatter: v => v.toLocaleString('pt-BR',{maximumFractionDigits:2})
+        }
       },
-      plugins:[ChartDataLabels]
-    });
-  }
+      onClick(e, el){
+        if (!el.length) return;
+        const idx = el[0].index;
+        const key = rawKeys[idx];
+        if (territoryBounds[key]) map.fitBounds(territoryBounds[key], { padding:[50,50], animate:true, duration:1.2 });
+      },
+      scales: {
+        x: { beginAtZero: true, grid: { display: false } },
+        y: { grid: { display: false } }
+      },
+      animation: { duration: 900, easing: 'easeInOutQuart' }
+    },
+    plugins: [ChartDataLabels]
+  });
+}
 
-  function updateLineChart(csvData,territoryType){
-    const ctx=document.getElementById('lineChart').getContext('2d');
-    if(lineChart) lineChart.destroy();
-    const years=Array.from(new Set(csvData.map(d=>d.ANO))).sort((a,b)=>a-b);
-    const nameKey=territoryNameMapping[territoryType];
-    const grouped={};
-    csvData.forEach(d=>{
-      const key=d[nameKey]; const year=d.ANO; const area=+d.AREAKM2||0;
-      if(!grouped[key]) grouped[key]={};
-      grouped[key][year]=(grouped[key][year]||0)+area;
-    });
-    const pal=d3.schemeTableau10.concat(d3.schemeSet2);
-    const datasets=currentTopTerritories.slice(0,10).map((k,i)=>({
-      label: estadoNomes[k]||k, data: years.map(y=>grouped[k]?.[y]||0),
-      borderColor: pal[i%pal.length], backgroundColor: pal[i%pal.length]+'20',
-      pointBackgroundColor: pal[i%pal.length], pointBorderColor:'#fff', pointRadius:4, pointHoverRadius:6, borderWidth:2, fill:false, tension:.35
-    }));
-    const dataType=getSelectedDataType();
-    lineChart=new Chart(ctx,{ type:'line', data:{ labels:years, datasets },
-      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:true, position:'top' }, datalabels:{ display:false } },
-        scales:{ y:{ beginAtZero:true, grid:{display:false} }, x:{ grid:{display:false} } } }
-    });
+  function updateLineChart(csvData, territoryType){
+  const canvas = document.getElementById('lineChart');
+  if (!canvas) return;
+
+  // Destroy existing chart safely
+  const prev = Chart.getChart(canvas);
+  if (prev) prev.destroy();
+
+  const ctx = canvas.getContext('2d');
+
+  // Years & grouping
+  const years = Array.from(new Set(csvData.map(d => d.ANO))).sort((a,b)=>a-b);
+  const nameKey = territoryNameMapping[territoryType];
+  const grouped = {};
+  csvData.forEach(d => {
+    const key = d[nameKey];
+    const year = d.ANO;
+    const area = +d.AREAKM2 || 0;
+    if (!grouped[key]) grouped[key] = {};
+    grouped[key][year] = (grouped[key][year] || 0) + area;
+  });
+
+  // Palettes per data type (as requested)
+  const palettes = {
+    desmatamento: d3.schemeTableau10,
+    degradacao:   d3.schemeSet2
+  };
+  const dataType = (typeof getSelectedDataType === 'function'
+    ? getSelectedDataType()
+    : (document.querySelector('.filter-btn.active[data-type="desmatamento"], .filter-btn.active[data-type="degradacao"]')?.getAttribute('data-type') || 'desmatamento'));
+  const pal = palettes[dataType] || d3.schemeTableau10;
+
+  // Datasets (up to Top-10 according to ranking)
+  const datasets = currentTopTerritories.slice(0, 10).map((k, i) => {
+    const color = pal[i % pal.length];
+    return {
+      label: estadoNomes[k] || k,
+      data: years.map(y => grouped[k]?.[y] || 0),
+      borderColor: color,
+      backgroundColor: color + '33',
+      pointBackgroundColor: color,
+      pointBorderColor: '#fff',
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      borderWidth: 2,
+      fill: false,
+      tension: .35
+    };
+  });
+
+  lineChart = new Chart(ctx, {
+  type: 'line',
+  data: { labels: years, datasets },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        labels: {
+          usePointStyle: true,   // 🔹 Faz a legenda usar bolinhas
+          pointStyle: 'circle',  // 🔹 Define o formato como círculo
+          padding: 20            // opcional: aumenta espaçamento
+        }
+      },
+      datalabels: { display: false }
+    },
+    scales: {
+      y: { beginAtZero: true, grid: { display: false } },
+      x: { grid: { display: false } }
+    }
   }
+});
+
+}
 
   function updateYearlyChart(csvData){
-    const ctx=document.getElementById('yearlyChart').getContext('2d');
-    if(yearlyChart) yearlyChart.destroy();
-    const yearlyData={};
-    csvData.forEach(d=>{ const y=d.ANO; const a=+d.AREAKM2||0; if(y) yearlyData[y]=(yearlyData[y]||0)+a; });
-    const currentYear=new Date().getFullYear();
-    const years=[]; for(let y=2008;y<=currentYear-1;y++) years.push(y);
-    const values=years.map(y=>yearlyData[y]||0);
-    yearlyChart=new Chart(ctx,{ plugins:[ChartDataLabels], type:'bar',
-      data:{ labels:years, datasets:[{ label:'Área Total (km²)', data:values, backgroundColor:'rgba(104,78,167,.7)', borderColor:'rgba(31,17,77,1)', borderWidth:2, borderRadius:4, borderSkipped:false, barPercentage:.99, categoryPercentage:.99 }]},
-      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, datalabels:{ anchor:'end', align:'top', color:'#333', font:{weight:'bold',size:10}, formatter:v=>v.toLocaleString('pt-BR',{maximumFractionDigits:0}) } },
-        scales:{ y:{ beginAtZero:true, grid:{display:false} }, x:{ grid:{display:false} } } }
-    });
-  }
+  const canvas = document.getElementById('yearlyChart');
+  if (!canvas) return;
 
-  function updateMap(geojsonData,aggregatedData,territoryType){
-    if(geoJsonLayer) map.removeLayer(geoJsonLayer);
-    const nameKey=territoryNameMapping[territoryType];
-    const values=Object.values(aggregatedData).filter(v=>v>0);
-    const maxVal=values.length? Math.max(...values) : 1;
-    const dataType=getSelectedDataType();
-    const colorScale=(dataType==='desmatamento') ? d3.scaleSequential().domain([0,maxVal]).interpolator(d3.interpolateReds) : getDegradacaoColorScale(maxVal);
-    const filteredGeojson={...geojsonData, features: geojsonData.features.filter(f=> currentTopTerritories.includes(f.properties[nameKey]) )};
-    territoryBounds={};
-    geoJsonLayer=L.geoJSON(filteredGeojson,{
-      style:feat=>{ const name=feat.properties[nameKey]; const v=aggregatedData[name]||0; return { fillColor:colorScale(v), weight:1.2, opacity:1, color:'#555', fillOpacity:.75, dashArray:(territoryType==='estados'||territoryType==='municipios')?'':'3' }; },
-      onEachFeature:(feat,layer)=>{
-        const name=feat.properties[nameKey]; const v=aggregatedData[name]||0;
-        territoryBounds[name]=layer.getBounds();
-        layer.bindPopup(`<strong>${softWrap(name)}</strong><br>Área: ${v.toLocaleString('pt-BR',{maximumFractionDigits:2})} km²`);
+  // Destroy safely
+  const prev = Chart.getChart(canvas);
+  if (prev) prev.destroy();
+
+  const ctx = canvas.getContext('2d');
+
+  const yearlyData = {};
+  csvData.forEach(d => {
+    const y = d.ANO;
+    const a = +d.AREAKM2 || 0;
+    if (y) yearlyData[y] = (yearlyData[y] || 0) + a;
+  });
+
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  for (let y = 2008; y <= currentYear - 1; y++) years.push(y);
+  const values = years.map(y => yearlyData[y] || 0);
+
+  yearlyChart = new Chart(ctx, {
+    plugins: [ChartDataLabels],
+    type: 'bar',
+    data: {
+      labels: years,
+      datasets: [{
+        label: 'Área Total (km²)',
+        data: values,
+        backgroundColor: 'rgba(104,78,167,.7)',
+        borderColor: 'rgba(31,17,77,1)',
+        borderWidth: 2,
+        borderRadius: 4,
+        borderSkipped: false,
+        barPercentage: .99,
+        categoryPercentage: .99
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          anchor: 'end',
+          align: 'top',
+          color: '#333',
+          font: { weight: 'bold', size: 10 },
+          formatter: v => v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
+        }
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { display: false } },
+        x: { grid: { display: false } }
       }
-    }).addTo(map);
-    if(geoJsonLayer.getBounds().isValid()) map.fitBounds(geoJsonLayer.getBounds(),{padding:[20,20]});
-  }
+    }
+  });
+}
+
+  function updateMap(geojsonData, aggregatedData, territoryType){
+  if (!window.map) return;
+
+  const nameKey = territoryNameMapping[territoryType];
+
+  // Remove previous layer safely
+  const prev = window.geoJsonLayer;
+  if (prev) { try { window.map.removeLayer(prev); } catch(e){} }
+
+  // Color scale per data type
+  const values = Object.values(aggregatedData).filter(v => v > 0);
+  const maxVal = values.length ? Math.max(...values) : 1;
+  const dataType = (typeof getSelectedDataType === 'function'
+    ? getSelectedDataType()
+    : (document.querySelector('.filter-btn.active[data-type="desmatamento"], .filter-btn.active[data-type="degradacao"]')?.getAttribute('data-type') || 'desmatamento'));
+  const colorScale = (dataType === 'desmatamento')
+    ? d3.scaleSequential().domain([0, maxVal]).interpolator(d3.interpolateReds)
+    : getDegradacaoColorScale(maxVal);
+
+  // Helper color
+  const colorByKey = (name) => colorScale(aggregatedData[name] || 0);
+
+  // Filter geojson to ranking items only
+  const filteredGeojson = {
+    ...geojsonData,
+    features: geojsonData.features.filter(f => currentTopTerritories.includes(f.properties[nameKey]))
+  };
+
+  window.territoryBounds = {};
+
+  const layer = L.geoJSON(filteredGeojson, {
+    style: feat => {
+      const name = feat.properties[nameKey];
+      return {
+        fillColor: colorByKey(name),
+        weight: 1.2,
+        opacity: 1,
+        color: '#555',
+        fillOpacity: .75,
+        dashArray: (territoryType==='estados' || territoryType==='municipios') ? '' : '3'
+      };
+    },
+    onEachFeature: (feat, lyr) => {
+      const name = feat.properties[nameKey];
+      const v = aggregatedData[name] || 0;
+      window.territoryBounds[name] = lyr.getBounds();
+      lyr.bindPopup(`<strong>${softWrap(name)}</strong><br>Área: ${v.toLocaleString('pt-BR',{maximumFractionDigits:2})} km²`);
+    }
+  }).addTo(window.map);
+
+  window.geoJsonLayer = layer;
+
+  try {
+    const b = layer.getBounds();
+    if (b && b.isValid()) window.map.fitBounds(b, { padding:[20,20] });
+  } catch(e){}
+}
 
   const territoryNaming={
     estados:{nome:'Estados',genero:'m'},
