@@ -652,10 +652,22 @@ function getProp(p, ...names){ for(const k of names){ if(p && p[k]!=null && p[k]
 function mkKey(p){ const nome=getProp(p,'nome'); const estado=getProp(p,'estado'); return `${(nome||'').trim()}|${(estado||'').trim()}`; }
 function fallbackColor(){
   if (currentClass === 'geral') return d3.interpolateGreys(0.6);
-  return d3.interpolateReds(0.6);
-}
-
+  if (currentClass === 'ameaca') return d3.interpolateOranges(0.6);
+  return d3.interpolateReds(0.6); // pressao
+} 
 function getColorFor(p){ const key=mkKey(p||{}); return colorMap.get(key) || fallbackColor(); }
+
+// Lê o valor de células de forma tolerante a variações de chave
+function cellValue(p = {}) {
+  const v =
+    p.celulas ??
+    p.CELULAS ??
+    p["Celulas"] ??
+    p["Células"] ??
+    0;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
 
 /* ========================
    Funções de EXPORTAÇÃO
@@ -1348,178 +1360,117 @@ function updateDonutCharts(){
 }
 let exportTable = null;
 
-function updateExportTable(){
-
-  // Conecta os chips visíveis às ações internas do DataTables
-const excelChip = document.getElementById('btn-export-excel');
-const pdfChip   = document.getElementById('btn-export-pdf');
-
-// sobrescreve (safe) em cada atualização
-excelChip.onclick = () => exportTable.button('excelChip:name').trigger();
-pdfChip.onclick   = () => exportTable.button('pdfChip:name').trigger();
-
-  // limpa container anterior dos botões (evita duplicar ao trocar filtros)
-  document.querySelector('#download-actions .dt-buttons')?.remove();
-
+function updateExportTable() {
+  // destrói instância anterior
   if (exportTable) { exportTable.destroy(); exportTable = null; }
 
+  // (re)monta o tbody com os dados filtrados
   const tbody = document.querySelector('#export-table tbody');
   tbody.innerHTML = '';
 
-  (filteredData||[]).forEach(f=>{
-    const p=f.properties||{};
-    const periodoVal = p.periodo ?? p.Periodo ?? p.PERIODO ?? p['Período'] ?? p['PERÍODO'] ?? '-';
+  (filteredData || []).forEach(f => {
+    const p = f.properties || {};
+    const periodoVal =
+      p.periodo ?? p.Periodo ?? p.PERIODO ?? p['Período'] ?? p['PERÍODO'] ?? '-';
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${p.nome||'-'}</td>
-      <td>${p.class||'-'}</td>
-      <td>${p.estado||'-'}</td>
-      <td>${mapAcronymLabel(p.categoria||'-')}</td>
-      <td>${mapAcronymLabel(p.modalidade||'-')}</td>
-      <td>${p.uso||'-'}</td>
-      <td>${p.celulas||0}</td>
-      <td>${p.ano||'-'}</td>
+      <td>${p.nome || '-'}</td>
+      <td>${p.class || '-'}</td>
+      <td>${p.estado || '-'}</td>
+      <td>${mapAcronymLabel(p.categoria || '-')}</td>
+      <td>${mapAcronymLabel(p.modalidade || '-')}</td>
+      <td>${p.uso || '-'}</td>
+      <td>${cellValue(p)}</td>
+      <td>${p.ano || '-'}</td>
       <td>${periodoVal}</td>`;
     tbody.appendChild(tr);
   });
 
+  // cria a DataTable (os botões ficam escondidos via CSS)
   exportTable = new DataTable('#export-table', {
-  paging: false,
-  searching: false,
-  info: false,
-  order: [[6,'desc']],
-  language: { url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json' },
-  dom: 'Bfrtip',
-  buttons: [
-    {
-      extend: 'excelHtml5',
-      text: '<i class="fas fa-file-excel"></i> Excel',
-      title: fileContextBase(),
-      className: 'download-chip download-chip--excel',
-      name: 'excelChip'
-    },
-    {
-      extend: 'pdfHtml5',
-      text: '<i class="fas fa-file-pdf"></i> PDF',
-      title: fileContextBase(),
-      orientation: 'landscape',
-      pageSize: 'A4',
-      className: 'download-chip download-chip--pdf',
-      name: 'pdfChip'
-    }
-  ]
-});
-
-
-
-
-// força TODOS os botões do DataTables a virarem "chips" iguais aos GeoJSON
-$btnWrap.find('button.dt-button, a.dt-button, span.dt-button').each(function () {
-  const $b = $(this);
-
-  // remove classes herdadas do DataTables
-  $b.removeClass(function (_i, c) {
-    return (c.match(/\bbuttons?\S*/g) || []).join(' ');
+    paging: false,
+    searching: false,
+    info: false,
+    order: [[6, 'desc']], // coluna "Células"
+    language: { url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json' },
+    dom: 'Bfrtip',
+    buttons: [
+      {
+        extend: 'excelHtml5',
+        text: '<i class="fas fa-file-excel"></i> Excel',
+        title: fileContextBase(),
+        className: 'download-chip download-chip--excel',
+        name: 'excelChip'
+      },
+      {
+        extend: 'pdfHtml5',
+        text: '<i class="fas fa-file-pdf"></i> PDF',
+        title: fileContextBase(),
+        orientation: 'landscape',
+        pageSize: 'A4',
+        className: 'download-chip download-chip--pdf',
+        name: 'pdfChip'
+      }
+    ]
   });
 
-  // aplica o mesmo estilo base
-  $b.addClass('download-chip');
-
-  // se já recebeu variação no config, mantém (ex: download-chip--excel / --pdf)
-  if ($b.text().includes('Excel')) $b.addClass('download-chip--excel');
-  if ($b.text().includes('PDF'))   $b.addClass('download-chip--pdf');
-});
-
-
+  // conecta os chips externos aos botões internos
+  const excelChip = document.getElementById('btn-export-excel');
+  const pdfChip   = document.getElementById('btn-export-pdf');
+  excelChip.onclick = () => exportTable.button('excelChip:name').trigger();
+  pdfChip.onclick   = () => exportTable.button('pdfChip:name').trigger();
 }
+
 function updateStatistics(){
-  const totalRecords=(filteredData||[]).length;
-  const totalCells=(filteredData||[]).reduce((s,f)=>s+(parseInt(f.properties?.celulas)||0),0);
-  const uniqueStates=new Set((filteredData||[]).map(f=>f.properties?.estado)).size;
-  const base=(geojsonData?.features||[]);
+  const feats = filteredData || [];
+  const totalRegistros = feats.length;
+  const totalCelulas   = feats.reduce((s, f) => s + cellValue(f?.properties || {}), 0);
+  const mediaCelulas   = totalRegistros ? totalCelulas / totalRegistros : 0;
 
-  // cartões existentes
-  document.getElementById('total-records').textContent = base.length;
-  document.getElementById('total-cells').textContent = base
-    .reduce((s,f)=>s+(parseInt(f.properties?.celulas)||0),0)
-    .toLocaleString('pt-BR');
-  document.getElementById('filtered-records').textContent = totalRecords;
+  // Variação anual (%): só calcula se um ano específico estiver selecionado
+  let variacaoTxt = '—';
+  if (selectedYear != null) {
+    const prevYear = selectedYear - 1;
 
-  // === NOVO: variação anual ===
-  function computeAnnualVariation(){
-  const feats = (geojsonData?.features) || [];
-  if (!feats.length) return null;
+    // aplica MESMOS filtros do ano corrente, mudando apenas o ano
+    const prevSet = (geojsonData?.features || []).filter(f => {
+      const p = f.properties || {};
+      const anoOK = String(p.ano) === String(prevYear);
 
-  // Determina ano alvo e anterior
-  let year = selectedYear;
-  let prevYear = (typeof year === 'number') ? year - 1 : null;
+      const periodoVal =
+        p.periodo ?? p.Periodo ?? p.PERIODO ?? p['Período'] ?? p['PERÍODO'] ?? null;
+      const triOK = (selectedQuarter == null)
+        ? true
+        : Number(periodoVal) === selectedQuarter;
 
-  if (year == null) {
-    const yearsSet = new Set(
-      feats.map(f => parseInt(f.properties?.ano, 10)).filter(Number.isFinite)
-    );
-    const yearsArr = Array.from(yearsSet).sort((a,b)=>a-b);
-    if (yearsArr.length < 2) return null;
-    year = yearsArr[yearsArr.length - 1];
-    prevYear = yearsArr[yearsArr.length - 2];
-  }
+      const estOK = selectedEstado     ? String(p.estado||'')    === String(selectedEstado)     : true;
+      const catOK = selectedCategoria  ? String(p.categoria||'') === String(selectedCategoria)  : true;
+      const modOK = selectedModalidade ? String(p.modalidade||'')=== String(selectedModalidade) : true;
 
-  if (!Number.isFinite(prevYear)) return null;
+      return anoOK && triOK && estOK && catOK && modOK;
+    });
 
-  // Aplica os MESMOS filtros (exceto o ano que variamos)
-  const sameFiltersForYear = (Y) => feats.filter(f=>{
-    const p = f.properties || {};
-    const anoOK = String(p.ano) === String(Y);
-    const periodoVal = p.periodo ?? p.Periodo ?? p.PERIODO ?? p['Período'] ?? p['PERÍODO'] ?? null;
-    let triOK = true;
-    if (selectedQuarter != null) {
-      const q = Number(periodoVal);
-      triOK = Number.isFinite(q) && q === selectedQuarter;
+    const prevCelulas = prevSet.reduce((s, f) => s + cellValue(f?.properties || {}), 0);
+    if (prevCelulas === 0 && totalCelulas === 0) {
+      variacaoTxt = '0%';
+    } else if (prevCelulas === 0) {
+      variacaoTxt = '+100%';
+    } else {
+      const pct = ((totalCelulas - prevCelulas) / prevCelulas) * 100;
+      variacaoTxt = `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
     }
-    const estOK = selectedEstado    ? String(p.estado||'')    === String(selectedEstado)    : true;
-    const catOK = selectedCategoria ? String(p.categoria||'') === String(selectedCategoria) : true;
-    const modOK = selectedModalidade? String(p.modalidade||'')=== String(selectedModalidade): true;
-    return anoOK && triOK && estOK && catOK && modOK;
-  });
-
-  const sumCells = arr => arr.reduce((s,f)=> s + (parseInt(f.properties?.celulas)||0), 0);
-
-  const totY   = sumCells(sameFiltersForYear(year));
-  const totPY  = sumCells(sameFiltersForYear(prevYear));
-
-  if (!totPY && !totY) return { year, prevYear, delta:0, pct:0, dir:0, totY, totPY };
-  if (!totPY &&  totY) return { year, prevYear, delta:totY, pct:null, dir:1, totY, totPY }; // sem base p/ % (n/d)
-
-  const delta = totY - totPY;
-  const pct   = (delta / totPY) * 100;
-  const dir   = delta === 0 ? 0 : (delta > 0 ? 1 : -1);
-
-  return { year, prevYear, delta, pct, dir, totY, totPY };
-}
-
-  const varObj = computeAnnualVariation();
-  const el = document.getElementById('unique-states'); // reaproveitando o ID do card
-
-  if (!varObj) {
-    el.textContent = '—';
-    el.parentElement?.setAttribute('title', 'Sem base para comparação ano a ano');
-    return;
   }
 
-  const { year, prevYear, delta, pct, dir, totY, totPY } = varObj;
-
-  const arrow = dir > 0 ? '▲' : (dir < 0 ? '▼' : '■');
-  const pctTxt = (pct == null) ? 'n/d' : `${pct.toFixed(1)}%`;
-  el.textContent = `${arrow} ${pctTxt}`;
-
-  // Tooltip com detalhes absolutos
-  const sign = delta > 0 ? '+' : '';
-  el.parentElement?.setAttribute(
-    'title',
-    `Ano ${year}: ${totY.toLocaleString('pt-BR')} células • ` +
-    `Ano ${prevYear}: ${totPY.toLocaleString('pt-BR')} • ` +
-    `Δ ${sign}${delta.toLocaleString('pt-BR')}`
-  );
+  // ⚠️ Mantive os IDs que já existem no seu HTML:
+  // #total-records  -> exibirá "Total de Células"
+  // #total-cells    -> exibirá "Quantidade Média de Células"
+  // #filtered-records -> "Registros Filtrados"
+  // #unique-states  -> "Variação Anual"
+  document.getElementById('total-records').textContent    = totalCelulas.toLocaleString('pt-BR');
+  document.getElementById('total-cells').textContent      = Math.round(mediaCelulas).toLocaleString('pt-BR');
+  document.getElementById('filtered-records').textContent = totalRegistros.toLocaleString('pt-BR');
+  document.getElementById('unique-states').textContent    = variacaoTxt;
 }
 
 
