@@ -12,7 +12,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css">
 
-
   <style>
     :root{
       --primary-color:#008055; --primary-dark:#003300; --accent-color:#FF6D00;
@@ -78,9 +77,8 @@
     .dropdown-menu{max-height:260px; overflow:auto}
 
     /* mapa/charts/tabela */
-    /* era #map { height:520px; ... } */
-#map{height:460px;width:100%;border-radius:var(--border-radius);box-shadow:inset 0 0 10px rgba(0,0,0,.1)}
-.chart-container{position:relative;height:460px;width:100%}
+    #map{height:460px;width:100%;border-radius:var(--border-radius);box-shadow:inset 0 0 10px rgba(0,0,0,.1)}
+    .chart-container{position:relative;height:460px;width:100%}
 
     .stat-card{background:var(--primary-color);color:#fff;border-radius:10px;padding:15px;margin-bottom:15px;box-shadow:0 4px 8px rgba(0,0,0,.1)}
     .stat-label{font-size:.9rem;opacity:.9}.stat-value{font-size:1.8rem;font-weight:700;margin:5px 0}
@@ -91,232 +89,32 @@
     #data-table tr:nth-child(even){background:#f9f9f9}
     #data-table tr:hover{background:#f0faf7}
 
-    .donut-card .card-body{
-  display:flex; flex-direction:column; gap:12px; height:420px;
-}
+    .donut-card .card-body{display:flex;flex-direction:column;gap:12px;height:420px}
+    .legend-grid{display:flex;flex-direction:column;gap:8px;max-height:140px;overflow:auto;padding-right:4px}
+    .legend-item{background:#f8f9fa;border:1px solid #e9ecef;border-radius:10px;padding:8px 10px;font-size:12px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;cursor:pointer;transition:.2s;width:100%;text-align:left}
+    .legend-left{display:flex;align-items:flex-start;gap:10px;min-width:0;flex:1 1 auto}
+    .legend-box{width:14px;height:14px;border-radius:3px;display:inline-block;flex:0 0 14px}
+    .legend-label{font-weight:600;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.25;overflow-wrap:anywhere}
+    .legend-meta{font-variant-numeric:tabular-nums;opacity:.9;white-space:nowrap;margin-left:6px;align-self:flex-start}
 
-/* por padrão a legenda vira lista vertical */
-.legend-grid{
-  display:flex; flex-direction:column; gap:8px;
-  max-height:140px; overflow:auto; padding-right:4px;
-}
-/* itens da legenda */
-.legend-item{
-  background:#f8f9fa; border:1px solid #e9ecef; border-radius:10px;
-  padding:8px 10px; font-size:12px; display:flex; align-items:flex-start;
-  justify-content:space-between; gap:10px; cursor:pointer; transition:.2s;
-  width:100%; text-align:left;
-}
-.legend-left{ display:flex; align-items:flex-start; gap:10px; min-width:0; flex:1 1 auto; }
-.legend-box{ width:14px; height:14px; border-radius:3px; display:inline-block; flex:0 0 14px }
-
-/* 🚩 quebra em até 2 linhas + reticências se passar disso */
-.legend-label{
-  font-weight:600;
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;      /* limita em 2 linhas (Chrome/Edge/Safari) */
-  overflow:hidden;
-  line-height:1.25;
-  overflow-wrap:anywhere;    /* quebra palavras muito longas */
-}
-
-/* valor/percentual à direita */
-.legend-meta{
-  font-variant-numeric:tabular-nums; opacity:.9; white-space:nowrap;
-  margin-left:6px; align-self:flex-start;
-}
-
-
-/* Em telas >= 992px, legenda fica AO LADO do donut */
-@media (min-width: 992px){
-  .donut-card .card-body{ flex-direction:row; align-items:stretch }
-  .donut-card .donut-chart-container{ flex:0 0 56%; min-height:0; order:1 }
-  .donut-card .legend-grid{
-    flex:1 1 44%; max-height:100%; order:2; padding-right:6px
-  }
-}
+    @media (min-width: 992px){
+      .donut-card .card-body{flex-direction:row;align-items:stretch}
+      .donut-card .donut-chart-container{flex:0 0 56%;min-height:0;order:1}
+      .donut-card .legend-grid{flex:1 1 44%;max-height:100%;order:2;padding-right:6px}
+    }
 
     @media (max-width:576px){#map{height:320px}.chart-container{height:320px}}
     @media (min-width:1025px){.container-fluid{max-width:1400px;margin:0 auto}}
-    /* === Toolbar de downloads === */
-.download-toolbar{
-  display:flex; flex-wrap:wrap; gap:10px; align-items:center;
-  justify-content:flex-start;
-}
 
-.download-chip,
-#dt-export-holder .dt-button{
-  appearance:none; border:1px solid #e6e8eb; background:linear-gradient(180deg,#fff,#f6f8f9);
-  padding:10px 14px; border-radius:999px; font-weight:700; font-size:14px;
-  display:inline-flex; align-items:center; gap:8px; cursor:pointer;
-  box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 16px rgba(0,0,0,.04);
-  transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-  color:#1f2937;
-}
-.download-chip:hover,
-#dt-export-holder .dt-button:hover{
-  transform:translateY(-1px);
-  box-shadow:0 8px 24px rgba(0,0,0,.12);
-  border-color:var(--primary-color);
-}
-
-/* variações */
-.download-chip--excel{ border-color:#e2f2e8 }
-.download-chip--pdf{   border-color:#ffe4e1 }
-.download-chip--geo{   border-color:#e7f0ff }
-
-/* ícones mantêm tamanho consistente */
-.download-chip i, #dt-export-holder .dt-button i{ font-size:16px }
-
-/* container padrão do DataTables lá dentro fica “flat” */
-#dt-export-holder .dt-buttons{ display:flex; gap:10px }
-
-/* === Botões de exportação com o MESMO visual das pílulas === */
-#dt-export-holder .dt-buttons{ display:flex; gap:10px; flex-wrap:wrap }
-
-/* força o estilo nas classes do DataTables (usa !important p/ sobrepor o CSS deles) */
-#dt-export-holder .dt-button,
-#dt-export-holder .dt-button:focus,
-#dt-export-holder .dt-button:active{
-  appearance:none !important;
-  border:1px solid #e6e8eb !important;
-  background:linear-gradient(180deg,#fff,#f6f8f9) !important;
-  padding:10px 14px !important;
-  border-radius:999px !important;
-  font-weight:700 !important;
-  font-size:14px !important;
-  line-height:1 !important;
-  display:inline-flex !important;
-  align-items:center !important;
-  gap:8px !important;
-  cursor:pointer !important;
-  box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 16px rgba(0,0,0,.04) !important;
-  color:#1f2937 !important;
-  background-image:none !important;
-}
-
-#dt-export-holder .dt-button:hover{
-  transform:translateY(-1px);
-  box-shadow:0 8px 24px rgba(0,0,0,.12) !important;
-  border-color:var(--primary-color) !important;
-}
-
-/* variações por tipo — mesma paleta das pílulas */
-#dt-export-holder .dt-button.download-chip--excel{ border-color:#e2f2e8 !important }
-#dt-export-holder .dt-button.download-chip--pdf{   border-color:#ffe4e1 !important }
-
-/* linha dos downloads */
-#download-actions{
-  display:flex; flex-wrap:wrap; gap:12px; align-items:center;
-}
-
-/* pílulas modernas (usadas em GeoJSON e agora Excel/PDF) */
-.download-chip{
-  appearance:none; border:1px solid #e6e8eb;
-  background:linear-gradient(180deg,#fff 0%,#f6f8f9 100%);
-  padding:10px 14px; border-radius:9999px;
-  font-weight:700; font-size:14px; line-height:1;
-  display:inline-flex; align-items:center; gap:8px;
-  cursor:pointer; color:#1f2937;
-  box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 16px rgba(0,0,0,.04);
-  transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-}
-.download-chip:hover{ transform:translateY(-1px); border-color:var(--primary-color); box-shadow:0 10px 28px rgba(0,0,0,.12) }
-.download-chip:active{ transform:translateY(0) }
-
-.download-chip i{ font-size:16px; opacity:.9 }
-.download-chip--excel i{ color:#2f855a }
-.download-chip--pdf   i{ color:#c62828 }
-
-/* container dos botões nativos do DataTables */
-#download-actions .dt-buttons{ display:flex; gap:10px; flex-wrap:wrap }
-
-/* dt-button com a MESMA cara de .download-chip */
-#download-actions .dt-button,
-#download-actions .dt-button:focus,
-#download-actions .dt-button:active{
-  appearance:none !important;
-  border:1px solid #e6e8eb !important;
-  background:linear-gradient(180deg,#fff 0%,#f6f8f9 100%) !important;
-  padding:10px 14px !important;
-  border-radius:9999px !important;
-  font-weight:700 !important;
-  font-size:14px !important;
-  line-height:1 !important;
-  display:inline-flex !important;
-  align-items:center !important;
-  gap:8px !important;
-  cursor:pointer !important;
-  color:#1f2937 !important;
-  box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 16px rgba(0,0,0,.04) !important;
-  background-image:none !important;
-}
-
-#download-actions .dt-button:hover{
-  transform:translateY(-1px);
-  box-shadow:0 10px 28px rgba(0,0,0,.12) !important;
-  border-color:var(--primary-color) !important;
-}
-
-#download-actions .dt-button i{ font-size:16px }
-#download-actions .dt-button.download-chip--excel{ border-color:#e2f2e8 !important }
-#download-actions .dt-button.download-chip--pdf{   border-color:#ffe4e1 !important }
-/* ===== Toolbar de downloads – VISUAL ÚNICO p/ GeoJSON, Excel e PDF ===== */
-.download-toolbar{
-  display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:flex-start;
-}
-
-/* base única */
-.download-chip,
-#download-actions .dt-button{
-  appearance:none !important;
-  border:1px solid #e6e8eb !important;
-  background:linear-gradient(180deg,#fff 0%,#f6f8f9 100%) !important;
-  padding:10px 14px !important;
-  border-radius:9999px !important;
-  font-weight:700 !important;
-  font-size:14px !important;
-  line-height:1 !important;
-  display:inline-flex !important;
-  align-items:center !important;
-  gap:8px !important;
-  cursor:pointer !important;
-  color:#1f2937 !important;
-  box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 16px rgba(0,0,0,.04) !important;
-  background-image:none !important;
-  margin:0 !important;
-}
-
-/* hover/active/focus iguais */
-.download-chip:hover,
-#download-actions .dt-button:hover{
-  transform:translateY(-1px);
-  box-shadow:0 10px 28px rgba(0,0,0,.12) !important;
-  border-color:var(--primary-color) !important;
-}
-#download-actions .dt-button:focus{ outline:none !important; box-shadow:0 0 0 2px rgba(0,128,85,.15) !important; }
-.download-chip:active,
-#download-actions .dt-button:active{ transform:translateY(0) }
-
-/* variações por tipo (bordas discretas) */
-.download-chip--geo{   border-color:#e7f0ff !important }
-.download-chip--excel,
-#download-actions .dt-button.download-chip--excel{ border-color:#e2f2e8 !important }
-.download-chip--pdf,
-#download-actions .dt-button.download-chip--pdf{   border-color:#ffe4e1 !important }
-
-/* ícones — tamanho consistente */
-.download-chip i,
-#download-actions .dt-button i{ font-size:16px }
-
-/* container nativo do DataTables “flat” e sem margens extras */
-#download-actions .dt-buttons{ display:flex; gap:10px; flex-wrap:wrap; margin:0 !important }
-
-#export-table_wrapper .dt-buttons {
-  display: none !important;
-}
-
+    /* Toolbar de downloads */
+    .download-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-start}
+    .download-chip{appearance:none;border:1px solid #e6e8eb;background:linear-gradient(180deg,#fff 0%,#f6f8f9 100%);padding:10px 14px;border-radius:9999px;font-weight:700;font-size:14px;line-height:1;display:inline-flex;align-items:center;gap:8px;cursor:pointer;color:#1f2937;box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 16px rgba(0,0,0,.04);transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease}
+    .download-chip:hover{transform:translateY(-1px);border-color:var(--primary-color);box-shadow:0 10px 28px rgba(0,0,0,.12)}
+    .download-chip i{font-size:16px;opacity:.9}
+    .download-chip--excel i{color:#2f855a}
+    .download-chip--pdf i{color:#c62828}
+    #download-actions .dt-buttons{display:flex;gap:10px;flex-wrap:wrap;margin:0!important}
+    #export-table_wrapper .dt-buttons{display:none!important}
   </style>
 </head>
 <body>
@@ -369,13 +167,7 @@
         </div>
         <div class="btn-group" role="group">
           <button id="btn-tri" type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Trimestre: Todos</button>
-          <ul class="dropdown-menu" id="menu-tri">
-            <li><a class="dropdown-item" data-tri="">Todos</a></li>
-            <li><a class="dropdown-item" data-tri="1">T1</a></li>
-            <li><a class="dropdown-item" data-tri="2">T2</a></li>
-            <li><a class="dropdown-item" data-tri="3">T3</a></li>
-            <li><a class="dropdown-item" data-tri="4">T4</a></li>
-          </ul>
+          <ul class="dropdown-menu" id="menu-tri"></ul>
         </div>
 
         <div class="btn-group" role="group">
@@ -466,55 +258,53 @@
     </div>
   </div>
 
-<!-- Downloads -->
-<div class="row">
-  <div class="col-12">
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title-wrap">
-          <i class="fas fa-download me-2"></i><span>Downloads</span>
+  <!-- Downloads -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-wrap">
+            <i class="fas fa-download me-2"></i><span>Downloads</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-success mb-3" role="alert" style="font-weight:600">
+            Baixe aqui os arquivos de Ameaça e Pressão em Áreas Protegidas da Amazônia Legal (Excel, PDF e GeoJSON).
+          </div>
+
+          <div class="download-toolbar" id="download-actions">
+            <button id="btn-geojson-map" class="download-chip download-chip--geo">
+              <i class="fas fa-globe-americas"></i> GeoJSON — Top 10 (Mapa)
+            </button>
+            <button id="btn-geojson-filtered" class="download-chip download-chip--geo">
+              <i class="fas fa-database"></i> GeoJSON — Filtrados
+            </button>
+
+            <button class="download-chip download-chip--excel" id="btn-export-excel">
+              <i class="fas fa-file-excel"></i> Exportar Excel
+            </button>
+            <button class="download-chip download-chip--pdf" id="btn-export-pdf">
+              <i class="fas fa-file-pdf"></i> Exportar PDF
+            </button>
+          </div>
+
+          <!-- Tabela oculta apenas para gerar os arquivos (Excel/PDF) -->
+          <table id="export-table" class="table table-striped" style="display:none">
+            <thead>
+              <tr>
+                <th>Nome</th><th>Classe</th><th>Estado</th>
+                <th>Categoria</th><th>Modalidade</th><th>Uso</th>
+                <th>Células</th><th>Ano</th><th>Período</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+
         </div>
       </div>
-      <div class="card-body">
-        <!-- Caixa de texto com a mensagem -->
-        <div class="alert alert-success mb-3" role="alert" style="font-weight:600">
-  Baixe aqui os arquivos de Ameaça e Pressão em Áreas Protegidas da Amazônia Legal (Excel, PDF e GeoJSON).
+    </div>
+  </div>
 </div>
-
-<!-- Toolbar de downloads -->
-<div class="download-toolbar" id="download-actions">
-  <!-- botões GeoJSON -->
-  <button id="btn-geojson-map" class="download-chip download-chip--geo">
-    <i class="fas fa-globe-americas"></i> GeoJSON — Top 10 (Mapa)
-  </button>
-  <button id="btn-geojson-filtered" class="download-chip download-chip--geo">
-    <i class="fas fa-database"></i> GeoJSON — Filtrados
-  </button>
-
-  <button class="download-chip download-chip--excel" id="btn-export-excel">
-    <i class="fas fa-file-excel"></i> Exportar Excel
-  </button>
-  <button class="download-chip download-chip--pdf" id="btn-export-pdf">
-    <i class="fas fa-file-pdf"></i> Exportar PDF
-  </button>
-
-  
-
-
-</div>
-
-<!-- Tabela oculta apenas para gerar os arquivos (Excel/PDF) -->
-<table id="export-table" class="table table-striped" style="display:none">
-  <thead>
-    <tr>
-      <th>Nome</th><th>Classe</th><th>Estado</th>
-      <th>Categoria</th><th>Modalidade</th><th>Uso</th>
-      <th>Células</th><th>Ano</th><th>Período</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
 
 <!-- JS libs -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -531,13 +321,17 @@
 <script src="https://cdn.datatables.net/buttons/3.0.1/js/buttons.html5.min.js"></script>
 
 <script>
-  function mapAcronymLabel(val){
+/* ========================
+   Utilidades gerais
+======================== */
+function mapAcronymLabel(val){
   const l = String(val ?? '').toLowerCase();
   if (l === 'ucf') return 'Unidade de Conservação Federal';
   if (l === 'uce') return 'Unidade de Conservação Estadual';
   if (l === 'ti')  return 'Terras Indígenas';
   return val;
 }
+
 /* ========================
    Chart.js plugins
 ======================== */
@@ -576,10 +370,9 @@ const htmlLegendPlugin = {
       box.style.background = ds.backgroundColor?.[i] || '#999';
 
       const name = document.createElement('span');
-name.className = 'legend-label';
-name.textContent = label;
-name.title = label; // ← mostra o rótulo inteiro ao passar o mouse
-
+      name.className = 'legend-label';
+      name.textContent = label;
+      name.title = label;
 
       left.appendChild(box);
       left.appendChild(name);
@@ -606,29 +399,21 @@ name.title = label; // ← mostra o rótulo inteiro ao passar o mouse
     });
   }
 };
-
-
 Chart.register(centerTextPlugin, htmlLegendPlugin);
 
 /* ========================
-   Paletas
+   Paletas (d3)
 ======================== */
-const TI_PALETTE = ['#664300','#a87b05','#efb810','#f9db5c','#ffff94']; // Terras Indígenas
+const TI_PALETTE = ['#664300','#a87b05','#efb810','#f9db5c','#ffff94'];
 const DONUT1_PALETTE = ['#8db600', '#659000', '#a1c02c', '#c09713', '#80221b'];
 const STATE_PALETTE = ['#8db600', '#bce444', '#e9a700', '#e5733d', '#ab625e'];
 const MODALITY_PALETTE = ['#704214', '#6d3f11', '#6b9b5a', '#95bd6f', '#f69171'];
 const CATEGORY_PALETTE = ['#867416', '#bea74b', '#f8de7e', '#feeeb8', '#fffff1'];
-// Gradiente perceptual entre as âncoras
 const categoryColor = d3.piecewise(d3.interpolateHcl, CATEGORY_PALETTE);
-// Gradiente perceptual entre as âncoras
 const modalityColor = d3.piecewise(d3.interpolateHcl, MODALITY_PALETTE);
-const stateColor = d3.piecewise(d3.interpolateHcl, STATE_PALETTE.slice().reverse());
-
+const stateColor    = d3.piecewise(d3.interpolateHcl, STATE_PALETTE.slice().reverse());
 const tiScale = d3.scaleLinear().domain([0,0.25,0.5,0.75,1]).range(TI_PALETTE);
-function tiSequential(n){
-  if(n<=1) return [TI_PALETTE[0]];
-  return Array.from({length:n},(_,i)=>tiScale(i/(n-1)));
-}
+function tiSequential(n){ if(n<=1) return [TI_PALETTE[0]]; return Array.from({length:n},(_,i)=>tiScale(i/(n-1))); }
 
 /* ========================
    Estado/variáveis globais
@@ -650,27 +435,143 @@ let colorMap = new Map();
 
 function getProp(p, ...names){ for(const k of names){ if(p && p[k]!=null && p[k]!=='') return p[k]; } return null; }
 function mkKey(p){ const nome=getProp(p,'nome'); const estado=getProp(p,'estado'); return `${(nome||'').trim()}|${(estado||'').trim()}`; }
-function fallbackColor(){
-  if (currentClass === 'geral') return d3.interpolateGreys(0.6);
-  if (currentClass === 'ameaca') return d3.interpolateOranges(0.6);
-  return d3.interpolateReds(0.6); // pressao
-} 
+function fallbackColor(){ if (currentClass === 'geral') return d3.interpolateGreys(0.6); if (currentClass === 'ameaca') return d3.interpolateOranges(0.6); return d3.interpolateReds(0.6); }
 function getColorFor(p){ const key=mkKey(p||{}); return colorMap.get(key) || fallbackColor(); }
 
-// Lê o valor de células de forma tolerante a variações de chave
+/* ========================
+   Ano / Trimestre / Legenda  (com ajustes "marco" e "(mês a mês)")
+======================== */
+function _norm(s){ return String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function getYear(p = {}) { return p.ano ?? p.ANO ?? p.Ano ?? null; }
+function getLegenda(p = {}) {
+  return p.legend ?? p.Legend ?? p.LEGEND ??
+         p.legenda ?? p.Legenda ?? p.LEGENDA ?? null;
+}
+
+/* <<< NOVO: normalizador de exibição >>> */
+function fixLegendDisplay(txt){
+  if (!txt) return txt;
+  let s = String(txt);
+
+  // "marco" -> "março" (preserva capitalização comum)
+  s = s.replace(/\bMARCO\b/g, 'MARÇO')
+       .replace(/\bMarco\b/g, 'Março')
+       .replace(/\bmarco\b/g, 'março');
+
+  // padroniza "mes a mes" / "mês a mes" -> "mês a mês"
+  s = s.replace(/m[eê]s\s*a\s*m[eê]s/gi, 'mês a mês');
+
+  // garante parênteses: "mês a mês" -> "(mês a mês)" (se ainda não tiver)
+  if (!/\(mês a mês\)/i.test(s) && /mês a mês/i.test(s)) {
+    s = s.replace(/mês a mês/gi, '(mês a mês)');
+  }
+
+  return s;
+}
+
+/* detecta trimestre a partir de número/legenda; reconhece "marco" */
+function readQuarterFromValue(v){
+  if (v == null) return null;
+  const s = _norm(v);
+
+  // Q1: jan, fev, marco/março
+  if (/(^|[^a-z])(jan|fev|marco|mar)([^a-z]|$)/.test(s)) return 1;
+  // Q2: abr, mai, jun
+  if (/(^|[^a-z])(abr|mai|jun)([^a-z]|$)/.test(s)) return 2;
+  // Q3: jul, ago, set
+  if (/(^|[^a-z])(jul|ago|set)([^a-z]|$)/.test(s)) return 3;
+  // Q4: out, nov, dez
+  if (/(^|[^a-z])(out|nov|dez)([^a-z]|$)/.test(s)) return 4;
+
+  // pega primeiro dígito 1..4 (T1, 1º, etc.)
+  const m = s.match(/([1-4])/);
+  return m ? Number(m[1]) : null;
+}
+function getQuarter(p = {}) {
+  const candNum = [
+    p.periodo, p.Periodo, p.PERIODO, p['Período'], p['PERÍODO'],
+    p.trimestre, p.Trimestre, p.TRIMESTRE, p.trim, p.tri
+  ];
+  for (const v of candNum){
+    const n = Number(v);
+    if (Number.isFinite(n) && n >= 1 && n <= 4) return n;
+  }
+  return readQuarterFromValue(getLegenda(p));
+}
+const DEFAULT_LEGENDS = {1:'Jan–Mar', 2:'Abr–Jun', 3:'Jul–Set', 4:'Out–Dez'};
+function periodLabel(p = {}) {
+  const q = getQuarter(p);
+  const legRaw = getLegenda(p) || (q ? DEFAULT_LEGENDS[q] : null);
+  const leg = fixLegendDisplay(legRaw);
+  if (q && leg) return `T${q} — ${leg}`;
+  if (q)        return `T${q}`;
+  return leg || '-';
+}
+function availableQuarters(year){
+  const feats = (geojsonData?.features) || [];
+  const set = new Set();
+  for (const f of feats){
+    const p = f.properties || {};
+    const yOK = (year == null) ? true : String(getYear(p)) === String(year);
+    const q   = getQuarter(p);
+    if (yOK && q) set.add(q);
+  }
+  return Array.from(set).sort((a,b)=>a-b);
+}
+function findLegendaFor(year, quarter){
+  if (quarter == null) return null;
+  const feats = (geojsonData?.features) || [];
+  const hits = feats.filter(f=>{
+    const p = f.properties || {};
+    const yOK = (year == null) ? true : String(getYear(p)) === String(year);
+    return yOK && getQuarter(p) === Number(quarter);
+  });
+  if (!hits.length) return DEFAULT_LEGENDS[quarter] || null;
+
+  const freq = new Map();
+  hits.forEach(f=>{
+    const l = getLegenda(f.properties || {});
+    if (!l) return;
+    freq.set(l, (freq.get(l)||0) + 1);
+  });
+  let best = null, bestN = -1;
+  freq.forEach((n,k)=>{ if(n>bestN){ bestN=n; best=k; }});
+  return fixLegendDisplay(best || DEFAULT_LEGENDS[quarter] || null);
+}
+function rebuildTriMenu(){
+  const ul = document.getElementById('menu-tri');
+  ul.innerHTML = '';
+  ul.insertAdjacentHTML('beforeend','<li><a class="dropdown-item" data-tri="">Todos</a></li>');
+  const qs = availableQuarters(selectedYear);
+  qs.forEach(q=>{
+    const leg = findLegendaFor(selectedYear, q);
+    const label = leg ? `T${q} — ${leg}` : `T${q}`;
+    ul.insertAdjacentHTML('beforeend', `<li><a class="dropdown-item" data-tri="${q}">${label}</a></li>`);
+  });
+}
+function updateTriButtonLabel(){
+  const btn = document.getElementById('btn-tri');
+  const qs = availableQuarters(selectedYear);
+  if (selectedQuarter == null || !qs.includes(selectedQuarter)){
+    selectedQuarter = null;
+    btn.textContent = 'Trimestre: Todos';
+    return;
+  }
+  const leg = findLegendaFor(selectedYear, selectedQuarter);
+  btn.textContent = leg ? `Trimestre: T${selectedQuarter} — ${leg}` : `Trimestre: T${selectedQuarter}`;
+}
+
+/* ========================
+   Valores numéricos
+======================== */
 function cellValue(p = {}) {
-  const v =
-    p.celulas ??
-    p.CELULAS ??
-    p["Celulas"] ??
-    p["Células"] ??
-    0;
+  const v = p.celulas ?? p.CELULAS ?? p["Celulas"] ?? p["Células"] ?? 0;
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 }
 
 /* ========================
-   Funções de EXPORTAÇÃO
+   Exportação GeoJSON
 ======================== */
 function getDashboardFeatureCollection(mode='map'){
   let features = [];
@@ -706,8 +607,6 @@ function downloadGeoJSONFromDashboard(mode='map'){
   const name = _contextFilename(fileContextBase(), mode, 'geojson');
   _saveBlob(JSON.stringify(fc), 'application/geo+json;charset=utf-8', name);
 }
-
-/* ====== Sanitização para Shapefile ====== */
 
 /* ========================
    Boot inicial
@@ -745,7 +644,6 @@ function filename(scope, cls, year, ucSub=''){
 const dashboardTitle = (scope, cls, ucSub, ano, triNum) => {
   const classe = cls === 'ameaca' ? 'Ameaça' : (cls === 'pressao' ? 'Pressão' : 'Geral');
   let escopo = 'Áreas Protegidas';
-
   if (scope === 'ti') escopo = 'Terras Indígenas';
   if (scope === 'uc') {
     if (ucSub === 'uce') escopo = 'Unidade de Conservação Estadual';
@@ -753,7 +651,6 @@ const dashboardTitle = (scope, cls, ucSub, ano, triNum) => {
     else escopo = 'Unidades de Conservação';
   }
   if (scope === 'allap') escopo = 'Todas as Áreas Protegidas';
-
   let extra = '';
   if (ano)    extra += ` — ${ano}`;
   if (triNum) extra += ` T${triNum}`;
@@ -765,7 +662,7 @@ function setTitles(){
     dashboardTitle(scope,currentClass,ucSubtype,selectedYear,selectedQuarter);
   const mapTitleEl=document.getElementById('map-card-title');
   const rankTitleEl=document.getElementById('rank-card-title');
-  const pressionadasDe = (currentClass==='ameaca')?'mais ameaçadas':(currentClass==='pressao')?'mais pressionadas':'mais relevantes';
+  const pressionadasDe = (currentClass==='ameaca')?'Mais Ameaçadas':(currentClass==='pressao')?'Mais Pressionadas':'Mais Relevantes';
   if(scope==='ti'){
     mapTitleEl.textContent=`Mapa das Terras Indígenas ${pressionadasDe}`;
     rankTitleEl.textContent=`Ranking das 10 Terras Indígenas ${pressionadasDe}`;
@@ -796,7 +693,6 @@ function paintLayer(layer, color){
   if (layer.eachLayer) layer.eachLayer(child => paintLayer(child, color));
 }
 function buildPopupHTML(p){
-  const periodoVal = p.periodo ?? p.Periodo ?? p.PERIODO ?? p['Período'] ?? p['PERÍODO'] ?? '-';
   const categoriaLabel = mapAcronymLabel(p.categoria ?? '-');
   return `
     <div style="font-family:Montserrat,sans-serif;min-width:220px">
@@ -806,10 +702,9 @@ function buildPopupHTML(p){
       <div><b>Modalidade:</b> ${mapAcronymLabel(p.modalidade||'-')}</div>
       <div><b>Uso:</b> ${p.uso||'-'}</div>
       <div><b>Células:</b> ${Number(p.celulas||0).toLocaleString('pt-BR')}</div>
-      <div><b>Ano:</b> ${p.ano||'-'} &nbsp; <b>Trimestre:</b> ${periodoVal}°</div>
+      <div><b>Ano:</b> ${p.ano||'-'} &nbsp; <b>Trimestre:</b> ${periodLabel(p)}</div>
     </div>`;
 }
-
 function updateMap(){
   if (geojsonLayer){ try{ geojsonLayer.remove(); }catch(e){} }
   featureLayerIndex = new Map();
@@ -825,33 +720,22 @@ function updateMap(){
     },
     pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius:6, weight:1, color:getColorFor(f.properties||{}), fillColor:getColorFor(f.properties||{}), fillOpacity:0.7 }),
     onEachFeature: (f, layer) => {
-  const p = f.properties || {};
-  const key = mkKey(p);
-  featureLayerIndex.set(key, layer);
-  mapFeatures.push(layer);
+      const p = f.properties || {};
+      const key = mkKey(p);
+      featureLayerIndex.set(key, layer);
+      mapFeatures.push(layer);
 
-  layer.bindPopup(buildPopupHTML(p));
+      layer.bindPopup(buildPopupHTML(p));
 
-  // NOVO: tooltip ao passar o mouse
-  const clsTxt = p.class === 'ameaca' ? 'Ameaça' : p.class === 'pressao' ? 'Pressão' : 'Geral';
-  const tip = `${p.nome||'-'} (${p.estado||'-'}) — ${clsTxt}\n${Number(p.celulas||0).toLocaleString('pt-BR')} células`;
-  layer.bindTooltip(tip, { sticky:true, direction:'top' });
+      const clsTxt = p.class === 'ameaca' ? 'Ameaça' : p.class === 'pressao' ? 'Pressão' : 'Geral';
+      const tip = `${p.nome||'-'} (${p.estado||'-'}) — ${clsTxt}\n${Number(p.celulas||0).toLocaleString('pt-BR')} células`;
+      layer.bindTooltip(tip, { sticky:true, direction:'top' });
 
-  // realce no hover
-  layer.on('mouseover', () => {
-    layer.bringToFront?.();
-    layer.setStyle?.({ weight: 4, opacity: 1 });
-  });
-  layer.on('mouseout', () => {
-    const c = getColorFor(p);
-    paintLayer(layer, c);
-    layer.setStyle?.({ weight: 2, opacity: 0.95 });
-  });
+      layer.on('mouseover', () => { layer.bringToFront?.(); layer.setStyle?.({ weight: 4, opacity: 1 }); });
+      layer.on('mouseout',  () => { const c = getColorFor(p); paintLayer(layer, c); layer.setStyle?.({ weight: 2, opacity: 0.95 }); });
 
-  // reforça a cor nos sublayers
-  paintLayer(layer, getColorFor(p));
-}
-
+      paintLayer(layer, getColorFor(p));
+    }
   }).addTo(map);
 
   if (mapFeatures.length > 0) {
@@ -895,19 +779,24 @@ function setupButtons(){
     });
   });
 
-  // Ano/Trimestre
+  // Ano
   document.getElementById('menu-ano').addEventListener('click',(e)=>{
     const li = e.target.closest('.dropdown-item'); if(!li) return;
     const val = li.getAttribute('data-ano') || '';
     selectedYear = val ? parseInt(val,10) : null;
+
     document.getElementById('btn-ano').textContent = `Ano: ${selectedYear ?? 'Todos'}`;
+    rebuildTriMenu();
+    updateTriButtonLabel();
     loadDashboard();
   });
+
+  // Trimestre
   document.getElementById('menu-tri').addEventListener('click',(e)=>{
     const li = e.target.closest('.dropdown-item'); if(!li) return;
     const v = li.getAttribute('data-tri');
     selectedQuarter = v ? parseInt(v,10) : null;
-    document.getElementById('btn-tri').textContent = `Trimestre: ${selectedQuarter ?? 'Todos'}`;
+    updateTriButtonLabel();
     loadDashboard();
   });
 
@@ -932,22 +821,13 @@ function setupButtons(){
     selectedModalidade = val || null;
     const label = selectedModalidade ? mapAcronymLabel(selectedModalidade) : 'Todos';
     document.getElementById('btn-modalidade').textContent = `Modalidade: ${label}`;
-
     loadDashboard();
   });
-// GeoJSON: Top 10 (Mapa)
-document.getElementById('btn-geojson-map').addEventListener('click', ()=>{
-  downloadGeoJSONFromDashboard('map');
-});
 
-// GeoJSON: Registros filtrados
-document.getElementById('btn-geojson-filtered').addEventListener('click', ()=>{
-  downloadGeoJSONFromDashboard('filtered');
-});
-
-
+  // Downloads GeoJSON
+  document.getElementById('btn-geojson-map').addEventListener('click', ()=>{ downloadGeoJSONFromDashboard('map'); });
+  document.getElementById('btn-geojson-filtered').addEventListener('click', ()=>{ downloadGeoJSONFromDashboard('filtered'); });
 }
-
 function selectClass(cls){
   currentClass = cls;
   document.querySelectorAll('.dashboard-btn').forEach(b=>b.classList.remove('active'));
@@ -1041,29 +921,29 @@ async function loadDashboard(){
 
     const basePath = '../dataset/ap/geojson/';
     const scope = currentFilter;
-const years = (selectedYear == null)
-  ? [2020,2021,2022,2023]
-  : [selectedYear, selectedYear - 1].filter(y => y >= 2020 && y <= 2023);
-
+    const years = (selectedYear == null)
+      ? [2020,2021,2022,2023]
+      : [selectedYear, selectedYear - 1].filter(y => y >= 2020 && y <= 2023);
 
     const allTargets = years.flatMap(y => targetsFor(scope, currentClass, y, ucSubtype)).filter(Boolean);
     const results = await Promise.all(allTargets.map(f => safeFetch(basePath + f)));
     geojsonData = mergeCollections(results.filter(Boolean));
 
+    // menus dependem dos dados carregados
+    rebuildTriMenu();
+    updateTriButtonLabel();
     populateAttributeMenus();
 
     const feats = geojsonData.features || [];
     filteredData = feats.filter(f=>{
       const p = f.properties || {};
       const anoOK = (selectedYear==null) ? true : (String(p.ano)===String(selectedYear));
-      const periodoVal = p.periodo ?? p.Periodo ?? p.PERIODO ?? p['Período'] ?? p['PERÍODO'] ?? null;
-      let triOK = true;
-      if(selectedQuarter != null){
-        const q = Number(periodoVal);
-        triOK = Number.isFinite(q) && q === selectedQuarter;
-      }
-      const estOK = selectedEstado ? (String(p.estado||'') === String(selectedEstado)) : true;
-      const catOK = selectedCategoria ? (String(p.categoria||'') === String(selectedCategoria)) : true;
+
+      const q = getQuarter(p);
+      const triOK = (selectedQuarter == null) ? true : (q === selectedQuarter);
+
+      const estOK = selectedEstado     ? (String(p.estado||'') === String(selectedEstado)) : true;
+      const catOK = selectedCategoria  ? (String(p.categoria||'') === String(selectedCategoria)) : true;
       const modOK = selectedModalidade ? (String(p.modalidade||'') === String(selectedModalidade)) : true;
 
       return anoOK && triOK && estOK && catOK && modOK;
@@ -1100,7 +980,7 @@ function wrapLabelToTwoLines(label, maxLineLen=28){
   const allWordsLen = words.join(' ').length;
   const joined = lines.join(' ');
   if(joined.length < allWordsLen && lines.length===2){
-    if(lines[1].length > 3) lines[1] = lines[1].slice(0, Math.max(0, lines[1].length-3)) + '...';
+    if(lines[1].length > 3) lines[1].length = Math.max(0, lines[1].length-3), lines[1] += '...';
     else lines[1] = lines[1] + '...';
   }
   return lines;
@@ -1119,7 +999,6 @@ function getLayerCenter(layer){
     return c;
   }catch(e){ return null; }
 }
-
 function resetAllLayerStyles(){
   featureLayerIndex.forEach((layer)=>{
     const p = layer.feature?.properties || {};
@@ -1128,7 +1007,6 @@ function resetAllLayerStyles(){
     if (layer.setStyle) layer.setStyle({ weight: 2, opacity: 0.95 });
   });
 }
-
 function highlightBarOnMap(idx){
   resetAllLayerStyles();
   if (idx == null){
@@ -1154,7 +1032,6 @@ function highlightBarOnMap(idx){
   if (layer.bringToFront) layer.bringToFront();
   if (layer.setStyle) layer.setStyle({ weight: 4, opacity: 1 });
 }
-
 function updateBarChart() {
   const ctx = document.getElementById('barChart').getContext('2d');
   if (barChart) barChart.destroy();
@@ -1172,31 +1049,17 @@ function updateBarChart() {
   const maxVal = values.reduce((m, v) => Math.max(m, v), 0);
   const suggestedMax = maxVal > 0 ? Math.ceil(maxVal * 1.15) : 10;
 
-// Paletas (escuro -> claro)
-const n = values.length || 1;
-const tSeq = (from, to, n) =>
-  Array.from({ length: n }, (_, i) => from + (to - from) * (i / Math.max(1, n - 1)));
+  const n = values.length || 1;
+  const tSeq = (from, to, n) =>
+    Array.from({ length: n }, (_, i) => from + (to - from) * (i / Math.max(1, n - 1)));
 
-let colors;
-if (currentClass === 'geral') {
-  // Cinza
-  colors = tSeq(0.9, 0.3, n).map(t => d3.interpolateGreys(t));
-} else if (currentClass === 'ameaca') {
-  // Laranja
-  colors = tSeq(0.9, 0.3, n).map(t => d3.interpolateOranges(t));
-} else if (currentClass === 'pressao') {
-  // Vermelho
-  colors = tSeq(0.9, 0.3, n).map(t => d3.interpolateReds(t));
-}
+  let colors;
+  if (currentClass === 'geral') colors = tSeq(0.9, 0.3, n).map(t => d3.interpolateGreys(t));
+  else if (currentClass === 'ameaca') colors = tSeq(0.9, 0.3, n).map(t => d3.interpolateOranges(t));
+  else colors = tSeq(0.9, 0.3, n).map(t => d3.interpolateReds(t));
 
-// indexa cores por key para o mapa
-colorMap = new Map();
-rows.forEach((r, i) => colorMap.set(r.key, colors[i]));
-
-
-// indexa cores por key para o mapa
-colorMap = new Map();
-rows.forEach((r, i) => colorMap.set(r.key, colors[i]));
+  colorMap = new Map();
+  rows.forEach((r, i) => colorMap.set(r.key, colors[i]));
 
   barChart = new Chart(ctx, {
     type: 'bar',
@@ -1207,14 +1070,10 @@ rows.forEach((r, i) => colorMap.set(r.key, colors[i]));
       maintainAspectRatio: false,
       layout: { padding: { top: 20, right: 16, left: 8, bottom: 8 } },
       onHover: (evt, elements) => {
-  evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
-  const idx = elements.length ? elements[0].index : null;
-  if (idx !== lastHoverIdx){
-    lastHoverIdx = idx;
-    highlightBarOnMap(idx);
-  }
-},
-
+        evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+        const idx = elements.length ? elements[0].index : null;
+        if (idx !== lastHoverIdx){ lastHoverIdx = idx; highlightBarOnMap(idx); }
+      },
       onClick: (evt, elements) => {
         if (!elements.length) return;
         const idx = elements[0].index;
@@ -1222,32 +1081,26 @@ rows.forEach((r, i) => colorMap.set(r.key, colors[i]));
         const layer = featureLayerIndex.get(item.key);
         if (layer) zoomToLayer(layer);
       },
-     plugins: {
-  legend: { display: false },
-  tooltip: {
-    callbacks: {
-      title: (items) => {
-        const idx = items[0].dataIndex;
-        const item = barItems[idx];
-        const cls = (item?._f?.properties?.class) || currentClass;
-        const clsTxt = cls === 'ameaca' ? 'Ameaça' : cls === 'pressao' ? 'Pressão' : 'Geral';
-        return `${items[0].label} — ${clsTxt}`;
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => {
+              const idx = items[0].dataIndex;
+              const item = barItems[idx];
+              const cls = (item?._f?.properties?.class) || currentClass;
+              const clsTxt = cls === 'ameaca' ? 'Ameaça' : cls === 'pressao' ? 'Pressão' : 'Geral';
+              return `${items[0].label} — ${clsTxt}`;
+            },
+            label: (c) => ` ${c.parsed.y.toLocaleString('pt-BR')} células`
+          }
+        },
+        datalabels: {
+          anchor: 'end', align: 'end', offset: 6, clamp: true, clip: false,
+          formatter: v => v.toLocaleString('pt-BR'),
+          color: '#111', font: { weight: '700', size: 12 }
+        }
       },
-      label: (c) => ` ${c.parsed.y.toLocaleString('pt-BR')} células`
-    }
-  },
-  datalabels: {
-    anchor: 'end',
-    align: 'end',
-    offset: 6,
-    clamp: true,
-    clip: false,
-    formatter: v => v.toLocaleString('pt-BR'),
-    color: '#111',
-    font: { weight: '700', size: 12 }
-  }
-}
-,
       scales: {
         x: { beginAtZero:true, suggestedMax, ticks:{ callback:v=>Number(v).toLocaleString('pt-BR') }, grid:{drawBorder:false} },
         y: { ticks:{ autoSkip:false, font: ctx=>({size:(ctx.chart.height||400)<360?10:12}) }, grid:{display:false} }
@@ -1291,10 +1144,8 @@ function buildDonut(canvasId,legendId,labels,values,total, palette=null){
   let bg;
 
   if (typeof palette === 'function') {
-    // Ex.: d3.piecewise(...) → gera N cores espaçadas no gradiente
     bg = labels.map((_,i)=> palette(n>1 ? i/(n-1) : 0));
   } else if (Array.isArray(palette) && palette.length) {
-    // Mantém compat. com arrays de cores (interpola entre elas)
     const dom = palette.length >= 5 ? [0,0.25,0.5,0.75,1] : palette.map((_,i)=> (palette.length>1 ? i/(palette.length-1) : 0));
     const seq = d3.scaleLinear().domain(dom).range(palette);
     bg = labels.map((_,i)=> seq(n>1 ? i/(n-1) : 0));
@@ -1321,7 +1172,6 @@ function buildDonut(canvasId,legendId,labels,values,total, palette=null){
 
   chartsStore[canvasId]=chart;
 }
-
 function updateDonutCharts(){
   ['donutChart1','donutChart2','donutChart3','donutChart4'].forEach(id=>{
     if(chartsStore[id]){ chartsStore[id].destroy(); chartsStore[id]=null; }
@@ -1332,7 +1182,6 @@ function updateDonutCharts(){
   const aggMod = makeAgg(filteredData,['modalidade']);
   const aggCat = makeAgg(filteredData,['categoria']);
 
-  // aplica o mapeamento em TODAS as labels (só afetará ucf/uce/ti)
   const mapAll = (arr)=> (arr||[]).map(mapAcronymLabel);
 
   const row1=document.getElementById('donuts-row-1');
@@ -1346,33 +1195,29 @@ function updateDonutCharts(){
     row2.style.display='none'; c1.style.display='none'; c3.style.display='none'; c4.style.display='none';
     c2.style.display=''; c2.classList.remove('col-lg-6'); c2.classList.add('col-lg-12');
     buildDonut('donutChart2','legend-donutChart2', mapAll(aggEst.labels), aggEst.values, aggEst.total, stateColor);
-    } else {
+  } else {
     row2.style.display=''; c1.style.display=''; c2.style.display=''; c3.style.display=''; c4.style.display='';
     c2.classList.remove('col-lg-12'); c2.classList.add('col-lg-6');
 
     buildDonut('donutChart1','legend-donutChart1', aggUso.labels, aggUso.values, aggUso.total, DONUT1_PALETTE);
     buildDonut('donutChart2','legend-donutChart2', mapAll(aggEst.labels), aggEst.values, aggEst.total, stateColor);
-
     buildDonut('donutChart3','legend-donutChart3', mapAll(aggMod.labels), aggMod.values, aggMod.total, modalityColor);
-
     buildDonut('donutChart4','legend-donutChart4', mapAll(aggCat.labels), aggCat.values, aggCat.total, categoryColor);
   }
 }
-let exportTable = null;
 
+/* ========================
+   Export (Excel/PDF) com DataTables
+======================== */
+let exportTable = null;
 function updateExportTable() {
-  // destrói instância anterior
   if (exportTable) { exportTable.destroy(); exportTable = null; }
 
-  // (re)monta o tbody com os dados filtrados
   const tbody = document.querySelector('#export-table tbody');
   tbody.innerHTML = '';
 
   (filteredData || []).forEach(f => {
     const p = f.properties || {};
-    const periodoVal =
-      p.periodo ?? p.Periodo ?? p.PERIODO ?? p['Período'] ?? p['PERÍODO'] ?? '-';
-
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${p.nome || '-'}</td>
@@ -1383,99 +1228,67 @@ function updateExportTable() {
       <td>${p.uso || '-'}</td>
       <td>${cellValue(p)}</td>
       <td>${p.ano || '-'}</td>
-      <td>${periodoVal}</td>`;
+      <td>${periodLabel(p)}</td>`;
     tbody.appendChild(tr);
   });
 
-  // cria a DataTable (os botões ficam escondidos via CSS)
   exportTable = new DataTable('#export-table', {
     paging: false,
     searching: false,
     info: false,
-    order: [[6, 'desc']], // coluna "Células"
+    order: [[6, 'desc']],
     language: { url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json' },
     dom: 'Bfrtip',
     buttons: [
-      {
-        extend: 'excelHtml5',
-        text: '<i class="fas fa-file-excel"></i> Excel',
-        title: fileContextBase(),
-        className: 'download-chip download-chip--excel',
-        name: 'excelChip'
-      },
-      {
-        extend: 'pdfHtml5',
-        text: '<i class="fas fa-file-pdf"></i> PDF',
-        title: fileContextBase(),
-        orientation: 'landscape',
-        pageSize: 'A4',
-        className: 'download-chip download-chip--pdf',
-        name: 'pdfChip'
-      }
+      { extend: 'excelHtml5', text: '<i class="fas fa-file-excel"></i> Excel', title: fileContextBase(), className: 'download-chip download-chip--excel', name: 'excelChip' },
+      { extend: 'pdfHtml5',   text: '<i class="fas fa-file-pdf"></i> PDF',   title: fileContextBase(), orientation: 'landscape', pageSize: 'A4', className: 'download-chip download-chip--pdf', name: 'pdfChip' }
     ]
   });
 
-  // conecta os chips externos aos botões internos
-  const excelChip = document.getElementById('btn-export-excel');
-  const pdfChip   = document.getElementById('btn-export-pdf');
-  excelChip.onclick = () => exportTable.button('excelChip:name').trigger();
-  pdfChip.onclick   = () => exportTable.button('pdfChip:name').trigger();
+  document.getElementById('btn-export-excel').onclick = () => exportTable.button('excelChip:name').trigger();
+  document.getElementById('btn-export-pdf').onclick   = () => exportTable.button('pdfChip:name').trigger();
 }
 
+/* ========================
+   Estatísticas
+======================== */
 function updateStatistics(){
   const feats = filteredData || [];
   const totalRegistros = feats.length;
   const totalCelulas   = feats.reduce((s, f) => s + cellValue(f?.properties || {}), 0);
   const mediaCelulas   = totalRegistros ? totalCelulas / totalRegistros : 0;
 
-  // Variação anual (%): só calcula se um ano específico estiver selecionado
   let variacaoTxt = '—';
   if (selectedYear != null) {
     const prevYear = selectedYear - 1;
-
-    // aplica MESMOS filtros do ano corrente, mudando apenas o ano
     const prevSet = (geojsonData?.features || []).filter(f => {
       const p = f.properties || {};
       const anoOK = String(p.ano) === String(prevYear);
-
-      const periodoVal =
-        p.periodo ?? p.Periodo ?? p.PERIODO ?? p['Período'] ?? p['PERÍODO'] ?? null;
-      const triOK = (selectedQuarter == null)
-        ? true
-        : Number(periodoVal) === selectedQuarter;
-
+      const q = getQuarter(p);
+      const triOK = (selectedQuarter == null) ? true : (q === selectedQuarter);
       const estOK = selectedEstado     ? String(p.estado||'')    === String(selectedEstado)     : true;
       const catOK = selectedCategoria  ? String(p.categoria||'') === String(selectedCategoria)  : true;
       const modOK = selectedModalidade ? String(p.modalidade||'')=== String(selectedModalidade) : true;
-
       return anoOK && triOK && estOK && catOK && modOK;
     });
 
     const prevCelulas = prevSet.reduce((s, f) => s + cellValue(f?.properties || {}), 0);
-    if (prevCelulas === 0 && totalCelulas === 0) {
-      variacaoTxt = '0%';
-    } else if (prevCelulas === 0) {
-      variacaoTxt = '+100%';
-    } else {
+    if (prevCelulas === 0 && totalCelulas === 0)      variacaoTxt = '0%';
+    else if (prevCelulas === 0)                       variacaoTxt = '+100%';
+    else {
       const pct = ((totalCelulas - prevCelulas) / prevCelulas) * 100;
       variacaoTxt = `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
     }
   }
 
-  // ⚠️ Mantive os IDs que já existem no seu HTML:
-  // #total-records  -> exibirá "Total de Células"
-  // #total-cells    -> exibirá "Quantidade Média de Células"
-  // #filtered-records -> "Registros Filtrados"
-  // #unique-states  -> "Variação Anual"
   document.getElementById('total-records').textContent    = totalCelulas.toLocaleString('pt-BR');
   document.getElementById('total-cells').textContent      = Math.round(mediaCelulas).toLocaleString('pt-BR');
   document.getElementById('filtered-records').textContent = totalRegistros.toLocaleString('pt-BR');
   document.getElementById('unique-states').textContent    = variacaoTxt;
 }
 
-
 /* ========================
-   Menus dinâmicos
+   Menus dinâmicos (Estado/Categoria/Modalidade)
 ======================== */
 function populateMenuFromSet(menuId, attrName, valuesSet, labelMapper = (v)=>v){
   const ul = document.getElementById(menuId);
@@ -1483,12 +1296,11 @@ function populateMenuFromSet(menuId, attrName, valuesSet, labelMapper = (v)=>v){
   ul.insertAdjacentHTML('beforeend', `<li><a class="dropdown-item" data-${attrName}="">Todos</a></li>`);
   Array.from(valuesSet).sort().forEach(v=>{
     const label = labelMapper(v);
-    const safeVal   = String(v).replace(/"/g,'&quot;'); // valor REAL para filtro
-    const safeLabel = String(label).replace(/"/g,'&quot;'); // texto exibido
+    const safeVal   = String(v).replace(/"/g,'&quot;');
+    const safeLabel = String(label).replace(/"/g,'&quot;');
     ul.insertAdjacentHTML('beforeend', `<li><a class="dropdown-item" data-${attrName}="${safeVal}">${safeLabel}</a></li>`);
   });
 }
-
 function populateAttributeMenus(){
   const feats=(geojsonData?.features)||[];
   const setEstado=new Set(), setCategoria=new Set(), setModalidade=new Set();
@@ -1498,11 +1310,9 @@ function populateAttributeMenus(){
     if(p.categoria) setCategoria.add(p.categoria);
     if(p.modalidade) setModalidade.add(p.modalidade);
   });
-populateMenuFromSet('menu-estado',   'estado',    setEstado);
-populateMenuFromSet('menu-categoria','categoria', setCategoria, mapAcronymLabel);
-populateMenuFromSet('menu-modalidade','modalidade', setModalidade, mapAcronymLabel);
-
-
+  populateMenuFromSet('menu-estado',   'estado',    setEstado);
+  populateMenuFromSet('menu-categoria','categoria', setCategoria, mapAcronymLabel);
+  populateMenuFromSet('menu-modalidade','modalidade', setModalidade, mapAcronymLabel);
 
   if(selectedEstado && !setEstado.has(selectedEstado)){ selectedEstado=null; document.getElementById('btn-estado').textContent='Estado: Todos'; }
   if(selectedCategoria && !setCategoria.has(selectedCategoria)){ selectedCategoria=null; document.getElementById('btn-categoria').textContent='Categoria: Todos'; }
