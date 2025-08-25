@@ -18,8 +18,31 @@
 
   <!-- JS libs -->
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<svg class="fa-tree-cut" viewBox="0 0 512 512" aria-hidden="true" focusable="false"
+     xmlns="http://www.w3.org/2000/svg">
+  <g fill="currentColor">
+    <!-- Copa (três círculos sobrepostos para dar volume) -->
+    <circle cx="240" cy="160" r="110"/>
+    <circle cx="320" cy="182" r="96"/>
+    <circle cx="168" cy="205" r="88"/>
 
+    <!-- Tronco inclinado -->
+    <rect x="248" y="248" width="52" height="176" rx="20"
+          transform="rotate(15 274 336)"/>
+
+    <!-- Base do corte no tronco (chanfro) -->
+    <polygon points="242,430 302,430 290,456 232,456"/>
+
+    <!-- Toco/“pedaço” serrado no chão (indica que foi cortada) -->
+    <polygon points="308,456 360,456 348,480 296,480"/>
+  </g>
+</svg>
   <style>
+     .fa-tree-cut{
+    width:1em; height:1em; /* comporta-se como um ícone FA */
+    vertical-align:-0.125em;
+    display:inline-block;
+  }
     :root{
       --primary-color:#008055; --primary-dark:#003300; --accent-color:#FF6D00;
       --text-color:#212121; --background-color:#F5F5F5; --card-color:#FFFFFF;

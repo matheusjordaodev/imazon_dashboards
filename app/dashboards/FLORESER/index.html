@@ -531,20 +531,20 @@
       <div class="filter-item">
         <label class="filter-label" for="stateFilter">Estado</label>
         <select id="stateFilter">
-          <option value="">Todos os Estados</option>
+          <option value="">Todos</option>
         </select>
       </div>
       <div class="filter-item">
         <label class="filter-label" for="municipioFilter">Município</label>
         <select id="municipioFilter">
-          <option value="">Todos os Municípios</option>
+          <option value="">Todos </option>
         </select>
       </div>
       <div class="filter-item">
         <label class="filter-label" for="startYear">Ano</label>
         <select id="startYear">
           <script>
-            for (let year = 1986; year <= new Date().getFullYear(); year++) {
+            for (let year = 1986; year <= new Date().getFullYear()-1; year++) {
               document.write(`<option value="${year}">${year}</option>`);
             }
           </script>
