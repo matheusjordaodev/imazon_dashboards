@@ -490,12 +490,11 @@ document.addEventListener('DOMContentLoaded',function(){
     if (rankDT){ rankDT.clear(); rankDT.rows.add(data).draw(); }
     else { rankDT = new DataTable('#rankTable', { data, paging:false, searching:false, info:false, order:[[0,'asc']] }); }
   }
-
-  function updateBarChart(labels, dataValues){
+function updateBarChart(labels, dataValues){
   const canvas = document.getElementById('barChart');
   if (!canvas) return;
 
-  // Destroy any existing chart safely
+  // Destroi com segurança o gráfico anterior desse canvas
   const prev = Chart.getChart(canvas);
   if (prev) prev.destroy();
 
@@ -507,6 +506,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
   const maxVal = Math.max(...dataValues, 1);
 
+  // Cores
   let barColors;
   if (dataType === 'desmatamento') {
     const reds = d3.scaleSequential().domain([0, maxVal]).interpolator(d3.interpolateReds);
@@ -542,6 +542,10 @@ document.addEventListener('DOMContentLoaded',function(){
       responsive: true,
       maintainAspectRatio: false,
       resizeDelay: 120,
+
+      // Folga para os rótulos não cortarem
+      layout: { padding: { right: 48 } },
+
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -555,29 +559,39 @@ document.addEventListener('DOMContentLoaded',function(){
           }
         },
         datalabels: {
+          clip: false,              // <- impede corte fora da área do gráfico
           anchor: 'end',
           align: 'end',
           offset: 6,
           color: '#111',
           font: { weight: 'bold', size: 12 },
-          formatter: v => v.toLocaleString('pt-BR',{maximumFractionDigits:2})
+          formatter: v => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
         }
       },
+
       onClick(e, el){
         if (!el.length) return;
         const idx = el[0].index;
         const key = rawKeys[idx];
         if (territoryBounds[key]) map.fitBounds(territoryBounds[key], { padding:[50,50], animate:true, duration:1.2 });
       },
+
       scales: {
-        x: { beginAtZero: true, grid: { display: false } },
+        x: {
+          beginAtZero: true,
+          grid: { display: false },
+          grace: '15%',            // <- folga visual no eixo
+          suggestedMax: maxVal * 1.15
+        },
         y: { grid: { display: false } }
       },
+
       animation: { duration: 900, easing: 'easeInOutQuart' }
     },
     plugins: [ChartDataLabels]
   });
 }
+
 
   function updateLineChart(csvData, territoryType){
   const canvas = document.getElementById('lineChart');
@@ -656,7 +670,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 }
 
-  function updateYearlyChart(csvData){
+function updateYearlyChart(csvData){
   const canvas = document.getElementById('yearlyChart');
   if (!canvas) return;
 
@@ -726,6 +740,8 @@ document.addEventListener('DOMContentLoaded',function(){
     }
   });
 }
+window.updateYearlyChart = updateYearlyChart;
+
 
   function updateMap(geojsonData, aggregatedData, territoryType){
   if (!window.map) return;
@@ -842,7 +858,8 @@ document.addEventListener('DOMContentLoaded',function(){
 
       const seriesData=applySpecificFilters(allPeriodData,territoryType);
       updateLineChart(seriesData,territoryType);
-      updateYearlyChart(allPeriodData);
+      window.updateYearlyChart(allPeriodData);
+
     }catch(e){ console.error("Erro ao atualizar dashboard:",e); }
     finally{ setTimeout(hideLoader,400); }
   }
@@ -866,15 +883,28 @@ document.addEventListener('DOMContentLoaded',function(){
     }));
   }
 
-  // ========= Utilitário para “Todos” nos modais =========
-  function addSelectAllBehavior(containerEl, listSelector, applyAll){
-    const allBtn = containerEl.querySelector('.select-all');
-    if(!allBtn) return;
-    allBtn.onclick = () => {
-      applyAll(); // seleciona todos os itens visíveis (sem limite)
-      containerEl.querySelectorAll(listSelector).forEach(el => el.classList.add('selected'));
-    };
-  }
+
+// ========= Utilitário para “Todos” com TOGGLE =========
+
+function addSelectAllBehavior(containerEl, listSelector, applyAll, clearAll){
+  const allBtn = containerEl.querySelector('.select-all');
+  if(!allBtn) return;
+
+  allBtn.onclick = () => {
+    const items = containerEl.querySelectorAll(listSelector);
+    const selected = containerEl.querySelectorAll(`${listSelector}.selected`);
+    const shouldSelect = selected.length !== items.length; // se nem todos estão selecionados, vamos selecionar
+
+    if (shouldSelect) {
+      applyAll && applyAll();               // atualiza seu array de selecionados + contador
+      items.forEach(el => el.classList.add('selected'));
+    } else {
+      clearAll && clearAll();               // zera seu array + contador
+      items.forEach(el => el.classList.remove('selected'));
+    }
+  };
+}
+
 
   const specificFiltersContainer=document.getElementById('specific-filters');
   const specificFiltersContent=document.getElementById('specific-filters-content');
@@ -958,9 +988,13 @@ document.addEventListener('DOMContentLoaded',function(){
               countEl.textContent=window.assentSelecionados.length;
             };
           });
-          addSelectAllBehavior(listDiv,'.assent-item',()=>{
-            const lista=getLista(); window.assentSelecionados=[...lista]; countEl.textContent=`${lista.length} (Todos)`;
-          });
+          addSelectAllBehavior(
+  listDiv,
+  '.assent-item',
+  () => { const lista=getLista(); window.assentSelecionados=[...lista]; countEl.textContent=`${lista.length}`; },
+  () => { window.assentSelecionados=[]; countEl.textContent='0'; }
+);
+
           countEl.textContent=window.assentSelecionados.length||0;
         }
         stateSel.onchange=render; searchBox.oninput=render; render();
@@ -1024,9 +1058,13 @@ document.addEventListener('DOMContentLoaded',function(){
               countEl.textContent=window.estadosSelecionados.length;
             };
           });
-          addSelectAllBehavior(listDiv,'.estado-item',()=>{
-            const lista=getLista(); window.estadosSelecionados=lista.map(e=>e.sigla); countEl.textContent=`${lista.length} (Todos)`;
-          });
+          addSelectAllBehavior(
+  listDiv,
+  '.estado-item',
+  () => { const lista=getLista(); window.estadosSelecionados=lista.map(e=>e.sigla); countEl.textContent=`${lista.length}`; },
+  () => { window.estadosSelecionados=[]; countEl.textContent='0'; }
+);
+
           countEl.textContent=window.estadosSelecionados.length||0;
         }
         searchBox.oninput=render; render();
@@ -1113,9 +1151,13 @@ document.addEventListener('DOMContentLoaded',function(){
               countEl.textContent=window.munSelecionados.length;
             };
           });
-          addSelectAllBehavior(listDiv,'.muni-item',()=>{
-            const lista=getLista(); window.munSelecionados=[...lista]; countEl.textContent=`${lista.length} (Todos)`;
-          });
+          addSelectAllBehavior(
+  listDiv,
+  '.muni-item',
+  () => { const lista=getLista(); window.munSelecionados=[...lista]; countEl.textContent=`${lista.length}`; },
+  () => { window.munSelecionados=[]; countEl.textContent='0'; }
+);
+
           countEl.textContent=window.munSelecionados.length||0;
         }
         stateSel.onchange=render; search.oninput=render; render();
@@ -1199,9 +1241,13 @@ document.addEventListener('DOMContentLoaded',function(){
               countEl.textContent=window.tiSelecionadas.length;
             };
           });
-          addSelectAllBehavior(listDiv,'.ti-item',()=>{
-            const lista=getLista(); window.tiSelecionadas=[...lista]; countEl.textContent=`${lista.length} (Todos)`;
-          });
+          addSelectAllBehavior(
+  listDiv,
+  '.ti-item',
+  () => { const lista=getLista(); window.tiSelecionadas=[...lista]; countEl.textContent=`${lista.length}`; },
+  () => { window.tiSelecionadas=[]; countEl.textContent='0'; }
+);
+
           countEl.textContent=window.tiSelecionadas.length||0;
         }
         stateSel.onchange=render; search.oninput=render; render();
@@ -1307,9 +1353,13 @@ document.addEventListener('DOMContentLoaded',function(){
               countEl.textContent=window.ucSelecionadas.length;
             };
           });
-          addSelectAllBehavior(listDiv,'.uc-item',()=>{
-            const lista=getLista(); window.ucSelecionadas=[...lista]; countEl.textContent=`${lista.length} (Todos)`;
-          });
+          addSelectAllBehavior(
+  listDiv,
+  '.uc-item',
+  () => { const lista=getLista(); window.ucSelecionadas=[...lista]; countEl.textContent=`${lista.length}`; },
+  () => { window.ucSelecionadas=[]; countEl.textContent='0'; }
+);
+
           countEl.textContent=window.ucSelecionadas.length||0;
         }
         ;[stateSel,jurisSel,modaSel].forEach(s=> s.onchange=render ); searchBox.oninput=render; render();
