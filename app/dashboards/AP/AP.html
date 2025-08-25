@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css">
-  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.0.1/css/buttons.dataTables.min.css">
+
 
   <style>
     :root{
@@ -260,8 +260,60 @@
 #download-actions .dt-button i{ font-size:16px }
 #download-actions .dt-button.download-chip--excel{ border-color:#e2f2e8 !important }
 #download-actions .dt-button.download-chip--pdf{   border-color:#ffe4e1 !important }
+/* ===== Toolbar de downloads – VISUAL ÚNICO p/ GeoJSON, Excel e PDF ===== */
+.download-toolbar{
+  display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:flex-start;
+}
 
+/* base única */
+.download-chip,
+#download-actions .dt-button{
+  appearance:none !important;
+  border:1px solid #e6e8eb !important;
+  background:linear-gradient(180deg,#fff 0%,#f6f8f9 100%) !important;
+  padding:10px 14px !important;
+  border-radius:9999px !important;
+  font-weight:700 !important;
+  font-size:14px !important;
+  line-height:1 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  cursor:pointer !important;
+  color:#1f2937 !important;
+  box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 16px rgba(0,0,0,.04) !important;
+  background-image:none !important;
+  margin:0 !important;
+}
 
+/* hover/active/focus iguais */
+.download-chip:hover,
+#download-actions .dt-button:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 28px rgba(0,0,0,.12) !important;
+  border-color:var(--primary-color) !important;
+}
+#download-actions .dt-button:focus{ outline:none !important; box-shadow:0 0 0 2px rgba(0,128,85,.15) !important; }
+.download-chip:active,
+#download-actions .dt-button:active{ transform:translateY(0) }
+
+/* variações por tipo (bordas discretas) */
+.download-chip--geo{   border-color:#e7f0ff !important }
+.download-chip--excel,
+#download-actions .dt-button.download-chip--excel{ border-color:#e2f2e8 !important }
+.download-chip--pdf,
+#download-actions .dt-button.download-chip--pdf{   border-color:#ffe4e1 !important }
+
+/* ícones — tamanho consistente */
+.download-chip i,
+#download-actions .dt-button i{ font-size:16px }
+
+/* container nativo do DataTables “flat” e sem margens extras */
+#download-actions .dt-buttons{ display:flex; gap:10px; flex-wrap:wrap; margin:0 !important }
+
+#export-table_wrapper .dt-buttons {
+  display: none !important;
+}
 
   </style>
 </head>
@@ -437,8 +489,16 @@
     <i class="fas fa-database"></i> GeoJSON — Filtrados
   </button>
 
-  <!-- aqui entram via JS os botões Excel/PDF do DataTables -->
-  <div id="dt-export-holder"></div>
+  <button class="download-chip download-chip--excel" id="btn-export-excel">
+    <i class="fas fa-file-excel"></i> Exportar Excel
+  </button>
+  <button class="download-chip download-chip--pdf" id="btn-export-pdf">
+    <i class="fas fa-file-pdf"></i> Exportar PDF
+  </button>
+
+  
+
+
 </div>
 
 <!-- Tabela oculta apenas para gerar os arquivos (Excel/PDF) -->
@@ -1183,6 +1243,15 @@ function updateDonutCharts(){
 let exportTable = null;
 
 function updateExportTable(){
+
+  // Conecta os chips visíveis às ações internas do DataTables
+const excelChip = document.getElementById('btn-export-excel');
+const pdfChip   = document.getElementById('btn-export-pdf');
+
+// sobrescreve (safe) em cada atualização
+excelChip.onclick = () => exportTable.button('excelChip:name').trigger();
+pdfChip.onclick   = () => exportTable.button('pdfChip:name').trigger();
+
   // limpa container anterior dos botões (evita duplicar ao trocar filtros)
   document.querySelector('#download-actions .dt-buttons')?.remove();
 
@@ -1209,32 +1278,52 @@ function updateExportTable(){
   });
 
   exportTable = new DataTable('#export-table', {
-    paging: false,
-    searching: false,
-    info: false,
-    order: [[6,'desc']],
-    language: { url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json' },
-    dom: 'Bfrtip',
-    buttons: [
-      {
-        extend: 'excelHtml5',
-        text: '<i class="fas fa-file-excel"></i> Excel',
-        title: fileContextBase(),
-        className: 'download-chip download-chip--excel'
-      },
-      {
-        extend: 'pdfHtml5',
-        text: '<i class="fas fa-file-pdf"></i> PDF',
-        title: fileContextBase(),
-        orientation: 'landscape',
-        pageSize: 'A4',
-        className: 'download-chip download-chip--pdf'
-      }
-    ]
+  paging: false,
+  searching: false,
+  info: false,
+  order: [[6,'desc']],
+  language: { url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json' },
+  dom: 'Bfrtip',
+  buttons: [
+    {
+      extend: 'excelHtml5',
+      text: '<i class="fas fa-file-excel"></i> Excel',
+      title: fileContextBase(),
+      className: 'download-chip download-chip--excel',
+      name: 'excelChip'
+    },
+    {
+      extend: 'pdfHtml5',
+      text: '<i class="fas fa-file-pdf"></i> PDF',
+      title: fileContextBase(),
+      orientation: 'landscape',
+      pageSize: 'A4',
+      className: 'download-chip download-chip--pdf',
+      name: 'pdfChip'
+    }
+  ]
+});
+
+
+
+
+// força TODOS os botões do DataTables a virarem "chips" iguais aos GeoJSON
+$btnWrap.find('button.dt-button, a.dt-button, span.dt-button').each(function () {
+  const $b = $(this);
+
+  // remove classes herdadas do DataTables
+  $b.removeClass(function (_i, c) {
+    return (c.match(/\bbuttons?\S*/g) || []).join(' ');
   });
 
-  // move os botões (com o mesmo estilo de chip) para a barra ao lado do GeoJSON
-  $(exportTable.buttons().container()).appendTo('#download-actions').show();
+  // aplica o mesmo estilo base
+  $b.addClass('download-chip');
+
+  // se já recebeu variação no config, mantém (ex: download-chip--excel / --pdf)
+  if ($b.text().includes('Excel')) $b.addClass('download-chip--excel');
+  if ($b.text().includes('PDF'))   $b.addClass('download-chip--pdf');
+});
+
 
 }
 function updateStatistics(){
