@@ -660,12 +660,13 @@ document.addEventListener('DOMContentLoaded',function(){
   const canvas = document.getElementById('yearlyChart');
   if (!canvas) return;
 
-  // Destroy safely
+  // Destroi com segurança o gráfico anterior
   const prev = Chart.getChart(canvas);
   if (prev) prev.destroy();
 
   const ctx = canvas.getContext('2d');
 
+  // Agrega valores por ano
   const yearlyData = {};
   csvData.forEach(d => {
     const y = d.ANO;
@@ -673,10 +674,20 @@ document.addEventListener('DOMContentLoaded',function(){
     if (y) yearlyData[y] = (yearlyData[y] || 0) + a;
   });
 
+  // Série de 2008 até o ano passado
   const currentYear = new Date().getFullYear();
   const years = [];
   for (let y = 2008; y <= currentYear - 1; y++) years.push(y);
   const values = years.map(y => yearlyData[y] || 0);
+
+  // Cor baseada no tipo selecionado
+  const dataType = (typeof getSelectedDataType === 'function'
+    ? getSelectedDataType()
+    : (document.querySelector('.filter-btn.active[data-type="desmatamento"], .filter-btn.active[data-type="degradacao"]')?.getAttribute('data-type') || 'desmatamento'));
+
+  const isDesmat = dataType === 'desmatamento';
+  const bgColor   = isDesmat ? 'rgba(198,40,40,0.7)' : 'rgba(104,78,167,0.7)'; // vermelho | roxo
+  const brdColor  = isDesmat ? 'rgba(198,40,40,1.0)' : 'rgba(31,17,77,1.0)';
 
   yearlyChart = new Chart(ctx, {
     plugins: [ChartDataLabels],
@@ -686,8 +697,8 @@ document.addEventListener('DOMContentLoaded',function(){
       datasets: [{
         label: 'Área Total (km²)',
         data: values,
-        backgroundColor: 'rgba(104,78,167,.7)',
-        borderColor: 'rgba(31,17,77,1)',
+        backgroundColor: bgColor,
+        borderColor: brdColor,
         borderWidth: 2,
         borderRadius: 4,
         borderSkipped: false,
