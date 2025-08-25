@@ -78,8 +78,10 @@
     .dropdown-menu{max-height:260px; overflow:auto}
 
     /* mapa/charts/tabela */
-    #map{height:520px;width:100%;border-radius:var(--border-radius);box-shadow:inset 0 0 10px rgba(0,0,0,.1)}
-    .chart-container{position:relative;height:460px;width:100%}
+    /* era #map { height:520px; ... } */
+#map{height:460px;width:100%;border-radius:var(--border-radius);box-shadow:inset 0 0 10px rgba(0,0,0,.1)}
+.chart-container{position:relative;height:460px;width:100%}
+
     .stat-card{background:var(--primary-color);color:#fff;border-radius:10px;padding:15px;margin-bottom:15px;box-shadow:0 4px 8px rgba(0,0,0,.1)}
     .stat-label{font-size:.9rem;opacity:.9}.stat-value{font-size:1.8rem;font-weight:700;margin:5px 0}
     .data-table-container{overflow-x:auto;border-radius:var(--border-radius);box-shadow:0 2px 10px rgba(0,0,0,.05)}
@@ -402,7 +404,7 @@
 
   <!-- Ranking (esquerda) e Mapa (direita) -->
   <div class="row mb-4">
-    <div class="col-lg-5">
+    <div class="col-lg-6">
       <div class="card">
         <div class="card-header">
           <div class="card-title-wrap"><i class="fas fa-chart-bar me-2"></i><span id="rank-card-title">Ranking das 10 Áreas Protegidas mais Pressionadas</span></div>
@@ -410,7 +412,7 @@
         <div class="card-body"><div class="chart-container"><canvas id="barChart"></canvas></div></div>
       </div>
     </div>
-    <div class="col-lg-7">
+    <div class="col-lg-6">
       <div class="card">
         <div class="card-header">
           <div class="card-title-wrap"><i class="fas fa-map-marked-alt me-2"></i><span id="map-card-title">Mapa das Áreas Protegidas mais Pressionadas</span></div>
@@ -648,11 +650,11 @@ let colorMap = new Map();
 
 function getProp(p, ...names){ for(const k of names){ if(p && p[k]!=null && p[k]!=='') return p[k]; } return null; }
 function mkKey(p){ const nome=getProp(p,'nome'); const estado=getProp(p,'estado'); return `${(nome||'').trim()}|${(estado||'').trim()}`; }
-function fallbackColor(){ 
-  if (currentFilter === 'ti') return tiScale(0.6);
-  if (currentFilter === 'uc') return d3.interpolateGreens(0.6);
-  return d3.interpolateOranges(0.6);
+function fallbackColor(){
+  if (currentClass === 'geral') return d3.interpolateGreys(0.6);
+  return d3.interpolateReds(0.6);
 }
+
 function getColorFor(p){ const key=mkKey(p||{}); return colorMap.get(key) || fallbackColor(); }
 
 /* ========================
@@ -811,13 +813,33 @@ function updateMap(){
     },
     pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius:6, weight:1, color:getColorFor(f.properties||{}), fillColor:getColorFor(f.properties||{}), fillOpacity:0.7 }),
     onEachFeature: (f, layer) => {
-      const p = f.properties || {};
-      const key = mkKey(p);
-      featureLayerIndex.set(key, layer);
-      mapFeatures.push(layer);
-      layer.bindPopup(buildPopupHTML(p));
-      paintLayer(layer, getColorFor(p));
-    }
+  const p = f.properties || {};
+  const key = mkKey(p);
+  featureLayerIndex.set(key, layer);
+  mapFeatures.push(layer);
+
+  layer.bindPopup(buildPopupHTML(p));
+
+  // NOVO: tooltip ao passar o mouse
+  const clsTxt = p.class === 'ameaca' ? 'Ameaça' : p.class === 'pressao' ? 'Pressão' : 'Geral';
+  const tip = `${p.nome||'-'} (${p.estado||'-'}) — ${clsTxt}\n${Number(p.celulas||0).toLocaleString('pt-BR')} células`;
+  layer.bindTooltip(tip, { sticky:true, direction:'top' });
+
+  // realce no hover
+  layer.on('mouseover', () => {
+    layer.bringToFront?.();
+    layer.setStyle?.({ weight: 4, opacity: 1 });
+  });
+  layer.on('mouseout', () => {
+    const c = getColorFor(p);
+    paintLayer(layer, c);
+    layer.setStyle?.({ weight: 2, opacity: 0.95 });
+  });
+
+  // reforça a cor nos sublayers
+  paintLayer(layer, getColorFor(p));
+}
+
   }).addTo(map);
 
   if (mapFeatures.length > 0) {
@@ -1071,6 +1093,56 @@ function wrapLabelToTwoLines(label, maxLineLen=28){
   }
   return lines;
 }
+let lastHoverIdx = null;
+let hoverMarker = null;
+
+function getLayerCenter(layer){
+  try{
+    if (layer.getBounds){
+      const b = layer.getBounds();
+      if (b && b.isValid && b.isValid()) return b.getCenter();
+    }
+    if (layer.getLatLng) return layer.getLatLng();
+    let c = null; layer.eachLayer?.(l => { if(!c){ c = getLayerCenter(l); } });
+    return c;
+  }catch(e){ return null; }
+}
+
+function resetAllLayerStyles(){
+  featureLayerIndex.forEach((layer)=>{
+    const p = layer.feature?.properties || {};
+    const c = getColorFor(p);
+    paintLayer(layer, c);
+    if (layer.setStyle) layer.setStyle({ weight: 2, opacity: 0.95 });
+  });
+}
+
+function highlightBarOnMap(idx){
+  resetAllLayerStyles();
+  if (idx == null){
+    if (hoverMarker){ try{ map.removeLayer(hoverMarker); }catch(e){} hoverMarker = null; }
+    return;
+  }
+  const item = barItems[idx];
+  const layer = featureLayerIndex.get(item.key);
+  if (!layer) return;
+
+  const center = getLayerCenter(layer);
+  if (center){
+    if (!hoverMarker){
+      hoverMarker = L.circleMarker(center, { radius: 8, weight: 2, color: '#000', fillOpacity: 0 }).addTo(map);
+    } else {
+      hoverMarker.setLatLng(center);
+    }
+    const p = layer.feature?.properties || {};
+    const clsTxt = p.class === 'ameaca' ? 'Ameaça' : p.class === 'pressao' ? 'Pressão' : 'Geral';
+    const tt = `${p.nome||'-'} (${p.estado||'-'})\n${clsTxt} — ${Number(p.celulas||0).toLocaleString('pt-BR')} células`;
+    layer.bindTooltip(tt, { sticky:true, direction:'top' }).openTooltip(center);
+  }
+  if (layer.bringToFront) layer.bringToFront();
+  if (layer.setStyle) layer.setStyle({ weight: 4, opacity: 1 });
+}
+
 function updateBarChart() {
   const ctx = document.getElementById('barChart').getContext('2d');
   if (barChart) barChart.destroy();
@@ -1088,22 +1160,31 @@ function updateBarChart() {
   const maxVal = values.reduce((m, v) => Math.max(m, v), 0);
   const suggestedMax = maxVal > 0 ? Math.ceil(maxVal * 1.15) : 10;
 
-  const n = values.length || 1;
-  const tSeq=(from,to,n)=>Array.from({length:n},(_,i)=>from+(to-from)*(i/Math.max(1,n-1)));
+// Paletas (escuro -> claro)
+const n = values.length || 1;
+const tSeq = (from, to, n) =>
+  Array.from({ length: n }, (_, i) => from + (to - from) * (i / Math.max(1, n - 1)));
 
-  let colors;
-  if (currentFilter === 'ti') {
-    // Usa a paleta fixa para TI (do mais escuro para o mais claro)
-    colors = tiSequential(n);
-  } else if (currentFilter === 'uc') {
-    colors = tSeq(0.9,0.4,n).map(t=>d3.interpolateGreens(t));
-  } else {
-    colors = tSeq(0.9,0.4,n).map(t=>d3.interpolateOranges(t));
-  }
+let colors;
+if (currentClass === 'geral') {
+  // Cinza
+  colors = tSeq(0.9, 0.3, n).map(t => d3.interpolateGreys(t));
+} else if (currentClass === 'ameaca') {
+  // Laranja
+  colors = tSeq(0.9, 0.3, n).map(t => d3.interpolateOranges(t));
+} else if (currentClass === 'pressao') {
+  // Vermelho
+  colors = tSeq(0.9, 0.3, n).map(t => d3.interpolateReds(t));
+}
 
-  // Mapa herda as cores do ranking
-  colorMap = new Map();
-  rows.forEach((r, i) => colorMap.set(r.key, colors[i]));
+// indexa cores por key para o mapa
+colorMap = new Map();
+rows.forEach((r, i) => colorMap.set(r.key, colors[i]));
+
+
+// indexa cores por key para o mapa
+colorMap = new Map();
+rows.forEach((r, i) => colorMap.set(r.key, colors[i]));
 
   barChart = new Chart(ctx, {
     type: 'bar',
@@ -1113,7 +1194,15 @@ function updateBarChart() {
       responsive: true,
       maintainAspectRatio: false,
       layout: { padding: { top: 20, right: 16, left: 8, bottom: 8 } },
-      onHover: (evt, el) => { evt.native.target.style.cursor = el.length ? 'pointer' : 'default'; },
+      onHover: (evt, elements) => {
+  evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+  const idx = elements.length ? elements[0].index : null;
+  if (idx !== lastHoverIdx){
+    lastHoverIdx = idx;
+    highlightBarOnMap(idx);
+  }
+},
+
       onClick: (evt, elements) => {
         if (!elements.length) return;
         const idx = elements[0].index;
@@ -1121,15 +1210,32 @@ function updateBarChart() {
         const layer = featureLayerIndex.get(item.key);
         if (layer) zoomToLayer(layer);
       },
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: c => ` ${c.parsed.x.toLocaleString('pt-BR')} células` } },
-        datalabels: {
-          anchor: 'end', align: 'right', offset: 6, clamp: true, clip: false,
-          formatter: v => Number(v).toLocaleString('pt-BR'),
-          color: '#111', font: { weight: '700', size: 12 }
-        }
+     plugins: {
+  legend: { display: false },
+  tooltip: {
+    callbacks: {
+      title: (items) => {
+        const idx = items[0].dataIndex;
+        const item = barItems[idx];
+        const cls = (item?._f?.properties?.class) || currentClass;
+        const clsTxt = cls === 'ameaca' ? 'Ameaça' : cls === 'pressao' ? 'Pressão' : 'Geral';
+        return `${items[0].label} — ${clsTxt}`;
       },
+      label: (c) => ` ${c.parsed.y.toLocaleString('pt-BR')} células`
+    }
+  },
+  datalabels: {
+    anchor: 'end',
+    align: 'end',
+    offset: 6,
+    clamp: true,
+    clip: false,
+    formatter: v => v.toLocaleString('pt-BR'),
+    color: '#111',
+    font: { weight: '700', size: 12 }
+  }
+}
+,
       scales: {
         x: { beginAtZero:true, suggestedMax, ticks:{ callback:v=>Number(v).toLocaleString('pt-BR') }, grid:{drawBorder:false} },
         y: { ticks:{ autoSkip:false, font: ctx=>({size:(ctx.chart.height||400)<360?10:12}) }, grid:{display:false} }
