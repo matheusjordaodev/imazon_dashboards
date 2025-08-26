@@ -100,9 +100,114 @@
     .download-chip--pdf i{color:#c62828}
     #download-actions .dt-buttons{display:flex;gap:10px;flex-wrap:wrap;margin:0!important}
     #export-table_wrapper .dt-buttons{display:none!important}
+    .leaflet-tooltip.hover-tooltip{
+  background:#fff; color:#111; border:1px solid #ddd; border-radius:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.15); padding:8px 10px; font-family:'Montserrat',sans-serif;
+}
+/*
+## Alterar aqui --- Selo de ranking (número no mapa) 
+
+  .rank-badge .rank-badge-inner{
+  background:#008055;               
+  color:#fff;
+  border:2px solid #fff;
+  border-radius:999px;
+  width:26px; height:26px;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:12px;
+  box-shadow:0 0 0 2px rgba(0,0,0,.25);
+}
+
+.value-badge .value-badge-inner{
+  background:#008055;         
+  color:#fff;
+  border:2px solid #fff;
+  border-radius:999px;
+  padding:2px 8px;
+  font-weight:800;
+  font-size:12px;
+  line-height:1;
+  box-shadow:0 0 0 2px rgba(0,0,0,.25);
+  white-space:nowrap;
+}
+*/
+/* ===== Overlay global de carregamento ===== */
+#app-loading-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,.9);
+  backdrop-filter: saturate(120%) blur(2px);
+  display: none;            /* fica oculto até showLoading() */
+  align-items: center;
+  justify-content: center;
+  z-index: 20000;           /* acima dos cards e do mapa */
+}
+#app-loading-overlay .loading-card{
+  background:#fff;
+  border:1px solid #e6e8eb;
+  border-radius:16px;
+  box-shadow:0 12px 40px rgba(0,0,0,.12);
+  padding:22px 26px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  font-family:'Montserrat',sans-serif;
+}
+.loading-ring{
+  width:28px; height:28px;
+  border-radius:50%;
+  border:3px solid #e6f4ef;
+  border-top-color: var(--primary-color);
+  animation: spin .9s linear infinite;
+}
+@keyframes spin{ to{ transform: rotate(360deg) } }
+
+/* ===== Overlay global de carregamento ===== */
+#loader-overlay{
+  position:fixed; inset:0; display:none;
+  align-items:center; justify-content:center;
+  background:rgba(255,255,255,.75);
+  backdrop-filter: blur(2px);
+  z-index:20000;
+}
+/* Cartão */
+#loader-overlay .loader-card{
+  background:#fff;
+  border-radius:16px;
+  box-shadow:0 16px 40px rgba(0,0,0,.14);
+  padding:20px 24px;
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  min-width:220px;
+  font-family:'Montserrat',sans-serif;
+}
+/* Arco animado (spinner) */
+#loader-overlay .loader-arc{
+  width:44px; height:44px; border-radius:50%;
+  /* arco verde de ~90° */
+  background: conic-gradient(var(--primary-color) 0 100deg, transparent 100deg 360deg);
+  /* “fura” o centro para parecer um donut */
+  -webkit-mask: radial-gradient(farthest-side, transparent 62%, #000 64%);
+          mask: radial-gradient(farthest-side, transparent 62%, #000 64%);
+  animation: loader-rotate 0.9s linear infinite;
+}
+@keyframes loader-rotate{ to{ transform: rotate(360deg) } }
+/* Texto */
+#loader-overlay .loader-text{
+  font-weight:700; font-size:15px; color:#4B5563;
+}
+
+
   </style>
 </head>
 <body>
+  <!-- Overlay de carregamento -->
+<div id="loader-overlay" aria-live="polite" aria-busy="true">
+  <div class="loader-card">
+    <div class="loader-arc" aria-hidden="true"></div>
+    <div class="loader-text">Carregando dados...</div>
+  </div>
+</div>
+
 <div class="container-fluid">
   <div class="dashboard-header">
     <img src="../../img/ameaca_e_pressao.png" alt="Ameaça e Pressão" style="max-width:150px;height:auto;display:block;margin:0 auto;">
@@ -169,7 +274,7 @@
     <div class="col-md-3"><div class="stat-card" style="background:#6c757d"><div class="stat-label">Variação Anual</div><div class="stat-value" id="unique-states">0</div></div></div>
   </div>
 
-  <!-- Ranking (esquerda) e Mapa (direita) -->
+  <!-- Ranking   (esquerda) e Mapa (direita) -->
   <div class="row mb-4">
     <div class="col-lg-6">
       <div class="card">
@@ -436,7 +541,7 @@ const stateColor    = d3.piecewise(d3.interpolateHcl, STATE_PALETTE.slice().reve
 let map, geojsonLayer=null, geojsonData=null, filteredData=[], dataTable=null, barChart=null;
 const chartsStore={};
 const classColors={ameaca:'#FF6D00', pressao:'#c62828', geral:'#008055'};
-
+let rankBadgesLayer = null;
 let currentClass = 'ameaca';
 let currentFilter = null;     // null | 'ti' | 'uc' | 'allap'
 let ucSubtype = 'all';        // manter 'all' (UCE+UCF)
@@ -444,6 +549,10 @@ let selectedYear = 2023;      // null = Todos
 let selectedQuarter = null;   // null | 1..4
 let selectedEstado = null;    // "AM" ou combo "AM/RO"
 let selectedCategoria = null, selectedModalidade = null;
+
+let rankBadgeIndex = new Map();             // key -> marker do selo fixo
+let hoverValueMarker = null;                // selo temporário com “células”
+let lastHoverKeyForValue = null;            // quem está temporariamente substituído
 
 let featureLayerIndex = new Map();
 let barItems = [];
@@ -708,47 +817,89 @@ function paintLayer(layer, color){
   if (layer.setStyle) layer.setStyle({ color, fillColor: color, weight:2, opacity:0.95, fillOpacity:0.6 });
   if (layer.eachLayer) layer.eachLayer(child => paintLayer(child, color));
 }
-function buildPopupHTML(p){
+function buildPopupHTML(p, rank){
   return `
     <div style="font-family:Montserrat,sans-serif;min-width:220px">
       <div style="font-weight:700;font-size:14px;margin-bottom:4px">${p.nome||'-'}</div>
+      ${rank ? `<div style="margin-bottom:4px"><b>Ranking:</b> ${rank}</div>` : ``}
       <div><b>Estado:</b> ${formatEstadoFull(p.estado)}</div>
       <div><b>Categoria:</b> ${mapAcronymLabel(p.categoria ?? '-')}</div>
       <div><b>Modalidade:</b> ${mapAcronymLabel(p.modalidade||'-')}</div>
       <div><b>Uso:</b> ${p.uso||'-'}</div>
-      <div><b>Células em Desmatamento:</b> ${Number(p.celulas||0).toLocaleString('pt-BR')}</div>
+      <div><b>Células:</b> ${Number(p.celulas||0).toLocaleString('pt-BR')}</div>
       <div><b>Ano:</b> ${p.ano||'-'} &nbsp; <b>Trimestre:</b> ${periodLabel(p)}</div>
     </div>`;
 }
 function updateMap(){
+  // Remove a camada anterior
   if (geojsonLayer){ try{ geojsonLayer.remove(); }catch(e){} }
   featureLayerIndex = new Map();
 
-  const featuresToDraw = barItems.map(r => r._f).filter(Boolean);
-  const mapFeatures = [];
+  // Trabalhamos apenas com os itens do ranking atual (top 10)
+  const featuresToDraw = (barItems || []).map(r => r._f).filter(Boolean);
 
+  // chave -> posição no ranking (1..10)
+  const rankByKey = new Map();
+  (barItems || []).forEach((r, i) => {
+    const key = mkKey(r?._f?.properties || {});
+    rankByKey.set(key, i + 1);
+  });
+
+  // Tooltip HTML (exibido no HOVER)
+  const buildHoverHTML = (p, rank) => `
+    <div style="font-family:Montserrat,sans-serif;min-width:240px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:6px">
+        ${p.nome || '-'}
+      </div>
+      ${rank ? `<div><b>Posição no Ranking:</b> #${rank}°</div>` : ``}
+      <div><b>Estado:</b> ${formatEstadoFull(p.estado)}</div>
+      <div><b>Categoria:</b> ${mapAcronymLabel(p.categoria ?? '-')}</div>
+      <div><b>Modalidade:</b> ${mapAcronymLabel(p.modalidade || '-')}</div>
+      <div><b>Uso:</b> ${p.uso || '-'}</div>
+      <div><b>Células:</b> ${Number(p.celulas || 0).toLocaleString('pt-BR')}</div>
+      <div><b>Ano:</b> ${p.ano || '-'} &nbsp; <b>Trimestre:</b> ${periodLabel(p)}</div>
+    </div>`;
+
+  const mapFeatures = [];
   geojsonLayer = L.geoJSON(featuresToDraw, {
     style: f => {
       const p = f.properties || {};
       const c = getColorFor(p);
       return { color:c, fillColor:c, weight:2, opacity:0.95, fillOpacity:0.6 };
     },
-    pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius:6, weight:1, color:getColorFor(f.properties||{}), fillColor:getColorFor(f.properties||{}), fillOpacity:0.7 }),
+    pointToLayer: (f, latlng) => L.circleMarker(latlng, {
+      radius:6, weight:1,
+      color:getColorFor(f.properties||{}),
+      fillColor:getColorFor(f.properties||{}),
+      fillOpacity:0.7
+    }),
     onEachFeature: (f, layer) => {
       const p = f.properties || {};
       const key = mkKey(p);
       featureLayerIndex.set(key, layer);
       mapFeatures.push(layer);
 
-      layer.bindPopup(buildPopupHTML(p));
+      // Somente tooltip (hover) — sem popup ao clique
+      layer.unbindPopup?.();
 
-      const clsTxt = p.class === 'ameaca' ? 'Ameaça' : p.class === 'pressao' ? 'Pressão' : 'Geral';
-      const tip = `${p.nome||'-'} (${formatEstadoFull(p.estado)||'-'}) — ${clsTxt}\n${Number(p.celulas||0).toLocaleString('pt-BR')} células`;
-      layer.bindTooltip(tip, { sticky:true, direction:'top' });
+      const rank = rankByKey.get(key) || null;
+      layer.bindTooltip(
+        buildHoverHTML(p, rank),
+        { sticky:true, direction:'top', opacity:1, className:'ap-hover-card' }
+      );
 
-      layer.on('mouseover', () => { layer.bringToFront?.(); layer.setStyle?.({ weight: 4, opacity: 1 }); });
-      layer.on('mouseout',  () => { const c = getColorFor(p); paintLayer(layer, c); layer.setStyle?.({ weight: 2, opacity: 0.95 }); });
+      // realce no hover
+      layer.on('mouseover', () => {
+        layer.bringToFront?.();
+        layer.setStyle?.({ weight:4, opacity:1 });
+      });
+      layer.on('mouseout', () => {
+        const c = getColorFor(p);
+        paintLayer(layer, c);
+        layer.setStyle?.({ weight:2, opacity:0.95 });
+      });
 
+      // cor inicial
       paintLayer(layer, getColorFor(p));
     }
   }).addTo(map);
@@ -757,6 +908,7 @@ function updateMap(){
     try { map.fitBounds(geojsonLayer.getBounds(), { padding:[20,20] }); } catch(e){}
   }
 }
+
 
 /* ========================
    Botões / eventos
@@ -861,19 +1013,19 @@ function selectClass(cls){
 /* ========================
    Loader
 ======================== */
-function showLoading(){
-  document.querySelectorAll('.card-body').forEach(body=>{
-    if(!body.querySelector('.loading-spinner')){
-      const s=document.createElement('div'); s.className='loading-spinner';
-      s.style.position='absolute'; s.style.inset='0'; s.style.background='rgba(255,255,255,.8)';
-      s.style.display='flex'; s.style.alignItems='center'; s.style.justifyContent='center'; s.style.zIndex='1000';
-      s.innerHTML='<div class="spinner-border" role="status" style="color:#008055"></div>';
-      body.style.position='relative';
-      body.appendChild(s);
-    }
-  });
+
+function showLoader(msg="Carregando dados..."){
+  const l=document.getElementById('loader-overlay'); if(!l) return;
+  const t=l.querySelector('.loader-text'); if(t) t.textContent=msg;
+  l.style.display='flex';
 }
-function hideLoading(){ document.querySelectorAll('.loading-spinner').forEach(s=>s.remove()); }
+function hideLoader(){
+  const l=document.getElementById('loader-overlay'); if(l) l.style.display='none';
+}
+/* Compat com suas chamadas existentes */
+function showLoading(msg){ showLoader(msg || "Carregando dados..."); }
+function hideLoading(){ hideLoader(); }
+
 
 /* ========================
    Fetch/merge
@@ -1042,31 +1194,32 @@ function resetAllLayerStyles(){
     if (layer.setStyle) layer.setStyle({ weight: 2, opacity: 0.95 });
   });
 }
+// Não queremos mais nenhum "badge" nem tooltip abrindo no hover do gráfico
 function highlightBarOnMap(idx){
+  // volta estilos originais de todas as feições
   resetAllLayerStyles();
-  if (idx == null){
-    if (hoverMarker){ try{ map.removeLayer(hoverMarker); }catch(e){} hoverMarker = null; }
-    return;
-  }
-  const item = barItems[idx];
+
+  // fecha qualquer tooltip que possa estar aberto de interações anteriores
+  featureLayerIndex.forEach(layer => layer.closeTooltip?.());
+
+  // se o mouse saiu da barra, não faz nada no mapa
+  if (idx == null) return;
+
+  // destaque visual APENAS na feição correspondente
+  const item  = barItems[idx];
   const layer = featureLayerIndex.get(item.key);
   if (!layer) return;
 
-  const center = getLayerCenter(layer);
-  if (center){
-    if (!hoverMarker){
-      hoverMarker = L.circleMarker(center, { radius: 8, weight: 2, color: '#000', fillOpacity: 0 }).addTo(map);
-    } else {
-      hoverMarker.setLatLng(center);
-    }
-    const p = layer.feature?.properties || {};
-    const clsTxt = p.class === 'ameaca' ? 'Ameaça' : p.class === 'pressao' ? 'Pressão' : 'Geral';
-    const tt = `${p.nome||'-'} (${formatEstadoFull(p.estado)||'-'})\n${clsTxt} — ${Number(p.celulas||0).toLocaleString('pt-BR')} células`;
-    layer.bindTooltip(tt, { sticky:true, direction:'top' }).openTooltip(center);
-  }
   if (layer.bringToFront) layer.bringToFront();
-  if (layer.setStyle) layer.setStyle({ weight: 4, opacity: 1 });
+  if (layer.setStyle)     layer.setStyle({ weight: 4, opacity: 1 });
+
+  // IMPORTANTE:
+  // - Não criar marker (hoverMarker).
+  // - Não chamar layer.bindTooltip(...).openTooltip(center).
+  //   O tooltip continua vinculado lá no updateMap(), mas só
+  //   aparecerá quando o usuário passar o mouse SOBRE o mapa.
 }
+
 function updateBarChart() {
   const ctx = document.getElementById('barChart').getContext('2d');
   if (barChart) barChart.destroy();
@@ -1123,23 +1276,27 @@ function updateBarChart() {
         const layer = featureLayerIndex.get(item.key);
         if (layer) zoomToLayer(layer);
       },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: (items) => {
-              const idx = items[0].dataIndex;
-              const item = barItems[idx];
-              const cls = (item?._f?.properties?.class) || currentClass;
-              const clsTxt = cls === 'ameaca' ? 'Ameaça' : cls === 'pressao' ? 'Pressão' : 'Geral';
-              return `${items[0].label} — ${clsTxt}`;
-            },
-            label: (c) => ` ${c.parsed.y.toLocaleString('pt-BR')} células`
-          }
-        },
-        datalabels: { anchor:'end', align:'end', offset:6, clamp:true, clip:false,
-          formatter: v => v.toLocaleString('pt-BR'), color:'#111', font:{ weight:'700', size:12 } }
+     plugins: {
+  legend: { display: false },
+  tooltip: {
+    callbacks: {
+      title: (items) => {
+        const idx  = items[0].dataIndex;
+        const item = barItems[idx];
+        const cls  = (item?._f?.properties?.class) || currentClass;
+        const clsTxt = cls === 'ameaca' ? 'Ameaça' : cls === 'pressao' ? 'Pressão' : 'Geral';
+        return `${items[0].label} — ${clsTxt}`;
       },
+      // ⬇️ AQUI É A TROCA IMPORTANTE
+      label: (ctx) => ` ${Number(ctx.parsed?.x ?? ctx.raw ?? 0).toLocaleString('pt-BR')} células`
+    }
+  },
+  datalabels: {
+    anchor:'end', align:'end', offset:6, clamp:true, clip:false,
+    formatter: v => Number(v).toLocaleString('pt-BR'),
+    color:'#111', font:{ weight:'700', size:12 }
+  }
+},
       scales: {
         x: { beginAtZero:true, suggestedMax, ticks:{ callback:v=>Number(v).toLocaleString('pt-BR') }, grid:{drawBorder:false} },
         y: { ticks:{ autoSkip:false, font: ctx=>({size:(ctx.chart.height||400)<360?10:12}) }, grid:{display:false} }
@@ -1427,5 +1584,13 @@ function populateAttributeMenus(){
   }
 }
 </script>
+<!-- Overlay de carregamento -->
+<div id="loader-overlay" aria-live="polite" aria-busy="true">
+  <div class="loader-card">
+    <div class="loader-ring" aria-hidden="true"></div>
+    <div class="loader-text">Carregando dados...</div>
+  </div>
+</div>
+
 </body>
 </html>
