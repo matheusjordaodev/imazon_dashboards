@@ -1405,24 +1405,64 @@ function buildDonut(canvasId,legendId,labels,values,total, palette=null){
     bg = labels.map((_,i)=> rainbow(i));
   }
 
-  const contrast=(bg)=>{ const c=d3.color(bg)||{r:128,g:128,b:128}; const yiq=(c.r*299+c.g*587+c.b*114)/1000; return yiq>=150?'#111':'#fff'; };
-
-  const chart=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data:values,backgroundColor:bg,borderColor:bg,borderWidth:1}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{
-      legend:{display:false},
-      tooltip:{callbacks:{label:(c)=>{const v=Number(c.raw||0);const tot=(c.dataset.data||[]).reduce((a,b)=>a+Number(b||0),0);const pct=tot?Math.round((v/tot)*100):0;return `${c.label}: ${v.toLocaleString('pt-BR')} (${pct}%)`;}}},
-      datalabels:{display:(ctx)=>{const d=ctx.dataset.data||[];const sum=d.reduce((a,b)=>a+Number(b||0),0);const v=Number(d[ctx.dataIndex]||0);const pct=sum?(v/sum)*100:0;return pct>=3;},
-        formatter:(v)=>Number(v||0).toFixed(0),
-        font:(ctx)=>{const w=ctx.chart.width||300;const s=Math.max(12,Math.min(16,Math.round(w*.02)));return {weight:'bold',size:s};},
-        color:'#fff',
-        textStrokeColor: '#000',
-        textStrokeWidth:3,anchor:'center',align:'center',offset:0,clip:false,padding:2},
-      centerText:{text:`${(total||0).toLocaleString('pt-BR')} células`,color:'#28a745',fontSize:22,fontFamily:'Montserrat',fontWeight:'700'},
-      htmlLegend:{containerID:legendId}
-    }}});
+  const chart=new Chart(ctx,{
+    type:'doughnut',
+    data:{ labels, datasets:[{ data:values, backgroundColor:bg, borderColor:bg, borderWidth:1 }] },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      cutout:'60%',
+      plugins:{
+        legend:{ display:false },
+        tooltip:{
+          callbacks:{
+            label:(c)=>{
+              const v=Number(c.raw||0);
+              const tot=(c.dataset.data||[]).reduce((a,b)=>a+Number(b||0),0);
+              const pct=tot?Math.round((v/tot)*100):0;
+              return `${c.label}: ${v.toLocaleString('pt-BR')} (${pct}%)`;
+            }
+          }
+        },
+        // ⬇️ Números com preenchimento preto e contorno branco
+        datalabels:{
+          display:(ctx)=>{
+            const d=ctx.dataset.data||[];
+            const sum=d.reduce((a,b)=>a+Number(b||0),0);
+            const v=Number(d[ctx.dataIndex]||0);
+            const pct=sum?(v/sum)*100:0;
+            return pct>=3; // exibe apenas se tiver >=3% para evitar poluição
+          },
+          formatter:(v)=>Number(v||0).toFixed(0),
+          font:(ctx)=>{
+            const w=ctx.chart.width||300;
+            const s=Math.max(12,Math.min(16,Math.round(w*.02)));
+            return { weight:'bold', size:s };
+          },
+          color:'#000',            // 🔁 agora PRETO dentro
+          textStrokeColor:'#fff',  // 🔁 contorno BRANCO
+          textStrokeWidth:3,
+          anchor:'center',
+          align:'center',
+          offset:0,
+          clip:false,
+          padding:2
+        },
+        centerText:{
+          text:`${(total||0).toLocaleString('pt-BR')} células`,
+          color:'#28a745',
+          fontSize:22,
+          fontFamily:'Montserrat',
+          fontWeight:'700'
+        },
+        htmlLegend:{ containerID:legendId }
+      }
+    }
+  });
 
   chartsStore[canvasId]=chart;
 }
+
 function updateDonutCharts(){
   ['donutChart1','donutChart2','donutChart3','donutChart4'].forEach(id=>{
     if(chartsStore[id]) chartsStore[id].destroy(); chartsStore[id]=null;
