@@ -35,7 +35,6 @@
     .dash-controls{background:var(--card-color);padding:1rem;border-radius:var(--border-radius);box-shadow:var(--box-shadow);margin-bottom:1rem}
     .current-dashboard{background:var(--primary-color);color:#fff;padding:6px 14px;border-radius:22px;font-weight:700;text-align:center;margin-bottom:10px}
 
-    /* 3 botões principais */
     .dashboard-buttons{display:flex;gap:10px;justify-content:center;align-items:stretch;flex-wrap:nowrap}
     .dashboard-btn{
       flex:0 0 120px; max-width:140px; min-height:64px;
@@ -52,7 +51,6 @@
     .dashboard-btn.pressao .dashboard-icon{color:var(--pressao-red)}
     .dashboard-btn.active{outline:2px solid var(--primary-color)}
 
-    /* Filtros principais */
     .filters-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin-top:8px}
     .filter-btn{
       background:#fff;border:1px solid #e0e0e0;padding:6px 14px;font-size:13px;border-radius:999px;
@@ -76,7 +74,6 @@
     .time-filter .btn{ --bs-btn-padding-y:.25rem; --bs-btn-padding-x:.6rem; --bs-btn-font-size:.8rem; border-radius:999px; font-weight:700 }
     .dropdown-menu{max-height:260px; overflow:auto}
 
-    /* mapa/charts/tabela */
     #map{height:460px;width:100%;border-radius:var(--border-radius);box-shadow:inset 0 0 10px rgba(0,0,0,.1)}
     .chart-container{position:relative;height:460px;width:100%}
 
@@ -106,7 +103,6 @@
     @media (max-width:576px){#map{height:320px}.chart-container{height:320px}}
     @media (min-width:1025px){.container-fluid{max-width:1400px;margin:0 auto}}
 
-    /* Toolbar de downloads */
     .download-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-start}
     .download-chip{appearance:none;border:1px solid #e6e8eb;background:linear-gradient(180deg,#fff 0%,#f6f8f9 100%);padding:10px 14px;border-radius:9999px;font-weight:700;font-size:14px;line-height:1;display:inline-flex;align-items:center;gap:8px;cursor:pointer;color:#1f2937;box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 16px rgba(0,0,0,.04);transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease}
     .download-chip:hover{transform:translateY(-1px);border-color:var(--primary-color);box-shadow:0 10px 28px rgba(0,0,0,.12)}
@@ -332,6 +328,54 @@ function mapAcronymLabel(val){
   return val;
 }
 
+/* ===== Estados (UF) — nomes por extenso e parsing de combos ===== */
+const UF_NAMES = {
+  AC:'Acre', AL:'Alagoas', AP:'Amapá', AM:'Amazonas', BA:'Bahia', CE:'Ceará',
+  DF:'Distrito Federal', ES:'Espírito Santo', GO:'Goiás', MA:'Maranhão',
+  MT:'Mato Grosso', MS:'Mato Grosso do Sul', MG:'Minas Gerais', PA:'Pará',
+  PB:'Paraíba', PR:'Paraná', PE:'Pernambuco', PI:'Piauí', RJ:'Rio de Janeiro',
+  RN:'Rio Grande do Norte', RS:'Rio Grande do Sul', RO:'Rondônia', RR:'Roraima',
+  SC:'Santa Catarina', SP:'São Paulo', SE:'Sergipe', TO:'Tocantins'
+};
+
+function stripAccents(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function ufCodeToName(code){ return UF_NAMES[code] || code; }
+function tokenToUF(token){
+  if(!token) return null;
+  const t = String(token).trim();
+  const up = t.toUpperCase();
+  if (UF_NAMES[up]) return up; // já é sigla
+  const norm = stripAccents(t).toUpperCase();
+  for (const [code, name] of Object.entries(UF_NAMES)){
+    if (stripAccents(name).toUpperCase() === norm) return code;
+  }
+  return null;
+}
+// ["AM/RO", "Amazonas / Pará"] -> ["AM","RO"] / ["AM","PA"]
+function parseUFs(value){
+  if (value == null) return [];
+  const raw = String(value);
+  return Array.from(new Set(
+    raw.split(/[\/,;|+&]/).map(s=>tokenToUF(s)).filter(Boolean)
+  ));
+}
+// label por extenso mantendo combos: "AM/RO" -> "Amazonas / Rondônia"
+function formatEstadoFull(value){
+  const codes = parseUFs(value);
+  if (!codes.length) return value || '-';
+  return codes.map(ufCodeToName).join(' / ');
+}
+// normaliza valor para combo (ordem irrelevante na comparação)
+function normalizeComboValue(value){
+  const codes = parseUFs(value).slice().sort();
+  return codes.join('/');
+}
+function arraysEqualAsSets(a,b){
+  if (a.length !== b.length) return false;
+  const aa = a.slice().sort(); const bb = b.slice().sort();
+  return aa.every((v,i)=> v === bb[i]);
+}
+
 /* ========================
    Chart.js plugins
 ======================== */
@@ -404,7 +448,6 @@ Chart.register(centerTextPlugin, htmlLegendPlugin);
 /* ========================
    Paletas (d3)
 ======================== */
-const TI_PALETTE = ['#664300','#a87b05','#efb810','#f9db5c','#ffff94'];
 const DONUT1_PALETTE = ['#8db600', '#659000', '#a1c02c', '#c09713', '#80221b'];
 const STATE_PALETTE = ['#8db600', '#bce444', '#e9a700', '#e5733d', '#ab625e'];
 const MODALITY_PALETTE = ['#704214', '#6d3f11', '#6b9b5a', '#95bd6f', '#f69171'];
@@ -412,25 +455,23 @@ const CATEGORY_PALETTE = ['#867416', '#bea74b', '#f8de7e', '#feeeb8', '#fffff1']
 const categoryColor = d3.piecewise(d3.interpolateHcl, CATEGORY_PALETTE);
 const modalityColor = d3.piecewise(d3.interpolateHcl, MODALITY_PALETTE);
 const stateColor    = d3.piecewise(d3.interpolateHcl, STATE_PALETTE.slice().reverse());
-const tiScale = d3.scaleLinear().domain([0,0.25,0.5,0.75,1]).range(TI_PALETTE);
-function tiSequential(n){ if(n<=1) return [TI_PALETTE[0]]; return Array.from({length:n},(_,i)=>tiScale(i/(n-1))); }
 
 /* ========================
    Estado/variáveis globais
 ======================== */
 let map, geojsonLayer=null, geojsonData=null, filteredData=[], dataTable=null, barChart=null;
 const chartsStore={};
-const classColors={ameaca:'#FF6D00', pressao:'#c62828', geral:'#008055'};
 
-let currentClass = 'ameaca';  // 'ameaca' | 'pressao' | 'geral'
+let currentClass = 'ameaca';
 let currentFilter = null;     // null | 'ti' | 'uc' | 'allap'
 let ucSubtype = 'all';        // 'all' | 'uce' | 'ucf'
 let selectedYear = 2023;      // null = Todos
 let selectedQuarter = null;   // null | 1..4
-let selectedEstado = null, selectedCategoria = null, selectedModalidade = null;
+let selectedEstado = null;    // "AM" (simples) ou "AM/RO" (combo normalizado)
+let selectedCategoria = null, selectedModalidade = null;
 
 let featureLayerIndex = new Map();
-let barItems = [];    // top 10 (ranking)
+let barItems = [];
 let colorMap = new Map();
 
 function getProp(p, ...names){ for(const k of names){ if(p && p[k]!=null && p[k]!=='') return p[k]; } return null; }
@@ -439,7 +480,7 @@ function fallbackColor(){ if (currentClass === 'geral') return d3.interpolateGre
 function getColorFor(p){ const key=mkKey(p||{}); return colorMap.get(key) || fallbackColor(); }
 
 /* ========================
-   Ano / Trimestre / Legenda  (com ajustes "marco" e "(mês a mês)")
+   Ano / Trimestre / Legenda
 ======================== */
 function _norm(s){ return String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 function getYear(p = {}) { return p.ano ?? p.ANO ?? p.Ano ?? null; }
@@ -447,43 +488,21 @@ function getLegenda(p = {}) {
   return p.legend ?? p.Legend ?? p.LEGEND ??
          p.legenda ?? p.Legenda ?? p.LEGENDA ?? null;
 }
-
-/* <<< NOVO: normalizador de exibição >>> */
 function fixLegendDisplay(txt){
   if (!txt) return txt;
   let s = String(txt);
-
-  // "marco" -> "março" (preserva capitalização comum)
-  s = s.replace(/\bMARCO\b/g, 'MARÇO')
-       .replace(/\bMarco\b/g, 'Março')
-       .replace(/\bmarco\b/g, 'março');
-
-  // padroniza "mes a mes" / "mês a mes" -> "mês a mês"
+  s = s.replace(/\bMARCO\b/g, 'MARÇO').replace(/\bMarco\b/g, 'Março').replace(/\bmarco\b/g, 'março');
   s = s.replace(/m[eê]s\s*a\s*m[eê]s/gi, 'mês a mês');
-
-  // garante parênteses: "mês a mês" -> "(mês a mês)" (se ainda não tiver)
-  if (!/\(mês a mês\)/i.test(s) && /mês a mês/i.test(s)) {
-    s = s.replace(/mês a mês/gi, '(mês a mês)');
-  }
-
+  if (!/\(mês a mês\)/i.test(s) && /mês a mês/i.test(s)) s = s.replace(/mês a mês/gi, '(mês a mês)');
   return s;
 }
-
-/* detecta trimestre a partir de número/legenda; reconhece "marco" */
 function readQuarterFromValue(v){
   if (v == null) return null;
   const s = _norm(v);
-
-  // Q1: jan, fev, marco/março
   if (/(^|[^a-z])(jan|fev|marco|mar)([^a-z]|$)/.test(s)) return 1;
-  // Q2: abr, mai, jun
   if (/(^|[^a-z])(abr|mai|jun)([^a-z]|$)/.test(s)) return 2;
-  // Q3: jul, ago, set
   if (/(^|[^a-z])(jul|ago|set)([^a-z]|$)/.test(s)) return 3;
-  // Q4: out, nov, dez
   if (/(^|[^a-z])(out|nov|dez)([^a-z]|$)/.test(s)) return 4;
-
-  // pega primeiro dígito 1..4 (T1, 1º, etc.)
   const m = s.match(/([1-4])/);
   return m ? Number(m[1]) : null;
 }
@@ -527,7 +546,6 @@ function findLegendaFor(year, quarter){
     return yOK && getQuarter(p) === Number(quarter);
   });
   if (!hits.length) return DEFAULT_LEGENDS[quarter] || null;
-
   const freq = new Map();
   hits.forEach(f=>{
     const l = getLegenda(f.properties || {});
@@ -615,6 +633,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   initializeMap();
   setupButtons();
   populateYears();
+  updateAttributeControlsVisibility();
   document.getElementById('btn-ano').textContent = `Ano: ${selectedYear}`;
   document.getElementById('btn-tri').textContent = `Trimestre: Todos`;
   document.getElementById('btn-estado').textContent = `Estado: Todos`;
@@ -678,6 +697,27 @@ function setTitles(){
     rankTitleEl.textContent=`Ranking das 10 Áreas Protegidas ${pressionadasDe}`;
   }
 }
+function updateAttributeControlsVisibility(){
+  const catBtn = document.getElementById('btn-categoria');
+  const modBtn = document.getElementById('btn-modalidade');
+  if (!catBtn || !modBtn) return;
+
+  const catGroup = catBtn.parentElement;   // <div class="btn-group"> que envolve o botão+menu
+  const modGroup = modBtn.parentElement;
+
+  const show = currentFilter !== 'ti';     // em TI ocultar
+
+  if (catGroup) catGroup.style.display = show ? '' : 'none';
+  if (modGroup) modGroup.style.display = show ? '' : 'none';
+
+  // Se esconder, limpa os filtros e reseta os rótulos
+  if (!show){
+    selectedCategoria = null;
+    selectedModalidade = null;
+    catBtn.textContent = 'Categoria: Todos';
+    modBtn.textContent = 'Modalidade: Todos';
+  }
+}
 
 /* ========================
    Mapa
@@ -693,12 +733,11 @@ function paintLayer(layer, color){
   if (layer.eachLayer) layer.eachLayer(child => paintLayer(child, color));
 }
 function buildPopupHTML(p){
-  const categoriaLabel = mapAcronymLabel(p.categoria ?? '-');
   return `
     <div style="font-family:Montserrat,sans-serif;min-width:220px">
       <div style="font-weight:700;font-size:14px;margin-bottom:4px">${p.nome||'-'}</div>
-      <div><b>Estado:</b> ${p.estado||'-'}</div>
-      <div><b>Categoria:</b> ${categoriaLabel}</div>
+      <div><b>Estado:</b> ${formatEstadoFull(p.estado)}</div>
+      <div><b>Categoria:</b> ${mapAcronymLabel(p.categoria ?? '-')}</div>
       <div><b>Modalidade:</b> ${mapAcronymLabel(p.modalidade||'-')}</div>
       <div><b>Uso:</b> ${p.uso||'-'}</div>
       <div><b>Células:</b> ${Number(p.celulas||0).toLocaleString('pt-BR')}</div>
@@ -728,7 +767,7 @@ function updateMap(){
       layer.bindPopup(buildPopupHTML(p));
 
       const clsTxt = p.class === 'ameaca' ? 'Ameaça' : p.class === 'pressao' ? 'Pressão' : 'Geral';
-      const tip = `${p.nome||'-'} (${p.estado||'-'}) — ${clsTxt}\n${Number(p.celulas||0).toLocaleString('pt-BR')} células`;
+      const tip = `${p.nome||'-'} (${formatEstadoFull(p.estado)||'-'}) — ${clsTxt}\n${Number(p.celulas||0).toLocaleString('pt-BR')} células`;
       layer.bindTooltip(tip, { sticky:true, direction:'top' });
 
       layer.on('mouseover', () => { layer.bringToFront?.(); layer.setStyle?.({ weight: 4, opacity: 1 }); });
@@ -747,12 +786,10 @@ function updateMap(){
    Botões / eventos
 ======================== */
 function setupButtons(){
-  // principais
   document.getElementById('btn-ameaca').addEventListener('click',()=>selectClass('ameaca'));
   document.getElementById('btn-pressao').addEventListener('click',()=>selectClass('pressao'));
   document.getElementById('btn-geral').addEventListener('click',()=>selectClass('geral'));
 
-  // filtros
   const btnTI = document.getElementById('btn-ti');
   const btnUC = document.getElementById('btn-uc');
   const btnALL = document.getElementById('btn-allap');
@@ -765,11 +802,10 @@ function setupButtons(){
     else if(currentFilter==='allap') btnALL.classList.add('active');
   }
 
-  btnTI.addEventListener('click',()=>{ currentFilter=(currentFilter==='ti')?null:'ti'; setActiveFilterButton(); ucBox.classList.toggle('disabled', currentFilter!=='uc'); loadDashboard(); });
-  btnUC.addEventListener('click',()=>{ currentFilter=(currentFilter==='uc')?null:'uc'; setActiveFilterButton(); ucBox.classList.toggle('disabled', currentFilter!=='uc'); loadDashboard(); });
-  btnALL.addEventListener('click',()=>{ currentFilter=(currentFilter==='allap')?null:'allap'; setActiveFilterButton(); ucBox.classList.add('disabled'); loadDashboard(); });
+  btnTI.addEventListener('click',()=>{ currentFilter=(currentFilter==='ti')?null:'ti'; setActiveFilterButton(); ucBox.classList.toggle('disabled', currentFilter!=='uc');updateAttributeControlsVisibility();  loadDashboard(); });
+  btnUC.addEventListener('click',()=>{ currentFilter=(currentFilter==='uc')?null:'uc'; setActiveFilterButton(); ucBox.classList.toggle('disabled', currentFilter!=='uc');updateAttributeControlsVisibility();  loadDashboard(); });
+  btnALL.addEventListener('click',()=>{ currentFilter=(currentFilter==='allap')?null:'allap'; setActiveFilterButton(); ucBox.classList.add('disabled');updateAttributeControlsVisibility();  loadDashboard(); });
 
-  // subfiltro UC
   document.querySelectorAll('#uc-subfilter .btn').forEach(b=>{
     b.addEventListener('click',()=>{
       document.querySelectorAll('#uc-subfilter .btn').forEach(x=>x.classList.remove('active'));
@@ -800,14 +836,21 @@ function setupButtons(){
     loadDashboard();
   });
 
-  // Estado/Categoria/Modalidade
+  // Estado (simples ou combinação)
   document.getElementById('menu-estado').addEventListener('click',(e)=>{
     const li = e.target.closest('.dropdown-item'); if(!li) return;
     const val = li.getAttribute('data-estado') || '';
     selectedEstado = val || null;
-    document.getElementById('btn-estado').textContent = `Estado: ${selectedEstado ?? 'Todos'}`;
+
+    const label = !selectedEstado
+      ? 'Todos'
+      : (selectedEstado.includes('/') ? formatEstadoFull(selectedEstado) : ufCodeToName(selectedEstado));
+
+    document.getElementById('btn-estado').textContent = `Estado: ${label}`;
     loadDashboard();
   });
+
+  // Categoria/Modalidade
   document.getElementById('menu-categoria').addEventListener('click',(e)=>{
     const li = e.target.closest('.dropdown-item'); if(!li) return;
     const val = li.getAttribute('data-categoria') || '';
@@ -824,7 +867,6 @@ function setupButtons(){
     loadDashboard();
   });
 
-  // Downloads GeoJSON
   document.getElementById('btn-geojson-map').addEventListener('click', ()=>{ downloadGeoJSONFromDashboard('map'); });
   document.getElementById('btn-geojson-filtered').addEventListener('click', ()=>{ downloadGeoJSONFromDashboard('filtered'); });
 }
@@ -916,6 +958,7 @@ function targetsFor(scope, cls, year, ucSub){
 ======================== */
 async function loadDashboard(){
   showLoading();
+  updateAttributeControlsVisibility(); 
   try {
     setTitles();
 
@@ -929,20 +972,27 @@ async function loadDashboard(){
     const results = await Promise.all(allTargets.map(f => safeFetch(basePath + f)));
     geojsonData = mergeCollections(results.filter(Boolean));
 
-    // menus dependem dos dados carregados
     rebuildTriMenu();
     updateTriButtonLabel();
-    populateAttributeMenus();
+    populateAttributeMenus(); // inclui Estados (simples + combinações)
 
     const feats = geojsonData.features || [];
     filteredData = feats.filter(f=>{
       const p = f.properties || {};
       const anoOK = (selectedYear==null) ? true : (String(p.ano)===String(selectedYear));
-
       const q = getQuarter(p);
       const triOK = (selectedQuarter == null) ? true : (q === selectedQuarter);
 
-      const estOK = selectedEstado     ? (String(p.estado||'') === String(selectedEstado)) : true;
+      const codes = parseUFs(p.estado);
+      let estOK = true;
+      if (selectedEstado){
+        if (selectedEstado.includes('/')){
+          estOK = arraysEqualAsSets(codes, parseUFs(selectedEstado)); // combinação exata
+        }else{
+          estOK = codes.includes(String(selectedEstado).toUpperCase()); // contém UF simples
+        }
+      }
+
       const catOK = selectedCategoria  ? (String(p.categoria||'') === String(selectedCategoria)) : true;
       const modOK = selectedModalidade ? (String(p.modalidade||'') === String(selectedModalidade)) : true;
 
@@ -977,14 +1027,20 @@ function wrapLabelToTwoLines(label, maxLineLen=28){
     }
   });
   if(lines.length > 2){ lines.length = 2; }
+
   const allWordsLen = words.join(' ').length;
   const joined = lines.join(' ');
-  if(joined.length < allWordsLen && lines.length===2){
-    if(lines[1].length > 3) lines[1].length = Math.max(0, lines[1].length-3), lines[1] += '...';
-    else lines[1] = lines[1] + '...';
+
+  if(joined.length < allWordsLen && lines.length === 2){
+    if(lines[1].length > 3){
+      lines[1] = lines[1].slice(0, Math.max(0, lines[1].length - 3)) + '...';
+    }else{
+      lines[1] = lines[1] + '...';
+    }
   }
   return lines;
 }
+
 let lastHoverIdx = null;
 let hoverMarker = null;
 
@@ -1026,7 +1082,7 @@ function highlightBarOnMap(idx){
     }
     const p = layer.feature?.properties || {};
     const clsTxt = p.class === 'ameaca' ? 'Ameaça' : p.class === 'pressao' ? 'Pressão' : 'Geral';
-    const tt = `${p.nome||'-'} (${p.estado||'-'})\n${clsTxt} — ${Number(p.celulas||0).toLocaleString('pt-BR')} células`;
+    const tt = `${p.nome||'-'} (${formatEstadoFull(p.estado)||'-'})\n${clsTxt} — ${Number(p.celulas||0).toLocaleString('pt-BR')} células`;
     layer.bindTooltip(tt, { sticky:true, direction:'top' }).openTooltip(center);
   }
   if (layer.bringToFront) layer.bringToFront();
@@ -1037,7 +1093,13 @@ function updateBarChart() {
   if (barChart) barChart.destroy();
 
   const rows = (filteredData || [])
-    .map(f => ({ name:f.properties?.nome||'-', state:f.properties?.estado||'-', cells:+f.properties?.celulas||0, key:mkKey(f.properties||{}), _f:f }))
+    .map(f => ({
+      name:f.properties?.nome||'-',
+      state: formatEstadoFull(f.properties?.estado||'-'),
+      cells:+f.properties?.celulas||0,
+      key:mkKey(f.properties||{}),
+      _f:f
+    }))
     .sort((a, b) => b.cells - a.cells)
     .slice(0, 10);
 
@@ -1053,10 +1115,11 @@ function updateBarChart() {
   const tSeq = (from, to, n) =>
     Array.from({ length: n }, (_, i) => from + (to - from) * (i / Math.max(1, n - 1)));
 
-  let colors;
-  if (currentClass === 'geral') colors = tSeq(0.9, 0.3, n).map(t => d3.interpolateGreys(t));
-  else if (currentClass === 'ameaca') colors = tSeq(0.9, 0.3, n).map(t => d3.interpolateOranges(t));
-  else colors = tSeq(0.9, 0.3, n).map(t => d3.interpolateReds(t));
+  let colors = tSeq(0.9, 0.3, n).map(t =>
+    currentClass === 'geral' ? d3.interpolateGreys(t)
+    : currentClass === 'ameaca' ? d3.interpolateOranges(t)
+    : d3.interpolateReds(t)
+  );
 
   colorMap = new Map();
   rows.forEach((r, i) => colorMap.set(r.key, colors[i]));
@@ -1095,11 +1158,8 @@ function updateBarChart() {
             label: (c) => ` ${c.parsed.y.toLocaleString('pt-BR')} células`
           }
         },
-        datalabels: {
-          anchor: 'end', align: 'end', offset: 6, clamp: true, clip: false,
-          formatter: v => v.toLocaleString('pt-BR'),
-          color: '#111', font: { weight: '700', size: 12 }
-        }
+        datalabels: { anchor:'end', align:'end', offset:6, clamp:true, clip:false,
+          formatter: v => v.toLocaleString('pt-BR'), color:'#111', font:{ weight:'700', size:12 } }
       },
       scales: {
         x: { beginAtZero:true, suggestedMax, ticks:{ callback:v=>Number(v).toLocaleString('pt-BR') }, grid:{drawBorder:false} },
@@ -1174,7 +1234,7 @@ function buildDonut(canvasId,legendId,labels,values,total, palette=null){
 }
 function updateDonutCharts(){
   ['donutChart1','donutChart2','donutChart3','donutChart4'].forEach(id=>{
-    if(chartsStore[id]){ chartsStore[id].destroy(); chartsStore[id]=null; }
+    if(chartsStore[id]) chartsStore[id].destroy(); chartsStore[id]=null;
   });
 
   const aggUso = makeAgg(filteredData,['uso','categoria']);
@@ -1182,6 +1242,7 @@ function updateDonutCharts(){
   const aggMod = makeAgg(filteredData,['modalidade']);
   const aggCat = makeAgg(filteredData,['categoria']);
 
+  const estadoLabelsFull = (aggEst.labels || []).map(formatEstadoFull);
   const mapAll = (arr)=> (arr||[]).map(mapAcronymLabel);
 
   const row1=document.getElementById('donuts-row-1');
@@ -1194,20 +1255,20 @@ function updateDonutCharts(){
   if(currentFilter==='ti'){
     row2.style.display='none'; c1.style.display='none'; c3.style.display='none'; c4.style.display='none';
     c2.style.display=''; c2.classList.remove('col-lg-6'); c2.classList.add('col-lg-12');
-    buildDonut('donutChart2','legend-donutChart2', mapAll(aggEst.labels), aggEst.values, aggEst.total, stateColor);
+    buildDonut('donutChart2','legend-donutChart2', estadoLabelsFull, aggEst.values, aggEst.total, stateColor);
   } else {
     row2.style.display=''; c1.style.display=''; c2.style.display=''; c3.style.display=''; c4.style.display='';
     c2.classList.remove('col-lg-12'); c2.classList.add('col-lg-6');
 
     buildDonut('donutChart1','legend-donutChart1', aggUso.labels, aggUso.values, aggUso.total, DONUT1_PALETTE);
-    buildDonut('donutChart2','legend-donutChart2', mapAll(aggEst.labels), aggEst.values, aggEst.total, stateColor);
+    buildDonut('donutChart2','legend-donutChart2', estadoLabelsFull, aggEst.values, aggEst.total, stateColor);
     buildDonut('donutChart3','legend-donutChart3', mapAll(aggMod.labels), aggMod.values, aggMod.total, modalityColor);
     buildDonut('donutChart4','legend-donutChart4', mapAll(aggCat.labels), aggCat.values, aggCat.total, categoryColor);
   }
 }
 
 /* ========================
-   Export (Excel/PDF) com DataTables
+   Export (Excel/PDF)
 ======================== */
 let exportTable = null;
 function updateExportTable() {
@@ -1222,7 +1283,7 @@ function updateExportTable() {
     tr.innerHTML = `
       <td>${p.nome || '-'}</td>
       <td>${p.class || '-'}</td>
-      <td>${p.estado || '-'}</td>
+      <td>${formatEstadoFull(p.estado) || '-'}</td>
       <td>${mapAcronymLabel(p.categoria || '-')}</td>
       <td>${mapAcronymLabel(p.modalidade || '-')}</td>
       <td>${p.uso || '-'}</td>
@@ -1266,7 +1327,17 @@ function updateStatistics(){
       const anoOK = String(p.ano) === String(prevYear);
       const q = getQuarter(p);
       const triOK = (selectedQuarter == null) ? true : (q === selectedQuarter);
-      const estOK = selectedEstado     ? String(p.estado||'')    === String(selectedEstado)     : true;
+
+      const codes = parseUFs(p.estado);
+      let estOK = true;
+      if (selectedEstado){
+        if (selectedEstado.includes('/')){
+          estOK = arraysEqualAsSets(codes, parseUFs(selectedEstado));
+        }else{
+          estOK = codes.includes(String(selectedEstado).toUpperCase());
+        }
+      }
+
       const catOK = selectedCategoria  ? String(p.categoria||'') === String(selectedCategoria)  : true;
       const modOK = selectedModalidade ? String(p.modalidade||'')=== String(selectedModalidade) : true;
       return anoOK && triOK && estOK && catOK && modOK;
@@ -1288,35 +1359,97 @@ function updateStatistics(){
 }
 
 /* ========================
-   Menus dinâmicos (Estado/Categoria/Modalidade)
+   Menus dinâmicos
 ======================== */
 function populateMenuFromSet(menuId, attrName, valuesSet, labelMapper = (v)=>v){
   const ul = document.getElementById(menuId);
   ul.innerHTML = '';
   ul.insertAdjacentHTML('beforeend', `<li><a class="dropdown-item" data-${attrName}="">Todos</a></li>`);
-  Array.from(valuesSet).sort().forEach(v=>{
+
+  const arr = Array.from(valuesSet);
+  arr.sort((a,b) => (labelMapper(a)||'').localeCompare(labelMapper(b)||'', 'pt-BR'));
+
+  arr.forEach(v=>{
     const label = labelMapper(v);
     const safeVal   = String(v).replace(/"/g,'&quot;');
     const safeLabel = String(label).replace(/"/g,'&quot;');
     ul.insertAdjacentHTML('beforeend', `<li><a class="dropdown-item" data-${attrName}="${safeVal}">${safeLabel}</a></li>`);
   });
 }
-function populateAttributeMenus(){
+
+// === Estado: simples + combinações ===
+function populateEstadoMenu(){
   const feats=(geojsonData?.features)||[];
-  const setEstado=new Set(), setCategoria=new Set(), setModalidade=new Set();
+  const singleUFs = new Set();       // "AM", "PA", ...
+  const comboValues = new Map();      // "AM/RO" -> "Amazonas / Rondônia"
+
   feats.forEach(f=>{
-    const p=f.properties||{};
-    if(p.estado) setEstado.add(p.estado);
-    if(p.categoria) setCategoria.add(p.categoria);
-    if(p.modalidade) setModalidade.add(p.modalidade);
+    const est = f?.properties?.estado;
+    if (!est) return;
+    const codes = parseUFs(est);
+    if (!codes.length) return;
+    if (codes.length === 1){
+      singleUFs.add(codes[0]);
+    } else {
+      const key = normalizeComboValue(codes.join('/')); // normalizado e ordenado
+      comboValues.set(key, formatEstadoFull(key));
+      // também adiciona os atômicos encontrados dentro das combos
+      codes.forEach(c=> singleUFs.add(c));
+    }
   });
-  populateMenuFromSet('menu-estado',   'estado',    setEstado);
-  populateMenuFromSet('menu-categoria','categoria', setCategoria, mapAcronymLabel);
+
+  const ul = document.getElementById('menu-estado');
+  ul.innerHTML = '';
+  ul.insertAdjacentHTML('beforeend', `<li><a class="dropdown-item" data-estado="">Todos</a></li>`);
+
+  // Estados simples
+  Array.from(singleUFs)
+    .sort((a,b)=> ufCodeToName(a).localeCompare(ufCodeToName(b),'pt-BR'))
+    .forEach(code=>{
+      ul.insertAdjacentHTML('beforeend', `<li><a class="dropdown-item" data-estado="${code}">${ufCodeToName(code)}</a></li>`);
+    });
+
+  // Divisor e combos, se houver
+  if (comboValues.size){
+    ul.insertAdjacentHTML('beforeend', `<li><hr class="dropdown-divider"></li>`);
+    const combosSorted = Array.from(comboValues.entries())
+      .sort((a,b)=> a[1].localeCompare(b[1],'pt-BR'));
+    combosSorted.forEach(([key,label])=>{
+      ul.insertAdjacentHTML('beforeend', `<li><a class="dropdown-item" data-estado="${key}">${label}</a></li>`);
+    });
+  }
+
+  // Ajusta o label do botão se algo selecionado ficou inválido
+  const allKeys = new Set([...singleUFs, ...comboValues.keys()]);
+  if (selectedEstado && !allKeys.has(selectedEstado)){
+    selectedEstado = null;
+    document.getElementById('btn-estado').textContent = 'Estado: Todos';
+  } else if (selectedEstado){
+    const label = selectedEstado.includes('/') ? formatEstadoFull(selectedEstado) : ufCodeToName(selectedEstado);
+    document.getElementById('btn-estado').textContent = `Estado: ${label}`;
+  }
+}
+
+function populateAttributeMenus(){
+  const feats = (geojsonData?.features) || [];
+  const setCategoria = new Set(), setModalidade = new Set();
+
+  feats.forEach(f=>{
+    const p = f.properties || {};
+    if (p.categoria)  setCategoria.add(p.categoria);
+    if (p.modalidade) setModalidade.add(p.modalidade);
+  });
+
+  populateEstadoMenu(); // << estados simples + combinações
+  populateMenuFromSet('menu-categoria','categoria', setCategoria,  mapAcronymLabel);
   populateMenuFromSet('menu-modalidade','modalidade', setModalidade, mapAcronymLabel);
 
-  if(selectedEstado && !setEstado.has(selectedEstado)){ selectedEstado=null; document.getElementById('btn-estado').textContent='Estado: Todos'; }
-  if(selectedCategoria && !setCategoria.has(selectedCategoria)){ selectedCategoria=null; document.getElementById('btn-categoria').textContent='Categoria: Todos'; }
-  if(selectedModalidade && !setModalidade.has(selectedModalidade)){ selectedModalidade=null; document.getElementById('btn-modalidade').textContent='Modalidade: Todos'; }
+  if (selectedCategoria && !setCategoria.has(selectedCategoria)){
+    selectedCategoria=null; document.getElementById('btn-categoria').textContent='Categoria: Todos';
+  }
+  if (selectedModalidade && !setModalidade.has(selectedModalidade)){
+    selectedModalidade=null; document.getElementById('btn-modalidade').textContent='Modalidade: Todos';
+  }
 }
 </script>
 </body>
