@@ -556,7 +556,18 @@
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+/* Wrapper horizontal para os anos */
+.filter-item.year-range {
+  display: flex;
+  gap: 5px;         /* espaço entre Ano e Ano final */
+  align-items: flex-end; /* alinha os selects pela base */
+}
 
+/* Garante que o botão fique alinhado pela base também */
+.filter-container > .filter-item button {
+  height: 48px;   /* mesma altura dos selects */
+  margin-top: 28px; /* compensa a altura do label */
+}
   </style>
 </head>
 <body>
@@ -588,16 +599,31 @@
           <option value="">Todos </option>
         </select>
       </div>
-      <div class="filter-item">
-        <label class="filter-label" for="startYear">Ano</label>
-        <select id="startYear">
-          <script>
-            for (let year = 1986; year <= new Date().getFullYear()-1; year++) {
-              document.write(`<option value="${year}">${year}</option>`);
-            }
-          </script>
-        </select>
-      </div>
+     <div class="filter-item year-range">
+  <div>
+    <label class="filter-label" for="startYear">Ano</label>
+    <select id="startYear">
+      <script>
+        for (let year = 1986; year <= new Date().getFullYear()-1; year++) {
+          document.write(`<option value="${year}">${year}</option>`);
+        }
+      </script>
+    </select>
+  </div>
+  <div>
+    <label class="filter-label" for="endYear">Ano final</label>
+    <select id="endYear">
+      <script>
+        for (let year = 1986; year <= new Date().getFullYear(); year++) {
+          document.write(`<option value="${year}">${year}</option>`);
+        }
+      </script>
+    </select>
+  </div>
+</div>
+
+
+      
       
       <div class="filter-item">
         <button id="applyYearFilter">
@@ -605,7 +631,7 @@
         </button>
       </div> 
     </div>
-
+</div>
     <!-- Gráficos lado a lado -->
     <div class="charts-section fade-in fade-in-2">
       <div class="chart-card" id="areaChartCard">
