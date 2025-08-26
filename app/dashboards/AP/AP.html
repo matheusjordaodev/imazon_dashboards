@@ -60,17 +60,6 @@
     .filter-btn.active{background:var(--primary-color);color:#fff;border-color:var(--primary-color)}
     .filter-btn i{font-size:14px}
 
-    .uc-subfilter{
-      display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border:1px solid #e9ecef;border-radius:999px;
-    }
-    .uc-subfilter .label{font-size:12px;font-weight:700;opacity:.8}
-    .btn-pill-group .btn{
-      --bs-btn-padding-y:.2rem; --bs-btn-padding-x:.6rem; --bs-btn-font-size:.75rem; border-radius:999px;
-      border:1px solid #d0d0d0; background:#fff; font-weight:700;
-    }
-    .btn-pill-group .btn.active{background:var(--primary-color);color:#fff;border-color:var(--primary-color)}
-    .uc-subfilter.disabled{opacity:.5; pointer-events:none}
-
     .time-filter .btn{ --bs-btn-padding-y:.25rem; --bs-btn-padding-x:.6rem; --bs-btn-font-size:.8rem; border-radius:999px; font-weight:700 }
     .dropdown-menu{max-height:260px; overflow:auto}
 
@@ -144,16 +133,6 @@
       <button id="btn-ti" class="filter-btn" data-filter="ti"><i class="fas fa-people-group"></i> Terras Indígenas</button>
       <button id="btn-uc" class="filter-btn" data-filter="uc"><i class="fas fa-tree"></i> Unidades de Conservação</button>
       <button id="btn-allap" class="filter-btn" data-filter="allap" title="TI + UC"><i class="fas fa-globe-americas"></i> Áreas de Proteção</button>
-
-      <!-- Subfiltro UC -->
-      <div id="uc-subfilter" class="uc-subfilter disabled" title="Ative o filtro UC para usar">
-        <span class="label">UC:</span>
-        <div class="btn-pill-group btn-group" role="group" aria-label="UC scope">
-          <button type="button" class="btn btn-outline-secondary active" data-uc="all">Todas</button>
-          <button type="button" class="btn btn-outline-secondary" data-uc="uce">Estaduais</button>
-          <button type="button" class="btn btn-outline-secondary" data-uc="ucf">Federais</button>
-        </div>
-      </div>
 
       <!-- Tempo + Atributos -->
       <div class="time-filter btn-group">
@@ -365,11 +344,6 @@ function formatEstadoFull(value){
   if (!codes.length) return value || '-';
   return codes.map(ufCodeToName).join(' / ');
 }
-// normaliza valor para combo (ordem irrelevante na comparação)
-function normalizeComboValue(value){
-  const codes = parseUFs(value).slice().sort();
-  return codes.join('/');
-}
 function arraysEqualAsSets(a,b){
   if (a.length !== b.length) return false;
   const aa = a.slice().sort(); const bb = b.slice().sort();
@@ -398,8 +372,8 @@ const htmlLegendPlugin = {
     el.classList.add('legend-grid');
 
     const labels = chart.data.labels || [];
-    const ds = chart.data.datasets?.[0] || { data: [], backgroundColor: [] };
-    const total = (ds.data || []).reduce((a, b) => a + Number(b || 0), 0);
+    theDs = chart.data.datasets?.[0] || { data: [], backgroundColor: [] };
+    const total = (theDs.data || []).reduce((a, b) => a + Number(b || 0), 0);
 
     labels.forEach((label, i) => {
       const btn = document.createElement('button');
@@ -411,7 +385,7 @@ const htmlLegendPlugin = {
 
       const box = document.createElement('span');
       box.className = 'legend-box';
-      box.style.background = ds.backgroundColor?.[i] || '#999';
+      box.style.background = theDs.backgroundColor?.[i] || '#999';
 
       const name = document.createElement('span');
       name.className = 'legend-label';
@@ -421,7 +395,7 @@ const htmlLegendPlugin = {
       left.appendChild(box);
       left.appendChild(name);
 
-      const v = Number(ds.data?.[i] || 0);
+      const v = Number(theDs.data?.[i] || 0);
       const pct = total ? Math.round((v / total) * 100) : 0;
 
       const meta = document.createElement('span');
@@ -461,13 +435,14 @@ const stateColor    = d3.piecewise(d3.interpolateHcl, STATE_PALETTE.slice().reve
 ======================== */
 let map, geojsonLayer=null, geojsonData=null, filteredData=[], dataTable=null, barChart=null;
 const chartsStore={};
+const classColors={ameaca:'#FF6D00', pressao:'#c62828', geral:'#008055'};
 
 let currentClass = 'ameaca';
 let currentFilter = null;     // null | 'ti' | 'uc' | 'allap'
-let ucSubtype = 'all';        // 'all' | 'uce' | 'ucf'
+let ucSubtype = 'all';        // manter 'all' (UCE+UCF)
 let selectedYear = 2023;      // null = Todos
 let selectedQuarter = null;   // null | 1..4
-let selectedEstado = null;    // "AM" (simples) ou "AM/RO" (combo normalizado)
+let selectedEstado = null;    // "AM" ou combo "AM/RO"
 let selectedCategoria = null, selectedModalidade = null;
 
 let featureLayerIndex = new Map();
@@ -633,12 +608,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
   initializeMap();
   setupButtons();
   populateYears();
-  updateAttributeControlsVisibility();
   document.getElementById('btn-ano').textContent = `Ano: ${selectedYear}`;
   document.getElementById('btn-tri').textContent = `Trimestre: Todos`;
   document.getElementById('btn-estado').textContent = `Estado: Todos`;
   document.getElementById('btn-categoria').textContent = `Categoria: Todos`;
   document.getElementById('btn-modalidade').textContent = `Modalidade: Todos`;
+  updateAttributeControlsVisibility(); // garante estado inicial
   loadDashboard();
 });
 
@@ -686,9 +661,8 @@ function setTitles(){
     mapTitleEl.textContent=`Mapa das Terras Indígenas ${pressionadasDe}`;
     rankTitleEl.textContent=`Ranking das 10 Terras Indígenas ${pressionadasDe}`;
   }else if(scope==='uc'){
-    const ucLabel = ucSubtype==='uce'?'Unidades de Conservação Estaduais':(ucSubtype==='ucf'?'Unidades de Conservação Federais':'Unidades de Conservação');
-    mapTitleEl.textContent=`Mapa das ${ucLabel} ${pressionadasDe}`;
-    rankTitleEl.textContent=`Ranking das 10 ${ucLabel} ${pressionadasDe}`;
+    mapTitleEl.textContent=`Mapa das Unidades de Conservação ${pressionadasDe}`;
+    rankTitleEl.textContent=`Ranking das 10 Unidades de Conservação ${pressionadasDe}`;
   }else if(scope==='allap'){
     mapTitleEl.textContent=`Mapa de Todas as Áreas Protegidas ${pressionadasDe}`;
     rankTitleEl.textContent=`Ranking das 10 Áreas Protegidas ${pressionadasDe}`;
@@ -697,20 +671,22 @@ function setTitles(){
     rankTitleEl.textContent=`Ranking das 10 Áreas Protegidas ${pressionadasDe}`;
   }
 }
+
+/* ========================
+   Mostra/oculta Categoria/Modalidade em TI
+======================== */
 function updateAttributeControlsVisibility(){
   const catBtn = document.getElementById('btn-categoria');
   const modBtn = document.getElementById('btn-modalidade');
   if (!catBtn || !modBtn) return;
 
-  const catGroup = catBtn.parentElement;   // <div class="btn-group"> que envolve o botão+menu
+  const catGroup = catBtn.parentElement;
   const modGroup = modBtn.parentElement;
 
-  const show = currentFilter !== 'ti';     // em TI ocultar
-
+  const show = currentFilter !== 'ti'; // em TI, esconder
   if (catGroup) catGroup.style.display = show ? '' : 'none';
   if (modGroup) modGroup.style.display = show ? '' : 'none';
 
-  // Se esconder, limpa os filtros e reseta os rótulos
   if (!show){
     selectedCategoria = null;
     selectedModalidade = null;
@@ -740,7 +716,7 @@ function buildPopupHTML(p){
       <div><b>Categoria:</b> ${mapAcronymLabel(p.categoria ?? '-')}</div>
       <div><b>Modalidade:</b> ${mapAcronymLabel(p.modalidade||'-')}</div>
       <div><b>Uso:</b> ${p.uso||'-'}</div>
-      <div><b>Células:</b> ${Number(p.celulas||0).toLocaleString('pt-BR')}</div>
+      <div><b>Células em Desmatamento:</b> ${Number(p.celulas||0).toLocaleString('pt-BR')}</div>
       <div><b>Ano:</b> ${p.ano||'-'} &nbsp; <b>Trimestre:</b> ${periodLabel(p)}</div>
     </div>`;
 }
@@ -793,7 +769,6 @@ function setupButtons(){
   const btnTI = document.getElementById('btn-ti');
   const btnUC = document.getElementById('btn-uc');
   const btnALL = document.getElementById('btn-allap');
-  const ucBox = document.getElementById('uc-subfilter');
 
   function setActiveFilterButton(){
     [btnTI, btnUC, btnALL].forEach(b=>b.classList.remove('active'));
@@ -802,17 +777,23 @@ function setupButtons(){
     else if(currentFilter==='allap') btnALL.classList.add('active');
   }
 
-  btnTI.addEventListener('click',()=>{ currentFilter=(currentFilter==='ti')?null:'ti'; setActiveFilterButton(); ucBox.classList.toggle('disabled', currentFilter!=='uc');updateAttributeControlsVisibility();  loadDashboard(); });
-  btnUC.addEventListener('click',()=>{ currentFilter=(currentFilter==='uc')?null:'uc'; setActiveFilterButton(); ucBox.classList.toggle('disabled', currentFilter!=='uc');updateAttributeControlsVisibility();  loadDashboard(); });
-  btnALL.addEventListener('click',()=>{ currentFilter=(currentFilter==='allap')?null:'allap'; setActiveFilterButton(); ucBox.classList.add('disabled');updateAttributeControlsVisibility();  loadDashboard(); });
-
-  document.querySelectorAll('#uc-subfilter .btn').forEach(b=>{
-    b.addEventListener('click',()=>{
-      document.querySelectorAll('#uc-subfilter .btn').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active');
-      ucSubtype = b.getAttribute('data-uc');
-      loadDashboard();
-    });
+  btnTI.addEventListener('click',()=>{
+    currentFilter=(currentFilter==='ti')?null:'ti';
+    setActiveFilterButton();
+    updateAttributeControlsVisibility();
+    loadDashboard();
+  });
+  btnUC.addEventListener('click',()=>{
+    currentFilter=(currentFilter==='uc')?null:'uc';
+    setActiveFilterButton();
+    updateAttributeControlsVisibility();
+    loadDashboard();
+  });
+  btnALL.addEventListener('click',()=>{
+    currentFilter=(currentFilter==='allap')?null:'allap';
+    setActiveFilterButton();
+    updateAttributeControlsVisibility();
+    loadDashboard();
   });
 
   // Ano
@@ -928,14 +909,12 @@ function targetsFor(scope, cls, year, ucSub){
     return t;
   }
   if(scope==='uc'){
-    const wantUCE = (ucSub==='all' || ucSub==='uce');
-    const wantUCF = (ucSub==='all' || ucSub==='ucf');
+    // Como removemos o subfiltro, sempre busca UCE + UCF
     if(cls==='geral'){
-      if(wantUCE){ addUC('ameaca','uce'); addUC('pressao','uce'); }
-      if(wantUCF){ addUC('ameaca','ucf'); addUC('pressao','ucf'); }
+      addUC('ameaca','uce'); addUC('pressao','uce');
+      addUC('ameaca','ucf'); addUC('pressao','ucf');
     }else{
-      if(wantUCE){ addUC(cls,'uce'); }
-      if(wantUCF){ addUC(cls,'ucf'); }
+      addUC(cls,'uce'); addUC(cls,'ucf');
     }
     return t;
   }
@@ -958,7 +937,7 @@ function targetsFor(scope, cls, year, ucSub){
 ======================== */
 async function loadDashboard(){
   showLoading();
-  updateAttributeControlsVisibility(); 
+  updateAttributeControlsVisibility();
   try {
     setTitles();
 
@@ -1013,7 +992,7 @@ async function loadDashboard(){
 }
 
 /* ========================
-   Ranking (barra) — horizontal
+   Ranking (barra)
 ======================== */
 function wrapLabelToTwoLines(label, maxLineLen=28){
   const words = String(label).split(' ');
@@ -1223,8 +1202,8 @@ function buildDonut(canvasId,legendId,labels,values,total, palette=null){
       datalabels:{display:(ctx)=>{const d=ctx.dataset.data||[];const sum=d.reduce((a,b)=>a+Number(b||0),0);const v=Number(d[ctx.dataIndex]||0);const pct=sum?(v/sum)*100:0;return pct>=3;},
         formatter:(v)=>Number(v||0).toFixed(0),
         font:(ctx)=>{const w=ctx.chart.width||300;const s=Math.max(12,Math.min(16,Math.round(w*.02)));return {weight:'bold',size:s};},
-        color:(ctx)=>{const bgc=ctx.dataset.backgroundColor?.[ctx.dataIndex]||'#666';return contrast(bgc);},
-        textStrokeColor:(ctx)=>{const bgc=ctx.dataset.backgroundColor?.[ctx.dataIndex]||'#666';return contrast(bgc)==='#fff'?'rgba(0,0,0,.7)':'rgba(255,255,255,.85)';},
+        color:'#fff',
+        textStrokeColor: '#000',
         textStrokeWidth:3,anchor:'center',align:'center',offset:0,clip:false,padding:2},
       centerText:{text:`${(total||0).toLocaleString('pt-BR')} células`,color:'#28a745',fontSize:22,fontFamily:'Montserrat',fontWeight:'700'},
       htmlLegend:{containerID:legendId}
@@ -1391,9 +1370,8 @@ function populateEstadoMenu(){
     if (codes.length === 1){
       singleUFs.add(codes[0]);
     } else {
-      const key = normalizeComboValue(codes.join('/')); // normalizado e ordenado
+      const key = codes.slice().sort().join('/');
       comboValues.set(key, formatEstadoFull(key));
-      // também adiciona os atômicos encontrados dentro das combos
       codes.forEach(c=> singleUFs.add(c));
     }
   });
@@ -1402,14 +1380,12 @@ function populateEstadoMenu(){
   ul.innerHTML = '';
   ul.insertAdjacentHTML('beforeend', `<li><a class="dropdown-item" data-estado="">Todos</a></li>`);
 
-  // Estados simples
   Array.from(singleUFs)
     .sort((a,b)=> ufCodeToName(a).localeCompare(ufCodeToName(b),'pt-BR'))
     .forEach(code=>{
       ul.insertAdjacentHTML('beforeend', `<li><a class="dropdown-item" data-estado="${code}">${ufCodeToName(code)}</a></li>`);
     });
 
-  // Divisor e combos, se houver
   if (comboValues.size){
     ul.insertAdjacentHTML('beforeend', `<li><hr class="dropdown-divider"></li>`);
     const combosSorted = Array.from(comboValues.entries())
@@ -1419,7 +1395,6 @@ function populateEstadoMenu(){
     });
   }
 
-  // Ajusta o label do botão se algo selecionado ficou inválido
   const allKeys = new Set([...singleUFs, ...comboValues.keys()]);
   if (selectedEstado && !allKeys.has(selectedEstado)){
     selectedEstado = null;
@@ -1440,7 +1415,7 @@ function populateAttributeMenus(){
     if (p.modalidade) setModalidade.add(p.modalidade);
   });
 
-  populateEstadoMenu(); // << estados simples + combinações
+  populateEstadoMenu();
   populateMenuFromSet('menu-categoria','categoria', setCategoria,  mapAcronymLabel);
   populateMenuFromSet('menu-modalidade','modalidade', setModalidade, mapAcronymLabel);
 
