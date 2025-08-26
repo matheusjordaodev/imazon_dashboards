@@ -48,6 +48,16 @@ function toTitleCasePt(str = '') {
   }).join(' ');
 }
 
+function normalizeStr(s = '') {
+  return String(s)
+    .normalize('NFD')                    // separa acentos
+    .replace(/\p{Diacritic}/gu, '')      // remove acentos
+    .toLowerCase()
+    .trim();
+}
+function eqStr(a, b) {
+  return normalizeStr(a) === normalizeStr(b);
+}
 // ---- Helpers UI ----
 
 function showLoader(msg = 'Carregando dados...') {
@@ -409,43 +419,42 @@ function formatCompactNumber(value) {
 }
 
 // ---- Charts ----
+// --- SUBSTITUA loadChartByState COMPLETA por esta versão ---
 async function loadChartByState(state = '', municipio = '', startYear = 1986, endYear = 2024) {
   try {
     const response = await fetch('/area-data', { cache: 'no-store' });
-    const data = await response.json();
+    const raw = await response.json();
 
-    // Filtra por município/estado/anos
-    let filteredData;
-    if (municipio) {
-      filteredData = data.filter(item =>
-        item.name === municipio &&
-        item.year >= startYear && item.year <= endYear
-      );
-    } else if (state) {
-      filteredData = data.filter(item =>
-        item.state === state &&
-        item.year >= startYear && item.year <= endYear
-      );
-    } else {
-      filteredData = data.filter(item =>
-        item.year >= startYear && item.year <= endYear
-      );
-    }
+    // Converte campos críticos e normaliza o que vamos comparar
+    const data = raw.map(d => ({
+      state: d.state,
+      name: d.name,
+      year: Number(d.year),                 // <- garante número
+      area: Number(d.area) || 0
+    })).filter(d => Number.isFinite(d.year));
 
-    // Labels contínuos do intervalo (mesmo se algum ano não tiver dado)
+    // Filtro por intervalo de anos
+    const byYears = data.filter(d => d.year >= startYear && d.year <= endYear);
+
+    // Gera labels contínuos (numéricos)
     const labels = [];
     for (let y = startYear; y <= endYear; y++) labels.push(y);
 
-    let datasets;
+    let datasets = [];
 
     if (municipio) {
-      const municipioData = filteredData.filter(item => item.name === municipio);
+      // Casamento por município com normalização (ignora acento/caso)
+      const muniRows = byYears.filter(d => eqStr(d.name, municipio));
+
+      // Agrega por ano (soma, caso existam múltiplas linhas por ano)
+      const areaByYear = new Map();
+      for (const r of muniRows) {
+        areaByYear.set(r.year, (areaByYear.get(r.year) || 0) + r.area);
+      }
+
       datasets = [{
-        label: municipio,
-        data: labels.map(year => {
-          const entry = municipioData.find(item => item.year === year);
-          return entry ? entry.area : 0;
-        }),
+        label: toTitleCasePt(municipio),
+        data: labels.map(y => areaByYear.get(y) || 0),
         backgroundColor: chartColors[0],
         borderColor: chartBorders[0],
         borderWidth: 2,
@@ -454,14 +463,19 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
         pointRadius: 4,
         pointHoverRadius: 6
       }];
+
     } else if (state) {
-      const stateData = filteredData; // já filtrado por estado
+      // Casamento por estado com normalização
+      const stateRows = byYears.filter(d => eqStr(d.state, state));
+
+      const areaByYear = new Map();
+      for (const r of stateRows) {
+        areaByYear.set(r.year, (areaByYear.get(r.year) || 0) + r.area);
+      }
+
       datasets = [{
         label: toTitleCasePt(state),
-        data: labels.map(year => {
-          const entry = stateData.find(item => item.year === year);
-          return entry ? entry.area : 0;
-        }),
+        data: labels.map(y => areaByYear.get(y) || 0),
         backgroundColor: chartColors[0],
         borderColor: chartBorders[0],
         borderWidth: 2,
@@ -470,33 +484,35 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
         pointRadius: 4,
         pointHoverRadius: 6
       }];
+
     } else {
-      // Lista única de estados + ordenação alfabética pt-BR
-const states = [...new Set(filteredData.map(item => item.state))]
-  .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+      // Sem filtro: um dataset por estado (ordenado A→Z)
+      // Lista única de estados (usando o valor original) e ordena com locale pt-BR
+      const uniqueStates = Array.from(new Set(byYears.map(d => d.state)))
+        .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
 
-datasets = states.map((stateLabel, index) => {
-  const stateData = filteredData.filter(item => item.state === stateLabel);
-  return {
-    label: toTitleCasePt(stateLabel),   // já formata bonitinho
-    data: labels.map(year => {
-      const yearData = stateData.filter(item => item.year === year);
-      const totalArea = yearData.reduce((sum, item) => sum + item.area, 0);
-      return totalArea;
-    }),
-    backgroundColor: chartColors[index % chartColors.length],
-    borderColor: chartBorders[index % chartBorders.length],
-    borderWidth: 2,
-    fill: false,
-    tension: 0.1,
-    pointRadius: 3,
-    pointHoverRadius: 5
-  };
-});
+      datasets = uniqueStates.map((st, idx) => {
+        const rows = byYears.filter(d => eqStr(d.state, st));
 
+        const areaByYear = new Map();
+        for (const r of rows) {
+          areaByYear.set(r.year, (areaByYear.get(r.year) || 0) + r.area);
+        }
+
+        return {
+          label: toTitleCasePt(st),
+          data: labels.map(y => areaByYear.get(y) || 0),
+          backgroundColor: chartColors[idx % chartColors.length],
+          borderColor: chartBorders[idx % chartBorders.length],
+          borderWidth: 2,
+          fill: false,
+          tension: 0.1,
+          pointRadius: 3,
+          pointHoverRadius: 5
+        };
+      });
     }
 
-    // Opções do gráfico (x categórico)
     const chartOptions = {
       responsive: true,
       maintainAspectRatio: false,
@@ -527,9 +543,8 @@ datasets = states.map((stateLabel, index) => {
           bodyFont: { family: "'Montserrat', sans-serif", size: 13 },
           callbacks: {
             label: function (ctx) {
-              let label = ctx.dataset.label || '';
-              if (label) label += ': ';
-              if (ctx.parsed.y !== null) label += formatNumber(ctx.parsed.y) + ' ha';
+              let label = ctx.dataset.label ? ctx.dataset.label + ': ' : '';
+              if (ctx.parsed.y != null) label += formatNumber(ctx.parsed.y) + ' ha';
               return label;
             }
           }
@@ -575,9 +590,9 @@ datasets = states.map((stateLabel, index) => {
     const modalTitle = document.querySelector('#modalAreaChart .modal-title');
     if (modalTitle) {
       modalTitle.textContent = municipio
-        ? `Série Temporal (${startYear}-${endYear}) - ${municipio}`
+        ? `Série Temporal (${startYear}-${endYear}) - ${toTitleCasePt(municipio)}`
         : state
-          ? `Série Temporal (${startYear}-${endYear}) - ${state}`
+          ? `Série Temporal (${startYear}-${endYear}) - ${toTitleCasePt(state)}`
           : `Série Temporal por Estado (${startYear}-${endYear})`;
     }
 
