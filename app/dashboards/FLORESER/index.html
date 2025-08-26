@@ -614,7 +614,7 @@
     <label class="filter-label" for="endYear">Ano final</label>
     <select id="endYear">
       <script>
-        for (let year = 1986; year <= new Date().getFullYear(); year++) {
+        for (let year = 1986; year <= new Date().getFullYear()-1; year++) {
           document.write(`<option value="${year}">${year}</option>`);
         }
       </script>

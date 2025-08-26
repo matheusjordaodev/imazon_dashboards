@@ -126,8 +126,8 @@
 <!-- Loader -->
 <div id="loader-overlay">
   <div class="loader-content">
-    <div class="spinner-border" role="status"><span class="visually-hidden">Carregando...</span></div>
-    <div class="loader-text">Carregando dados...</div>
+    <div class="spinner-border" role="status"><span class="visually-hidden">Carregando Dados...</span></div>
+    <div class="loader-text">Carregando Dados...</div>
   </div>
 </div>
 
@@ -344,7 +344,7 @@ function getDegradacaoColorScale(maxVal){
 const estadoNomes={AC:"Acre",AM:"Amazonas",AP:"Amapá",MA:"Maranhão",MT:"Mato Grosso",PA:"Pará",RO:"Rondônia",RR:"Roraima",TO:"Tocantins"};
 const amazoniaLegalStates=['AC','AP','AM','MA','MT','PA','RO','RR','TO'];
 
-function showLoader(msg="Carregando dados..."){ const l=document.getElementById('loader-overlay'); if(!l) return; const t=l.querySelector('.loader-text'); if(t) t.textContent=msg; l.style.display='flex'; }
+function showLoader(msg="Carregando Dados..."){ const l=document.getElementById('loader-overlay'); if(!l) return; const t=l.querySelector('.loader-text'); if(t) t.textContent=msg; l.style.display='flex'; }
 function hideLoader(){ const l=document.getElementById('loader-overlay'); if(l) l.style.display='none'; }
 
 function softWrap(s){
@@ -853,7 +853,7 @@ window.updateYearlyChart = updateYearlyChart;
   }
 
  async function updateDashboard(){
-  showLoader("Atualizando dados...");
+  showLoader("Carregando Dados...");
   try{
     const { csvData, geojsonData } = await loadData();
     if (!csvData.length || !geojsonData) { hideLoader(); return; }
