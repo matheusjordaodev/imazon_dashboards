@@ -32,10 +32,30 @@ const chartBorders = [
   'rgba(156, 39, 176, 1)'
 ];
 
+// ---- Title Case pt-BR (mantém preposições minúsculas exceto 1ª palavra) ----
+function toTitleCasePt(str = '') {
+  if (!str) return '';
+  const small = new Set([
+    'da','de','do','das','dos','e','di','du','d\'','d’','a','o','as','os'
+  ]);
+  // normaliza: "SÃO JOÃO DA BARRA" -> ["são","joão","da","barra"]
+  const words = str.toLowerCase().split(/\s+/);
+  return words.map((w, i) => {
+    // mantém “d’água” com D’ minúsculo e próxima maiúscula
+    if (small.has(w) && i !== 0) return w;
+    // primeira letra maiúscula (com acento funciona ok)
+    return w.charAt(0).toUpperCase() + w.slice(1);
+  }).join(' ');
+}
+
 // ---- Helpers UI ----
-function showLoader() {
+
+function showLoader(msg = 'Carregando dados...') {
   const el = document.getElementById('loader');
-  if (el) el.style.display = 'flex';
+  if (!el) return;
+  const t = el.querySelector('.loader-text');
+  if (t) t.textContent = msg;
+  el.style.display = 'flex';
 }
 
 function hideLoader() {
@@ -164,13 +184,14 @@ async function loadMap() {
 
       if (!layer.tooltip) {
         const props = e.target.feature.properties;
-        layer.tooltip = L.tooltip({
-          permanent: false,
-          direction: 'top',
-          className: 'custom-tooltip'
-        })
-          .setContent(`<strong>${props.NM_MUN}</strong><br>${props.NM_UF}`)
-          .setLatLng(e.latlng);
+layer.tooltip = L.tooltip({
+  permanent: false,
+  direction: 'top',
+  className: 'custom-tooltip'
+})
+  .setContent(`<strong>${toTitleCasePt(props.NM_MUN)}</strong><br>${toTitleCasePt(props.NM_UF)}`)
+  .setLatLng(e.latlng);
+
         layer.tooltip.addTo(map);
       }
     }
@@ -235,29 +256,45 @@ async function loadMap() {
     hideLoader();
   }
 }
-
-// ---- Filtros Estado/Município ----
 async function loadStateFilter() {
   try {
     showLoader();
     const response = await fetch('/lista-estados', { cache: 'no-store' });
     if (!response.ok) throw new Error('Erro na requisição');
-    const states = await response.json();
+    let states = await response.json();
+
+    // Únicos + ordenação A→Z (pt-BR)
+    states = Array.from(new Set(states))
+      .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
 
     const stateFilter = document.getElementById('stateFilter');
-    stateFilter.innerHTML = `<option value="">Todos os Estados</option>`;
+    stateFilter.innerHTML = '';
+
+    // Opções padrão
+    const optAll = document.createElement('option');
+    optAll.value = '';
+    optAll.textContent = 'Todos os Estados';
+    stateFilter.appendChild(optAll);
+
+    // Amazônia Legal
+    const optAL = document.createElement('option');
+    optAL.value = '__AMAZONIA_LEGAL__';
+    optAL.textContent = 'Amazônia Legal';
+    stateFilter.appendChild(optAL);
+
+    // Demais estados (ordenados)
     states.forEach(state => {
       const option = document.createElement('option');
-      option.value = state;
-      option.textContent = state;
+      option.value = state;                      // valor bruto para casar com backend
+      option.textContent = toTitleCasePt(state);
       stateFilter.appendChild(option);
     });
   } catch (error) {
     console.error('Erro ao carregar os estados:', error);
-    // fallback para não travar a página
     const stateFilter = document.getElementById('stateFilter');
     if (stateFilter) {
-      stateFilter.innerHTML = `<option value="">Todos os Estados</option>`;
+      stateFilter.innerHTML = `<option value="">Todos os Estados</option>
+                               <option value="__AMAZONIA_LEGAL__">Amazônia Legal</option>`;
     }
     showWarningModal(
       'Não foi possível carregar os Estados',
@@ -273,13 +310,18 @@ async function loadMunicipioFilter(state) {
     showLoader();
     const response = await fetch(`/lista-municipios/${encodeURIComponent(state)}`, { cache: 'no-store' });
     if (!response.ok) throw new Error('Erro na requisição');
-    const municipios = await response.json();
+    let municipios = await response.json();
+
+    // Ordena A→Z respeitando pt-BR
+    municipios = Array.from(new Set(municipios))
+      .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+
     const municipioFilter = document.getElementById('municipioFilter');
     municipioFilter.innerHTML = '<option value="">Todos os Municípios</option>';
     municipios.forEach(municipio => {
       const option = document.createElement('option');
-      option.value = municipio;
-      option.textContent = municipio;
+      option.value = municipio;                         // valor “bruto”
+      option.textContent = toTitleCasePt(municipio);    // exibição amigável
       municipioFilter.appendChild(option);
     });
   } catch (error) {
@@ -296,8 +338,8 @@ async function loadMunicipioFilter(state) {
 // ---- Apply Year Filter (com guard + clamp + modal) ----
 let applyYearFilterPending = false;     // novo: fila uma execução se reentrar
 async function applyYearFilter() {
-  if (isApplyingYearFilter) {            // evita reentrância
-    applyYearFilterPending = true;       // agenda uma única execução após terminar
+  if (isApplyingYearFilter) {
+    applyYearFilterPending = true;
     return;
   }
   isApplyingYearFilter = true;
@@ -305,47 +347,29 @@ async function applyYearFilter() {
   try {
     showLoader();
 
-    const state     = document.getElementById('stateFilter')?.value || '';
+    let state     = document.getElementById('stateFilter')?.value || '';
     const municipio = document.getElementById('municipioFilter')?.value || '';
+
+    // Normaliza Amazônia Legal como "sem estado específico"
+    if (state === '__AMAZONIA_LEGAL__') state = '';
 
     let { startYear, endYear } = getYearFilters();
     const { minYear, maxYear } = await getDataYearBounds();
 
-    // Se o usuário não definiu ano final, use o último do CSV
-    if (endYear === null) {
-      endYear = maxYear;
-    }
+    if (endYear === null) endYear = maxYear;
 
-    // Clamp + coleta de mensagens para modal
     const msgs = [];
     let adjusted = false;
-
-    if (endYear > maxYear) {
-      msgs.push(`Ano final (${endYear}) ajustado para <strong>${maxYear}</strong>.`);
-      endYear = maxYear; adjusted = true;
-    }
-    if (startYear > maxYear) {
-      msgs.push(`Ano inicial (${startYear}) sem dados; ajustado para <strong>${maxYear}</strong>.`);
-      startYear = maxYear; adjusted = true;
-    }
-    if (startYear < minYear) {
-      msgs.push(`Ano inicial (${startYear}) ajustado para <strong>${minYear}</strong>.`);
-      startYear = minYear; adjusted = true;
-    }
-    if (startYear > endYear) {
-      msgs.push(`Intervalo inválido (${startYear}-${endYear}); ajustado para <strong>${endYear}</strong>.`);
-      startYear = endYear; adjusted = true;
-    }
+    if (endYear > maxYear) { msgs.push(`Ano final (${endYear}) ajustado para <strong>${maxYear}</strong>.`); endYear = maxYear; adjusted = true; }
+    if (startYear > maxYear) { msgs.push(`Ano inicial (${startYear}) sem dados; ajustado para <strong>${maxYear}</strong>.`); startYear = maxYear; adjusted = true; }
+    if (startYear < minYear) { msgs.push(`Ano inicial (${startYear}) ajustado para <strong>${minYear}</strong>.`); startYear = minYear; adjusted = true; }
+    if (startYear > endYear) { msgs.push(`Intervalo inválido (${startYear}-${endYear}); ajustado para <strong>${endYear}</strong>.`); startYear = endYear; adjusted = true; }
 
     if (adjusted) {
-      showWarningModal(
-        'Ajuste de período',
-        `Os anos escolhidos foram ajustados aos limites do dataset:<br>${msgs.join('<br>')}`
-      );
-      // Importante: NÃO escrever nos inputs aqui para não disparar eventos e reentrar.
+      showWarningModal('Ajuste de período',
+        `Os anos escolhidos foram ajustados aos limites do dataset:<br>${msgs.join('<br>')}`);
     }
 
-    // Carregamento dos gráficos
     if (municipio) {
       await loadChartByState(state, municipio, startYear, endYear);
     } else if (state) {
@@ -363,10 +387,11 @@ async function applyYearFilter() {
     isApplyingYearFilter = false;
     if (applyYearFilterPending) {
       applyYearFilterPending = false;
-      applyYearFilter(); // roda uma única vez após liberar a flag
+      applyYearFilter();
     }
   }
 }
+
 
 // ---- Format helpers ----
 function formatNumber(value) {
@@ -432,7 +457,7 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
     } else if (state) {
       const stateData = filteredData; // já filtrado por estado
       datasets = [{
-        label: state,
+        label: toTitleCasePt(state),
         data: labels.map(year => {
           const entry = stateData.find(item => item.year === year);
           return entry ? entry.area : 0;
@@ -446,25 +471,29 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
         pointHoverRadius: 6
       }];
     } else {
-      const states = [...new Set(filteredData.map(item => item.state))];
-      datasets = states.map((stateLabel, index) => {
-        const stateData = filteredData.filter(item => item.state === stateLabel);
-        return {
-          label: stateLabel,
-          data: labels.map(year => {
-            const yearData = stateData.filter(item => item.year === year);
-            const totalArea = yearData.reduce((sum, item) => sum + item.area, 0);
-            return totalArea;
-          }),
-          backgroundColor: chartColors[index % chartColors.length],
-          borderColor: chartBorders[index % chartBorders.length],
-          borderWidth: 2,
-          fill: false,
-          tension: 0.1,
-          pointRadius: 3,
-          pointHoverRadius: 5
-        };
-      });
+      // Lista única de estados + ordenação alfabética pt-BR
+const states = [...new Set(filteredData.map(item => item.state))]
+  .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+
+datasets = states.map((stateLabel, index) => {
+  const stateData = filteredData.filter(item => item.state === stateLabel);
+  return {
+    label: toTitleCasePt(stateLabel),   // já formata bonitinho
+    data: labels.map(year => {
+      const yearData = stateData.filter(item => item.year === year);
+      const totalArea = yearData.reduce((sum, item) => sum + item.area, 0);
+      return totalArea;
+    }),
+    backgroundColor: chartColors[index % chartColors.length],
+    borderColor: chartBorders[index % chartBorders.length],
+    borderWidth: 2,
+    fill: false,
+    tension: 0.1,
+    pointRadius: 3,
+    pointHoverRadius: 5
+  };
+});
+
     }
 
     // Opções do gráfico (x categórico)
@@ -559,7 +588,7 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
   }
 }
 
-async function loadMunicipioChartByMunicipio(state = '', startYear = 1986, endYear = 2024) {
+async function loadMunicipioChartByMunicipio  (state = '', startYear = 1986, endYear = 2024) {
   try {
     const response = await fetch(`/municipios-area-data?startYear=${startYear}&endYear=${endYear}`, { cache: 'no-store' });
     const data = await response.json();
@@ -673,16 +702,26 @@ async function loadMunicipioChartByMunicipio(state = '', startYear = 1986, endYe
 // ---- Eventos ----
 document.getElementById('stateFilter').addEventListener('change', async function () {
   const state = this.value;
-  if (state) {
-    await loadMunicipioFilter(state);
-  } else {
-    const municipioFilter = document.getElementById('municipioFilter');
+  const municipioFilter = document.getElementById('municipioFilter');
+
+  if (!state) {
+    // Todos os Estados
     if (municipioFilter) {
       municipioFilter.innerHTML = '<option value="">Todos os Municípios</option>';
     }
+  } else if (state === '__AMAZONIA_LEGAL__') {
+    // Amazônia Legal -> não carregar municípios específicos
+    if (municipioFilter) {
+      municipioFilter.innerHTML = '<option value="">Todos os Municípios</option>';
+    }
+  } else {
+    // Estado específico -> carregar municípios
+    await loadMunicipioFilter(state);
   }
+
   await applyYearFilter(); // chama uma única vez
 });
+
 
 document.getElementById('municipioFilter').addEventListener('change', async function () {
   await applyYearFilter();

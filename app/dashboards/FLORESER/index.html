@@ -511,13 +511,61 @@
   border-radius: 2px;
 }
 
+/* Overlay */
+#loader-overlay{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.18);
+  z-index: 2147483647;
+  backdrop-filter: blur(1.5px);
+}
+
+/* Cartão fixo */
+#loader-overlay .loader-card{
+  width: 260px;             /* largura fixa */
+  height: 110px;            /* altura fixa */
+  display: flex;
+  flex-direction: column;   /* spinner em cima, texto embaixo */
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: #fff !important;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.15);
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Anel verde */
+#loader-overlay .loader-ring{
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: #008055;
+  animation: spin .9s linear infinite;
+}
+
+#loader-overlay .loader-text{
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
   </style>
 </head>
 <body>
+  
+  <!--
   <div class="loader-container" id="loader">
     <div class="loader"></div>
   </div>
-
+-->
 
   <div class="container" id="app-root">
     <!-- Header com gradiente -->
@@ -555,7 +603,7 @@
         <button id="applyYearFilter">
           <i class="fas fa-filter"></i> Aplicar Filtro
         </button>
-      </div>
+      </div> 
     </div>
 
     <!-- Gráficos lado a lado -->
@@ -623,13 +671,41 @@
   
 
   <script>
-    function showLoader() {
-      document.getElementById('loader').style.display = 'flex';
-    }
+// === Loader "cartão" com anel verde — sempre recria para evitar markup antigo ===
+function buildLoaderOverlay(msg = 'Carregando Dados') {
+  // remove overlays antigos (estrutura diferente/ID igual)
+  const old = document.getElementById('loader-overlay');
+  if (old) old.remove();
 
-    function hideLoader() {
-      document.getElementById('loader').style.display = 'none';
-    }
+  const el = document.createElement('div');
+  el.id = 'loader-overlay';
+  el.innerHTML = `
+    <div class="loader-card">
+      <div class="loader-ring" aria-hidden="true"></div>
+      <div class="loader-text">${msg}</div>
+    </div>
+  `;
+  document.body.appendChild(el);
+  return el;
+}
+
+function showLoader(msg = 'Carregando Dados') {
+  // garante overlay com a estrutura certa
+  let el = document.getElementById('loader-overlay');
+  if (!el || !el.querySelector('.loader-card')) {
+    el = buildLoaderOverlay(msg);
+  } else {
+    const t = el.querySelector('.loader-text');
+    if (t) t.textContent = msg;
+  }
+  el.style.display = 'flex';
+}
+
+function hideLoader() {
+  const el = document.getElementById('loader-overlay');
+  if (el) el.style.display = 'none';
+}
+
 
     function openModal(chartId) {
       const modal = document.getElementById(chartId);
@@ -657,6 +733,13 @@
       }
     }
   </script>
+  <div id="loader-overlay" style="display:none;">
+  <div class="loader-box">
+    <div class="spinner-border" role="status" aria-hidden="true"></div>
+    <span class="loader-text">Carregando dados...</span>
+  </div>
+</div>
+
 </body>
 </html>
 
