@@ -268,9 +268,9 @@
 
   <!-- Estatísticas -->
   <div class="row mb-4">
-    <div class="col-md-3"><div class="stat-card"><div class="stat-label">Total de Células</div><div class="stat-value" id="total-records">0</div></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-label">Total de Células com Desmatamento</div><div class="stat-value" id="total-records">0</div></div></div>
     <div class="col-md-3"><div class="stat-card" style="background:#FF6D00"><div class="stat-label">Quantiade Média de Células</div><div class="stat-value" id="total-cells">0</div></div></div>
-    <div class="col-md-3"><div class="stat-card" style="background:#c62828"><div class="stat-label">Registros Filtrados</div><div class="stat-value" id="filtered-records">0</div></div></div>
+    <div class="col-md-3"><div class="stat-card" style="background:#c62828"><div class="stat-label">Número de Áreas Afetadas</div><div class="stat-value" id="filtered-records">0</div></div></div>
     <div class="col-md-3"><div class="stat-card" style="background:#6c757d"><div class="stat-label">Variação Anual</div><div class="stat-value" id="unique-states">0</div></div></div>
   </div>
 
@@ -826,7 +826,7 @@ function buildPopupHTML(p, rank){
       <div><b>Categoria:</b> ${mapAcronymLabel(p.categoria ?? '-')}</div>
       <div><b>Modalidade:</b> ${mapAcronymLabel(p.modalidade||'-')}</div>
       <div><b>Uso:</b> ${p.uso||'-'}</div>
-      <div><b>Células:</b> ${Number(p.celulas||0).toLocaleString('pt-BR')}</div>
+      <div><b>Células de desmatamento:</b> ${Number(p.celulas||0).toLocaleString('pt-BR')}</div>
       <div><b>Ano:</b> ${p.ano||'-'} &nbsp; <b>Trimestre:</b> ${periodLabel(p)}</div>
     </div>`;
 }
@@ -1219,55 +1219,79 @@ function highlightBarOnMap(idx){
   //   O tooltip continua vinculado lá no updateMap(), mas só
   //   aparecerá quando o usuário passar o mouse SOBRE o mapa.
 }
-
 function updateBarChart() {
   const ctx = document.getElementById('barChart').getContext('2d');
   if (barChart) barChart.destroy();
 
+  // === Top 10 (sem UF no rótulo do eixo Y) ===
   const rows = (filteredData || [])
     .map(f => ({
-      name:f.properties?.nome||'-',
-      state: formatEstadoFull(f.properties?.estado||'-'),
-      cells:+f.properties?.celulas||0,
-      key:mkKey(f.properties||{}),
-      _f:f
+      name: f.properties?.nome || '-',
+      state: formatEstadoFull(f.properties?.estado || '-'),
+      cells: Number(f.properties?.celulas) || 0,
+      key: mkKey(f.properties || {}),
+      _f: f
     }))
     .sort((a, b) => b.cells - a.cells)
     .slice(0, 10);
 
-  const labelsRaw = rows.map(d => `${d.name} (${d.state})`);
-  const labels = labelsRaw.map(t => wrapLabelToTwoLines(t, 28));
+  const labels = rows.map(d => wrapLabelToTwoLines(d.name, 28));
   const values = rows.map(d => d.cells);
   barItems = rows;
 
   const maxVal = values.reduce((m, v) => Math.max(m, v), 0);
-  const suggestedMax = maxVal > 0 ? Math.ceil(maxVal * 1.15) : 10;
+  const suggestedMax = maxVal > 0 ? Math.ceil(maxVal * 1.25) : 10;
 
+  // Paleta coerente por classe
   const n = values.length || 1;
   const tSeq = (from, to, n) =>
     Array.from({ length: n }, (_, i) => from + (to - from) * (i / Math.max(1, n - 1)));
-
-  let colors = tSeq(0.9, 0.3, n).map(t =>
-    currentClass === 'geral' ? d3.interpolateGreys(t)
-    : currentClass === 'ameaca' ? d3.interpolateOranges(t)
-    : d3.interpolateReds(t)
+  const colors = tSeq(0.9, 0.35, n).map(t =>
+    currentClass === 'geral'   ? d3.interpolateGreys(t) :
+    currentClass === 'ameaca' ? d3.interpolateOranges(t) :
+                                d3.interpolateReds(t)
   );
 
   colorMap = new Map();
   rows.forEach((r, i) => colorMap.set(r.key, colors[i]));
 
+  const BAR_THICK = 20;
+  const RADIUS    = 6; // mantenho leve arredondamento
+
   barChart = new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets: [{ label:'Células', data: values, backgroundColor: colors, borderColor: colors, borderWidth: 1 }] },
+    data: {
+      labels,
+      datasets: [{
+        label: 'Células',
+        data: values,
+        backgroundColor: colors,
+        borderColor: colors,
+        borderWidth: 0,
+        borderSkipped: false,
+        borderRadius: {
+          topLeft: RADIUS, bottomLeft: RADIUS,
+          topRight: RADIUS, bottomRight: RADIUS
+        },
+        barThickness: BAR_THICK,
+        maxBarThickness: BAR_THICK,
+        barPercentage: 0.9,
+        categoryPercentage: 0.7,
+        clip: false
+      }]
+    },
     options: {
       indexAxis: 'y',
       responsive: true,
       maintainAspectRatio: false,
-      layout: { padding: { top: 20, right: 16, left: 8, bottom: 8 } },
+
+      // 🔧 Dá espaço para os rótulos ficarem fora da barra
+      layout: { padding: { top: 16, right: 48, left: 6, bottom: 12 } },
+
       onHover: (evt, elements) => {
         evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
         const idx = elements.length ? elements[0].index : null;
-        if (idx !== lastHoverIdx){ lastHoverIdx = idx; highlightBarOnMap(idx); }
+        if (idx !== lastHoverIdx) { lastHoverIdx = idx; highlightBarOnMap(idx); }
       },
       onClick: (evt, elements) => {
         if (!elements.length) return;
@@ -1276,34 +1300,65 @@ function updateBarChart() {
         const layer = featureLayerIndex.get(item.key);
         if (layer) zoomToLayer(layer);
       },
-     plugins: {
-  legend: { display: false },
-  tooltip: {
-    callbacks: {
-      title: (items) => {
-        const idx  = items[0].dataIndex;
-        const item = barItems[idx];
-        const cls  = (item?._f?.properties?.class) || currentClass;
-        const clsTxt = cls === 'ameaca' ? 'Ameaça' : cls === 'pressao' ? 'Pressão' : 'Geral';
-        return `${items[0].label} — ${clsTxt}`;
+
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => {
+              const idx = items[0].dataIndex;
+              const cls = (barItems[idx]?._f?.properties?.class) || currentClass;
+              const clsTxt = cls === 'ameaca' ? 'Ameaça' : cls === 'pressao' ? 'Pressão' : 'Geral';
+              return `${barItems[idx].name} — ${clsTxt}`;
+            },
+            afterLabel: (ctx) => {
+              const st = barItems[ctx.dataIndex]?.state || '-';
+              return `\nEstado(s): ${st}`;
+            },
+            label: (ctx) => ` ${Number(ctx.parsed?.x ?? ctx.raw ?? 0).toLocaleString('pt-BR')} células`
+          }
+        },
+
+        // ✅ Rótulo FORA da barra
+        datalabels: {
+          anchor: 'end',   // ancora na ponta direita da barra (horizontal)
+          align: 'end',    // posiciona depois da âncora (fora da barra)
+          offset: 12,      // distância para fora
+          clamp: false,    // não força ficar dentro
+          clip: false,     // permite desenhar fora da área do gráfico
+          color: '#111',
+          font: { weight: '700', size: 12 },
+          formatter: v => Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 2 })
+        }
       },
-      // ⬇️ AQUI É A TROCA IMPORTANTE
-      label: (ctx) => ` ${Number(ctx.parsed?.x ?? ctx.raw ?? 0).toLocaleString('pt-BR')} células`
-    }
-  },
-  datalabels: {
-    anchor:'end', align:'end', offset:6, clamp:true, clip:false,
-    formatter: v => Number(v).toLocaleString('pt-BR'),
-    color:'#111', font:{ weight:'700', size:12 }
-  }
-},
+
       scales: {
-        x: { beginAtZero:true, suggestedMax, ticks:{ callback:v=>Number(v).toLocaleString('pt-BR') }, grid:{drawBorder:false} },
-        y: { ticks:{ autoSkip:false, font: ctx=>({size:(ctx.chart.height||400)<360?10:12}) }, grid:{display:false} }
+        x: {
+          beginAtZero: true,
+          suggestedMax,
+          grid: { display: false, drawBorder: false },
+          ticks: {
+            callback: v => Number(v).toLocaleString('pt-BR'),
+            font: { family: 'Montserrat' }
+          },
+          title: {
+            display: true,
+            text: 'Nº de células com ocorrência de desmatamento',
+            font: { family: 'Montserrat', weight: '700' }
+          }
+        },
+        y: {
+          grid: { display: false, drawBorder: false },
+          ticks: {
+            autoSkip: false,
+            font: ctx => ({ family: 'Montserrat', size: (ctx.chart.height || 400) < 360 ? 10 : 12 })
+          }
+        }
       }
     }
   });
 }
+
 function zoomToLayer(layer){
   try{
     if (typeof layer.getBounds === 'function') {
