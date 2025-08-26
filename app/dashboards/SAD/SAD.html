@@ -527,6 +527,14 @@ function updateBarChart(labels, dataValues){
     ? getSelectedDataType()
     : (document.querySelector('.filter-btn.active[data-type="desmatamento"], .filter-btn.active[data-type="degradacao"]')?.getAttribute('data-type') || 'desmatamento'));
 
+  // Label dinâmico do eixo Y com base na camada selecionada
+  const territoryType = (typeof getSelectedTerritoryType === 'function'
+    ? getSelectedTerritoryType()
+    : 'estados');
+  const yAxisLabel = (typeof territoryNaming !== 'undefined' && territoryNaming[territoryType]?.nome)
+    ? territoryNaming[territoryType].nome
+    : 'Territórios';
+
   const maxVal = Math.max(...dataValues, 1);
 
   // Cores
@@ -565,10 +573,7 @@ function updateBarChart(labels, dataValues){
       responsive: true,
       maintainAspectRatio: false,
       resizeDelay: 120,
-
-      // Folga para os rótulos não cortarem
-      layout: { padding: { right: 48 } },
-
+      layout: { padding: { right: 56 } }, // folga p/ rótulos fora da barra
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -582,7 +587,7 @@ function updateBarChart(labels, dataValues){
           }
         },
         datalabels: {
-          clip: false,              // <- impede corte fora da área do gráfico
+          clip: false,
           anchor: 'end',
           align: 'end',
           offset: 6,
@@ -591,30 +596,42 @@ function updateBarChart(labels, dataValues){
           formatter: v => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
         }
       },
-
       onClick(e, el){
         if (!el.length) return;
         const idx = el[0].index;
         const key = rawKeys[idx];
         if (territoryBounds[key]) map.fitBounds(territoryBounds[key], { padding:[50,50], animate:true, duration:1.2 });
       },
-
       scales: {
         x: {
           beginAtZero: true,
           grid: { display: false },
-          grace: '15%',            // <- folga visual no eixo
-          suggestedMax: maxVal * 1.15
+          grace: '15%',
+          suggestedMax: maxVal * 1.15,
+          title: {
+            display: true,
+            text: 'Área (km²)',
+            padding: { top: 8 },
+            font: { weight: '600', size: 12 },
+            color: '#374151'
+          }
         },
-        y: { grid: { display: false } }
+        y: {
+          grid: { display: false },
+          title: {
+            display: true,
+            text: yAxisLabel,
+            padding: { bottom: 8 },
+            font: { weight: '600', size: 12 },
+            color: '#374151'
+          }
+        }
       },
-
       animation: { duration: 900, easing: 'easeInOutQuart' }
     },
     plugins: [ChartDataLabels]
   });
 }
-
 
   function updateLineChart(csvData, territoryType){
   const canvas = document.getElementById('lineChart');
@@ -638,17 +655,14 @@ function updateBarChart(labels, dataValues){
     grouped[key][year] = (grouped[key][year] || 0) + area;
   });
 
-  // Palettes per data type (as requested)
-  const palettes = {
-    desmatamento: d3.schemeTableau10,
-    degradacao:   d3.schemeSet2
-  };
+  // Palettes per data type
+  const palettes = { desmatamento: d3.schemeTableau10, degradacao: d3.schemeSet2 };
   const dataType = (typeof getSelectedDataType === 'function'
     ? getSelectedDataType()
     : (document.querySelector('.filter-btn.active[data-type="desmatamento"], .filter-btn.active[data-type="degradacao"]')?.getAttribute('data-type') || 'desmatamento'));
   const pal = palettes[dataType] || d3.schemeTableau10;
 
-  // Datasets (up to Top-10 according to ranking)
+  // Datasets (Top-10 conforme ranking)
   const datasets = currentTopTerritories.slice(0, 10).map((k, i) => {
     const color = pal[i % pal.length];
     return {
@@ -667,31 +681,46 @@ function updateBarChart(labels, dataValues){
   });
 
   lineChart = new Chart(ctx, {
-  type: 'line',
-  data: { labels: years, datasets },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: true,
-        position: 'top',
-        labels: {
-          usePointStyle: true,   // 🔹 Faz a legenda usar bolinhas
-          pointStyle: 'circle',  // 🔹 Define o formato como círculo
-          padding: 20            // opcional: aumenta espaçamento
-        }
+    type: 'line',
+    data: { labels: years, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: { usePointStyle: true, pointStyle: 'circle', padding: 20 }
+        },
+        datalabels: { display: false }
       },
-      datalabels: { display: false }
-    },
-    scales: {
-      y: { beginAtZero: true, grid: { display: false } },
-      x: { grid: { display: false } }
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { display: false },
+          title: {
+            display: true,
+            text: 'Área (km²)',
+            padding: { bottom: 8 },
+            font: { weight: '600', size: 12 },
+            color: '#374151'
+          }
+        },
+        x: {
+          grid: { display: false },
+          title: {
+            display: true,
+            text: 'Ano',
+            padding: { top: 8 },
+            font: { weight: '600', size: 12 },
+            color: '#374151'
+          }
+        }
+      }
     }
-  }
-});
-
+  });
 }
+
 
 function updateYearlyChart(csvData){
   const canvas = document.getElementById('yearlyChart');
@@ -757,8 +786,27 @@ function updateYearlyChart(csvData){
         }
       },
       scales: {
-        y: { beginAtZero: true, grid: { display: false } },
-        x: { grid: { display: false } }
+        y: {
+          beginAtZero: true,
+          grid: { display: false },
+          title: {
+            display: true,
+            text: 'Área (km²)',
+            padding: { bottom: 8 },
+            font: { weight: '600', size: 12 },
+            color: '#374151'
+          }
+        },
+        x: {
+          grid: { display: false },
+          title: {
+            display: true,
+            text: 'Ano',
+            padding: { top: 8 },
+            font: { weight: '600', size: 12 },
+            color: '#374151'
+          }
+        }
       }
     }
   });
