@@ -523,34 +523,34 @@
                 <i class="fas fa-map-marked-alt me-2"></i>Selecione o tipo de território:
               </div>
               <div class="filter-buttons">
-                <div class="filter-btn active" data-type="assentamentos">
-                  <div class="filter-icon"><i class="fas fa-users"></i></div>
-                  <div class="filter-label">Assentamentos</div>
-                </div>
-                <div class="filter-btn" data-type="imoveis">
-                  <div class="filter-icon"><i class="fas fa-tractor"></i></div>
-                  <div class="filter-label">Imóveis Rurais</div>
+                <!-- NOVO: Estados -->
+                <div class="filter-btn active" data-type="estados">
+                  <div class="filter-icon"><i class="fas fa-map-marked-alt"></i></div>
+                  <div class="filter-label">Estados</div>
                 </div>
                 <div class="filter-btn" data-type="municipios">
                   <div class="filter-icon"><i class="fas fa-city"></i></div>
                   <div class="filter-label">Municípios</div>
                 </div>
-                <!-- NOVO: Estados -->
-                <div class="filter-btn" data-type="estados">
-                  <div class="filter-icon"><i class="fas fa-map-marked-alt"></i></div>
-                  <div class="filter-label">Estados</div>
-                </div>
                 <div class="filter-btn" data-type="terras">
                   <div class="filter-icon"><i class="fas fa-campground"></i></div>
                   <div class="filter-label">Terras Indígenas</div>
+                </div>
+                <div class="filter-btn" data-type="uc">
+                  <div class="filter-icon"><i class="fas fa-tree"></i></div>
+                  <div class="filter-label">Unidades de Conservação</div>
+                </div>
+                <div class="filter-btn " data-type="assentamentos">
+                  <div class="filter-icon"><i class="fas fa-users"></i></div>
+                  <div class="filter-label">Assentamentos</div>
                 </div>
                 <div class="filter-btn" data-type="terras_sem_destinacao">
                   <div class="filter-icon"><i class="fas fa-globe-americas"></i></div>
                   <div class="filter-label">Terras Sem Destinação</div>
                 </div>
-                <div class="filter-btn" data-type="uc">
-                  <div class="filter-icon"><i class="fas fa-tree"></i></div>
-                  <div class="filter-label">Unidades de Conservação</div>
+                <div class="filter-btn" data-type="imoveis">
+                  <div class="filter-icon"><i class="fas fa-tractor"></i></div>
+                  <div class="filter-label">Imóveis Rurais</div>
                 </div>
               </div>
             </div>
@@ -603,7 +603,7 @@
             </div>
             <div class="col-md-2 dataset-select-group" id="terrasSemDestinacaoGroup" style="display:none;">
                 <button class="btn btn-primary w-100" id="open-terras-sem-destinacao-modal">
-                    <i class="fas fa-globe-americas me-2"></i>Selecionar Terras
+                    <i class="fas fa-globe-americas me-2"></i> Selecionar Terras Sem Destinação
                 </button>
             </div>
             <div class="col-md-2 dataset-select-group" id="ucGroup" style="display:none;">
@@ -770,7 +770,7 @@
                 <div id="terras-sem-destinacao-list" class="settlement-list mt-2" style="max-height: 400px; overflow-y: auto;"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="apply-terras-sem-destinacao-selection">Aplicar</button>
             </div>
         </div>
@@ -794,6 +794,7 @@
                 <div id="uc-list" class="settlement-list mt-2" style="max-height: 400px; overflow-y: auto;"></div>
             </div>
             <div class="modal-footer">
+                
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="apply-uc-selection">Aplicar</button>
             </div>
@@ -814,6 +815,7 @@
       <div id="terras-list" class="settlement-list mt-2" style="max-height:400px;overflow-y:auto;"></div>
     </div>
     <div class="modal-footer">
+      
       <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
       <button type="button" class="btn btn-primary" id="apply-terras-selection">Aplicar</button>
     </div>
@@ -833,6 +835,7 @@
       <div id="municipios-list" class="settlement-list mt-2" style="max-height:400px;overflow-y:auto;"></div>
     </div>
     <div class="modal-footer">
+      
       <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
       <button type="button" class="btn btn-primary" id="apply-municipios-selection">Aplicar</button>
     </div>
@@ -852,6 +855,7 @@
       <div id="estados-list" class="settlement-list mt-2" style="max-height:400px;overflow-y:auto;"></div>
     </div>
     <div class="modal-footer">
+      
       <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
       <button type="button" class="btn btn-primary" id="apply-estados-selection">Aplicar</button>
     </div>
@@ -871,6 +875,7 @@
       <div id="imoveis-list" class="settlement-list mt-2" style="max-height:400px;overflow-y:auto;"></div>
     </div>
     <div class="modal-footer">
+      
       <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
       <button type="button" class="btn btn-primary" id="apply-imoveis-selection">Aplicar</button>
     </div>
@@ -890,6 +895,7 @@
       <div id="assentamentos-list" class="settlement-list mt-2" style="max-height:400px;overflow-y:auto;"></div>
     </div>
     <div class="modal-footer">
+      
       <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
       <button type="button" class="btn btn-primary" id="apply-assentamentos-selection">Aplicar</button>
     </div>
@@ -949,7 +955,15 @@
   let currentBarData = { labels: [], values: [] };
   let currentLineData = { labels: [], datasets: [] };
   let currentYearlyData = { labels: [], values: [] };
-
+const DATASET_LABELS = {
+  estados: "Estados",
+  municipios: "Municípios",
+  terras: "Terras Indígenas",
+  terras_sem_destinacao: "Terras Sem Destinação",
+  assentamentos: "Assentamentos",
+  imoveis: "Imóveis Rurais",
+  uc: "Unidades de Conservação"
+};
   // Conjuntos de dados
   const DATASETS = {
     assentamentos: {
@@ -995,7 +1009,7 @@
     estados: {
       geo: '/dataset/simex/geojson/simex_amazonia_PAMT2007_2023_mun.geojson',
       csv: '/dataset/simex/csv/simex_amazonia_PAMT2007_2023_municipios.csv',
-      geoField: 'estado_nome',
+      geoField: 'nome',
       parse: d => ({
         year: +d.ano || null,
         month: null,
@@ -1310,33 +1324,53 @@
     const isMobile = window.matchMedia('(max-width: 576px)').matches;
 
     yearlyChart = new Chart(yearlyCanvas.getContext('2d'), {
-      type: 'bar',
-      data: { labels: years, datasets: [{
-        data,
-        backgroundColor: 'rgba(198, 40, 40, 0.7)',
-        borderColor:     'rgba(198, 40, 40, 1)',
-        borderWidth: 1,
-        borderRadius: 4,
-        barPercentage: 0.5,
-        categoryPercentage: 0.7
-      }]},
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          datalabels: isMobile ? false : {
-            color: '#212121', anchor: 'end', align: 'end',
-            formatter: v => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 }),
-            font: { weight: '600', size: 12 }
-          }
-        },
-        scales: {
-          y: { beginAtZero: true, grid: { display: false }, title: { display: true, text: 'Área (km²)' } },
-          x: { grid: { display: false }, title: { display: true, text: 'Ano' }, offset: true }
-        }
+  type: 'bar',
+  data: { 
+    labels: years, 
+    datasets: [{
+      data,
+      backgroundColor: 'rgba(198, 40, 40, 0.7)',
+      borderColor:     'rgba(198, 40, 40, 1)',
+      borderWidth: 1,
+      borderRadius: 4,
+barPercentage: 0.4,
+categoryPercentage: 0.4,
+maxBarThickness: 25
+
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      datalabels: isMobile ? false : {
+        color: '#212121',
+        anchor: 'end',
+        align: 'end',
+        formatter: v => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 }),
+        font: { weight: '600', size: 12 }
+      }
+    },
+    scales: {
+      y: { 
+        beginAtZero: true, 
+        grid: { display: false }, 
+        title: { display: true, text: 'Área (km²)' } 
       },
-      plugins: [ChartDataLabels]
-    });
+      x: {
+  ticks: {
+    callback: (val, index, ticks) => {
+      // Exibe só de 2 em 2 anos
+      return index % 2 === 0 ? years[index] : '';
+    }
+  }
+}
+    }
+  },
+  plugins: [ChartDataLabels]
+});
+
   };
 
   const updateLineChart = (year, topNames) => {
@@ -1455,63 +1489,156 @@
   }
 
   const updateDashboard = () => {
-    const year = +yearFilter.value;
-    const fase = currentDataset === 'terras' ? faseFilter.value : 'all';
+  const year = +yearFilter.value;
+  const fase = currentDataset === 'terras' ? faseFilter.value : 'all';
 
-    const hadSelectionBefore = getActiveSelectionForCurrentDataset().length > 0;
-    const activeSel = selectionNamesAvailableInYear(year);
-    if (hadSelectionBefore && activeSel.length === 0){
-      setActiveSelectionForCurrentDataset([]);
-      const toastEl = document.getElementById('toastAviso');
-      if (toastEl) bootstrap.Toast.getOrCreateInstance(toastEl).show();
+  // Seleção ativa antes da troca de ano (para decidir se mostra toast)
+  const hadSelectionBefore = getActiveSelectionForCurrentDataset().length > 0;
+
+  // Seleções disponíveis para o ano atual (normalizadas contra o CSV)
+  const activeSel = selectionNamesAvailableInYear(year);
+
+  // Se havia seleção e nada existe no ano -> limpa seleção e avisa
+  if (hadSelectionBefore && activeSel.length === 0) {
+    setActiveSelectionForCurrentDataset([]);
+    const toastEl = document.getElementById('toastAviso');
+    if (toastEl) bootstrap.Toast.getOrCreateInstance(toastEl).show();
+  }
+
+  // Filtragem base por ano e (opcional) categoria/fase
+  let filtered = csvData.filter(d => d.year === year);
+  if (currentCategoryFilter !== 'all') {
+    filtered = filtered.filter(d => d.normalizedCategory === currentCategoryFilter);
+  }
+  if (fase !== 'all' && currentDataset === 'terras') {
+    filtered = filtered.filter(d => d.fase === fase);
+  }
+  // Se houver seleção válida para o ano, restringe a ela
+  if (activeSel.length > 0) {
+    filtered = filtered.filter(d => activeSel.includes(d.name));
+  }
+
+  // Agregação (área total por nome)
+  const agg = {};
+  filtered.forEach(d => {
+    if (d.name) agg[d.name] = (agg[d.name] || 0) + d.area;
+  });
+
+  // Ranking exibido (sempre no máx. 10)
+  let sorted;
+  if (activeSel.length > 0) {
+    // Seleção ativa: Top 10 dentro da seleção por área desc
+    sorted = activeSel
+      .map(name => [name, agg[name] || 0])
+      .filter(([, val]) => val > 0)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10);
+  } else {
+    // Sem seleção: Top 10 geral
+    sorted = Object.entries(agg)
+      .filter(([, val]) => val > 0)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10);
+  }
+
+  const labels = sorted.map(([name]) => name);
+  const values = sorted.map(([, val]) => val);
+const datasetLabel = DATASET_LABELS[currentDataset] || "Itens";
+
+const rankingTitleEl = document.querySelector(
+  '.card .chart-title i.fa-chart-bar'
+)?.parentNode;
+if (rankingTitleEl) {
+  rankingTitleEl.innerHTML = `<i class="fas fa-chart-bar me-2"></i>Ranking de ${datasetLabel}`;
+}
+
+const mapTitleEl = document.querySelector(
+  '.card .chart-title i.fa-map'
+)?.parentNode;
+if (mapTitleEl) {
+  mapTitleEl.innerHTML = `<i class="fas fa-map me-2"></i>Mapa de ${datasetLabel}`;
+}
+  // KPIs
+  updateStats(agg, filtered, year);
+
+  // Gráficos e mapa (sempre usando no máx. 10 labels)
+  updateBarChart(labels, values);
+  updateLineChart(year, labels);  // série histórica apenas dos exibidos (máx. 10)
+  updateYearlyChart();
+  updateMap(agg, labels);         // mapa só dos exibidos (máx. 10)
+
+  hideLoader();
+};
+
+const populateList = (listId, searchId, selectedList, countId) => {
+  const listEl = document.getElementById(listId);
+  const termEl = document.getElementById(searchId);
+  const term = (termEl ? termEl.value : '').toLowerCase();
+  const year = +yearFilter.value;
+
+  // Todos os nomes disponíveis para o ano selecionado
+  const names = [...new Set(
+    csvData
+      .filter(d => d.year === year && d.name)
+      .map(d => d.name)
+  )].sort();
+
+  // Limpa a lista
+  listEl.innerHTML = '';
+
+  // Verifica se TODOS os itens estão selecionados
+  const allSelected = names.length > 0 && names.every(n => selectedList.includes(n));
+
+  // 🔹 Insere "Todos" como primeiro item (sempre visível, não depende do termo de busca)
+  const allItem = document.createElement('div');
+  allItem.className = `settlement-item ${allSelected ? 'selected' : ''}`;
+  allItem.textContent = 'Todos';
+  allItem.onclick = () => {
+    if (allSelected) {
+      // Se já estavam todos selecionados, limpa tudo
+      selectedList.length = 0;
+    } else {
+      // Exceção: seleciona TODOS (sem limite)
+      selectedList.length = 0;
+      for (const n of names) selectedList.push(n);
     }
-
-    let filtered = csvData.filter(d => d.year === year);
-    if (currentCategoryFilter !== 'all') filtered = filtered.filter(d => d.normalizedCategory === currentCategoryFilter);
-    if (fase !== 'all' && currentDataset === 'terras') filtered = filtered.filter(d => d.fase === fase);
-    if (activeSel.length > 0) filtered = filtered.filter(d => activeSel.includes(d.name));
-    
-    const agg = {};
-    filtered.forEach(d => { if (d.name) agg[d.name] = (agg[d.name] || 0) + d.area; });
-    
-    let sorted;
-    if (activeSel.length > 0) sorted = activeSel.map(name => [name, agg[name] || 0]);
-    else sorted = Object.entries(agg).sort(([, a], [, b]) => b - a).slice(0, 10);
-
-    const labels = sorted.map(([name]) => name);
-    const values = sorted.map(([, val]) => val);
-
-    updateStats(agg, filtered, year);
-    updateBarChart(labels, values);
-    updateLineChart(year, sorted.map(([name]) => name));
-    updateYearlyChart();
-
-    const topNames = sorted.map(([name]) => name);
-    updateMap(agg, topNames);
-    hideLoader();
+    populateList(listId, searchId, selectedList, countId);
   };
+  listEl.appendChild(allItem);
 
-  const populateList = (listId, searchId, selectedList, countId) => {
-    const listEl = document.getElementById(listId);
-    const term = document.getElementById(searchId).value.toLowerCase();
-    const year = +yearFilter.value;
-    const names = [...new Set(csvData.filter(d => d.year === year).map(d => d.name))].sort();
-    listEl.innerHTML = '';
-    names.filter(n => n.toLowerCase().includes(term)).forEach(name => {
+  // 🔹 Insere os itens normais (respeitando o filtro de busca e o limite de 10 na seleção manual)
+  names
+    .filter(n => n.toLowerCase().includes(term))
+    .forEach(name => {
       const sel = selectedList.includes(name);
       const item = document.createElement('div');
-      item.className = `settlement-item ${sel?'selected':''}`;
+      item.className = `settlement-item ${sel ? 'selected' : ''}`;
       item.textContent = name;
       item.onclick = () => {
-        if (!sel && selectedList.length >= 10) { alert('Máximo 10 selecionados'); return; }
-        if (sel) selectedList.splice(selectedList.indexOf(name), 1);
-        else selectedList.push(name);
+        // Se for selecionar (e não estava selecionado), respeita o limite de 10
+        if (!sel && selectedList.length >= 10) {
+          alert('Máximo 10 selecionados (exceto quando usar "Todos")');
+          return;
+        }
+        if (sel) {
+          // Remover
+          const idx = selectedList.indexOf(name);
+          if (idx >= 0) selectedList.splice(idx, 1);
+        } else {
+          // Adicionar
+          selectedList.push(name);
+        }
         populateList(listId, searchId, selectedList, countId);
       };
       listEl.appendChild(item);
     });
-    document.getElementById(countId).textContent = selectedList.length;
-  };
+
+  // Atualiza contador
+  const countEl = document.getElementById(countId);
+  if (countEl) countEl.textContent = selectedList.length;
+};
+
+
 
   const init = async () => {
     showLoader("Iniciando dashboard...");
@@ -1652,44 +1779,93 @@
     document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
   }
 
-  function setUpModalListeners () {
-    const CONFIG = [
-      ['open-terras-modal',       'terrasModal',       'terras-list',       'terras-search',       'selected-terras-count',       selectedTerras],
-      ['open-municipios-modal',   'municipiosModal',   'municipios-list',   'municipios-search',   'selected-municipios-count',   selectedMunicipios],
-      ['open-estados-modal',      'estadosModal',      'estados-list',      'estados-search',      'selected-estados-count',      selectedEstados], // NOVO
-      ['open-imoveis-modal',      'imoveisModal',      'imoveis-list',      'imoveis-search',      'selected-imoveis-count',      selectedImoveis],
-      ['open-assentamentos-modal','assentamentosModal','assentamentos-list','assentamentos-search','selected-assentamentos-count',selectedAssentamentos],
-    ];
+function setUpModalListeners () {
+  const CONFIG = [
+    // openId,                 modalId,                listId,                       searchId,                       countId,                             store,                       applyId
+    ['open-terras-modal',       'terrasModal',         'terras-list',                'terras-search',                'selected-terras-count',             selectedTerras,              'apply-terras-selection'],
+    ['open-municipios-modal',   'municipiosModal',     'municipios-list',            'municipios-search',            'selected-municipios-count',         selectedMunicipios,          'apply-municipios-selection'],
+    ['open-estados-modal',      'estadosModal',        'estados-list',               'estados-search',               'selected-estados-count',            selectedEstados,             'apply-estados-selection'],
+    ['open-imoveis-modal',      'imoveisModal',        'imoveis-list',               'imoveis-search',               'selected-imoveis-count',            selectedImoveis,             'apply-imoveis-selection'],
+    ['open-assentamentos-modal','assentamentosModal',  'assentamentos-list',         'assentamentos-search',         'selected-assentamentos-count',      selectedAssentamentos,       'apply-assentamentos-selection'],
+    ['open-uc-modal',           'ucModal',             'uc-list',                    'uc-search',                    'selected-uc-count',                 selectedUCs,                 'apply-uc-selection'],
+    ['open-terras-sem-destinacao-modal','terrasSemDestinacaoModal','terras-sem-destinacao-list','terras-sem-destinacao-search','selected-terras-sem-destinacao-count',selectedTerrasSemDestinacao,'apply-terras-sem-destinacao-selection'],
+  ];
 
-    CONFIG.forEach(([openId, modalId, listId, searchId, countId, store]) => {
-      const openBtn  = document.getElementById(openId);
-      const modalEl  = document.getElementById(modalId);
-      const applyBtn = document.getElementById(`apply-${modalId.replace('Modal','')}-selection`);
-      if (!openBtn || !modalEl || !applyBtn) return;
+  CONFIG.forEach(([openId, modalId, listId, searchId, countId, store, applyId]) => {
+    const openBtn  = document.getElementById(openId);
+    const modalEl  = document.getElementById(modalId);
+    const applyBtn = document.getElementById(applyId);
+    if (!openBtn || !modalEl || !applyBtn) {
+      console.warn('[setup] elemento não encontrado', {openId, modalId, applyId});
+      return;
+    }
 
-      openBtn.addEventListener('click', () => {
-        populateList(listId, searchId, store, countId);
-        new bootstrap.Modal(modalEl).show();
-      });
-
-      applyBtn.addEventListener('click', () => {
-        modalEl.addEventListener('hidden.bs.modal', () => {
-          updateDashboard();
-          liberarScroll();
-        }, { once: true });
-
-        const inst = bootstrap.Modal.getInstance(modalEl);
-        if (inst) inst.hide();
-      });
-
-      const searchInput = document.getElementById(searchId);
-      if (searchInput) {
-        searchInput.addEventListener('input', () => populateList(listId, searchId, store, countId));
-      }
+    openBtn.addEventListener('click', () => {
+      populateList(listId, searchId, store, countId);
+      new bootstrap.Modal(modalEl).show();
     });
-  }
+
+    applyBtn.addEventListener('click', () => {
+      modalEl.addEventListener('hidden.bs.modal', () => {
+        updateDashboard();
+        liberarScroll();
+      }, { once: true });
+
+      const inst = bootstrap.Modal.getInstance(modalEl);
+      if (inst) inst.hide();
+    });
+
+    const searchInput = document.getElementById(searchId);
+    if (searchInput) {
+      searchInput.addEventListener('input', () => populateList(listId, searchId, store, countId));
+    }
+  });
+}
 
   init();
 </script>
 </body>
 </html>
+
+
+<!-- Modal – Terras Sem Destinação -->
+<div class="modal fade modal-terras-indigenas" id="terrasSemDestinacaoModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title">Selecionar Terras Sem Destinação (máx. 10)</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="terras-sem-destinacao-search" class="form-control mb-3" placeholder="Buscar terra...">
+      <div class="selection-info"><span id="selected-terras-sem-destinacao-count">0</span> de 10 selecionadas</div>
+      <div id="terras-sem-destinacao-list" class="settlement-list mt-2" style="max-height:400px;overflow-y:auto;"></div>
+    </div>
+    <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="apply-terras-sem-destinacao-selection">Aplicar</button>
+    </div>
+  </div></div>
+</div>
+
+
+
+<!-- Modal – Unidades de Conservação -->
+<div class="modal fade modal-terras-indigenas" id="ucModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title">Selecionar Unidades de Conservação (máx. 10)</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="uc-search" class="form-control mb-3" placeholder="Buscar UC...">
+      <div class="selection-info"><span id="selected-uc-count">0</span> de 10 selecionadas</div>
+      <div id="uc-list" class="settlement-list mt-2" style="max-height:400px;overflow-y:auto;"></div>
+    </div>
+    <div class="modal-footer">
+      
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="apply-uc-selection">Aplicar</button>
+    </div>
+  </div></div>
+</div>
+
