@@ -30,21 +30,13 @@
   .card{background:#fff;border:1px solid #e8e8e8;border-radius:14px;margin:18px 0;padding:16px;box-shadow:0 6px 20px rgba(0,0,0,.04);position:relative}
   .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
 
-  /* Collapse button (na mesma linha do título, à direita) */
+  /* Collapse button */
   .collapse-btn{
     position:static;display:inline-flex;align-items:center;gap:6px;
     border:1px solid #e0e0e0;background:#fff;border-radius:10px;
     padding:6px 10px;color:var(--brand);cursor:pointer
   }
   .collapse-btn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
-
-  /* Filtros internos */
-  .subtoolbar{display:flex;gap:16px;flex-wrap:wrap;align-items:center;background:#fbfbfb;border:1px solid #eee;border-radius:12px;padding:14px;margin:10px 0 14px}
-  .subtoolbar label{display:block;margin-bottom:6px;font-size:.92rem;color:#333}
-  .chip{border:1px solid #e0e0e0;border-radius:999px;padding:8px 12px;background:#fff;cursor:pointer;display:inline-flex;align-items:center;white-space:nowrap}
-  .chip.active{background:var(--brand);color:#fff;border-color:var(--brand)}
-  .chip-group{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .field{min-width:220px}
 
   /* Anos (details) */
   details{border:1px solid #e8e8e8;border-radius:12px;margin:16px 0;background:#fff;position:relative}
@@ -74,11 +66,11 @@
 
   @media (max-width:820px){.format-wrap{grid-template-columns:1fr}}
 
-  /* Fix de clicabilidade (nada sobrepõe os botões) */
+  /* Fix de clicabilidade */
   #content{position:relative;isolation:isolate}
   details{ position: relative; overflow: visible; }
   details[open] > summary ~ *{ position: relative; z-index: 3; }
-  a.chiplink, button.chiplink, .btn-mini, .chip, .collapse-btn{
+  a.chiplink, button.chiplink, .btn-mini, .collapse-btn{
     position:relative; z-index: 10000 !important; pointer-events: auto !important;
   }
 </style>
@@ -96,84 +88,34 @@
   </div>
 
   <div id="content">
-    <!-- SAD -->
+    <!-- SAD - Simplificado como FLORESER -->
     <div class="card" data-section="sad">
       <div class="card-head">
         <h3>Sistema de Alerta de Desmatamento (SAD)</h3>
         <button class="collapse-btn" title="Recolher/Expandir" aria-expanded="true"><i class="fa fa-chevron-up"></i></button>
       </div>
-      <div class="subtoolbar" id="sadToolbar">
-        <div class="field">
-          <label>Tipo</label>
-          <div class="chip-group">
-            <span class="chip sadType active" data-type="desmatamento">Desmatamento</span>
-            <span class="chip sadType" data-type="degradacao">Degradação</span>
-          </div>
-        </div>
-        <div class="field">
-          <label>Território</label>
-          <div class="chip-group">
-            <span class="chip sadTerr active" data-territory="municipios">Municípios</span>
-            <span class="chip sadTerr" data-territory="estados">Estados</span>
-            <span class="chip sadTerr" data-territory="terrasIndigenas">Terras Indígenas</span>
-            <span class="chip sadTerr" data-territory="unidadesConservacao">UCs</span>
-            <span class="chip sadTerr" data-territory="assentamentos">Assentamentos</span>
-          </div>
-        </div>
-      </div>
-      <ul id="sad-list" class="list-divider"><li class="muted">Selecione Tipo e Território acima.</li></ul>
+      <ul id="sad-list" class="list-divider"><li class="muted">Carregando anos...</li></ul>
     </div>
 
-    <!-- AP -->
+    <!-- AP - Simplificado como FLORESER -->
     <div class="card" data-section="ap" style="display:none">
       <div class="card-head">
         <h3>Ameaça & Pressão</h3>
         <button class="collapse-btn" title="Recolher/Expandir" aria-expanded="true"><i class="fa fa-chevron-up"></i></button>
       </div>
-      <div class="subtoolbar" id="apToolbar">
-        <div class="chip-group">
-          <span class="chip apClass active" data-class="ameaca">Ameaça</span>
-          <span class="chip apClass" data-class="pressao">Pressão</span>
-          <span class="chip apScope active" data-scope="geral">Todos</span>
-          <span class="chip apScope" data-scope="ti">TI</span>
-          <span class="chip apScope" data-scope="uce">UC-E</span>
-          <span class="chip apScope" data-scope="ucf">UC-F</span>
-        </div>
-      </div>
       <ul id="ap-list" class="list-divider"><li class="muted">Carregando anos...</li></ul>
     </div>
 
-    <!-- SIMEX -->
+    <!-- SIMEX - Simplificado como FLORESER -->
     <div class="card" data-section="simex" style="display:none">
       <div class="card-head">
         <h3>SIMEX</h3>
         <button class="collapse-btn" title="Recolher/Expandir" aria-expanded="true"><i class="fa fa-chevron-up"></i></button>
       </div>
-      <div class="subtoolbar" id="simexToolbar">
-        <div class="field">
-          <label>Periodicidade</label>
-          <div class="chip-group">
-            <span class="chip simexMode active" data-mode="mensal">Mensal</span>
-            <span class="chip simexMode" data-mode="trimestral">Trimestral</span>
-          </div>
-        </div>
-        <div class="field">
-          <label>Camada</label>
-          <div class="chip-group">
-            <span class="chip simexDs active" data-ds="municipios">Municípios</span>
-            <span class="chip simexDs" data-ds="estados">Estados</span>
-            <span class="chip simexDs" data-ds="assentamentos">Assentamentos</span>
-            <span class="chip simexDs" data-ds="imoveis">Imóveis</span>
-            <span class="chip simexDs" data-ds="terras">Terras Indígenas</span>
-            <span class="chip simexDs" data-ds="terras_sem_destinacao">Terras s/ Dest.</span>
-            <span class="chip simexDs" data-ds="uc">UC</span>
-          </div>
-        </div>
-      </div>
-      <ul id="simex-list" class="list-divider"><li class="muted">Escolha a periodicidade e a camada acima.</li></ul>
+      <ul id="simex-list" class="list-divider"><li class="muted">Carregando anos...</li></ul>
     </div>
 
-    <!-- FLORESER -->
+    <!-- FLORESER - Mantido como está -->
     <div class="card" data-section="floreser" style="display:none">
       <div class="card-head">
         <h3>FLORESER</h3>
@@ -191,34 +133,16 @@
 /* =================== CONFIG =================== */
 const CFG = {
   SAD: {
-    csv: {
-      desmatamento: {
-        municipios: '/dataset/sad/csv/alertas_sad_desmatamento_08_2008_05_2025_municipios.csv',
-        estados: '/dataset/sad/csv/alertas_sad_desmatamento_08_2008_05_2025_municipios.csv',
-        terrasIndigenas: '/dataset/sad/csv/alertas_sad_desmatamento_08_2008_05_2025_terraIndigena.csv',
-        unidadesConservacao: '/dataset/sad/csv/alertas_sad_desmatamento_08_2008_05_2025_unidadeConservacao.csv',
-        assentamentos: '/dataset/sad/csv/alertas_sad_desmatamento_08_2008_05_2025_assentamentos.csv'
-      },
-      degradacao: {
-        municipios: '/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_municipios.csv',
-        estados: '/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_municipios.csv',
-        terrasIndigenas: '/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_terraIndigena.csv',
-        unidadesConservacao: '/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_ucs.csv',
-        assentamentos: '/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_assentamento.csv'
-      }
-    },
-    yearField: 'ANO',
-    monthField: 'MES'
+    csv: '/dataset/sad/csv/sad_completo_anual.csv',
+    yearFieldCandidates: ['ANO', 'ano', 'year', 'Ano']
   },
   AP: {
-    base: '/dataset/ap/geojson/',
-    filename(scope, klass, year){
-      if(scope==='geral') return `ameaca_e_pressao_${year}_geral_${klass}.geojson`;
-      if(scope==='ti')    return `ameaca_e_pressao_${year}_categ_ti_${klass}.geojson`;
-      if(scope==='uce')   return `ameaca_e_pressao_${year}_categ_uce_${klass}.geojson`;
-      if(scope==='ucf')   return `ameaca_e_pressao_${year}_categ_ucf_${klass}.geojson`;
-      return null;
-    }
+    csv: '/dataset/ap/csv/ap_completo_anual.csv',
+    yearFieldCandidates: ['ANO', 'ano', 'year', 'Ano']
+  },
+  SIMEX: {
+    csv: '/dataset/simex/csv/simex_completo_anual.csv',
+    yearFieldCandidates: ['ANO', 'ano', 'year', 'Ano']
   },
   FLORESER: {
     csv: '/dataset/floreser-9-22-1-ages-sf.csv',
@@ -227,30 +151,18 @@ const CFG = {
 };
 
 /* =================== HELPERS =================== */
-const PT_MONTH=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const onlyDigitsKeepMinus = s => String(s==null?'':s).replace(/[^0-9-]/g,'');
 function parseYearFlexible(row, candidates){
   for(const k of candidates){ if(row[k]!=null && row[k]!==''){ const v=parseInt(onlyDigitsKeepMinus(row[k]),10); if(Number.isFinite(v)) return v; } }
   return null;
 }
-function rowsToCSV(rows){ // vírgula + CRLF (SAD/AP/SIMEX)
-  if(!rows||!rows.length) return '';
-  const cols=Object.keys(rows[0]);
-  const esc=v=>('"'+String(v==null?'':v).replace(/"/g,'""')+'"');
-  const out=[cols.join(',')];
-  rows.forEach(r=>out.push(cols.map(k=>esc(r[k])).join(',')));
-  return out.join('\r\n')+'\r\n';
-}
-function rowsToCSVWith(rows, sep, newline){ // para FLORESER (; + \n)
+function rowsToCSVWith(rows, sep, newline){
   if(!rows||!rows.length) return '';
   const cols=Object.keys(rows[0]);
   const esc=v=>('"'+String(v==null?'':v).replace(/"/g,'""')+'"');
   const out=[cols.join(sep)];
   rows.forEach(r=>out.push(cols.map(k=>esc(r[k])).join(sep)));
   return out.join(newline)+newline;
-}
-function rowsToGeoJSON(rows){
-  return JSON.stringify({type:'FeatureCollection',features:(rows||[]).map(r=>({type:'Feature',geometry:null,properties:r}))});
 }
 function downloadBlob(strOrBlob,mime,filename){
   let blob; const isCsv = /csv/i.test(mime) || /\.csv$/i.test(filename);
@@ -259,217 +171,95 @@ function downloadBlob(strOrBlob,mime,filename){
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
-async function probeUrlExists(url){
-  try{ const r=await fetch(url,{method:'HEAD'}); if(r.ok) return true; }catch(e){}
-  try{ const r=await fetch(url,{method:'GET'}); return r.ok; }catch(e){ return false; }
-}
 
-/* =================== SAD =================== */
+/* =================== SAD - Simplificado =================== */
 function buildSAD(){
   const ul=document.getElementById('sad-list'); ul.innerHTML='';
-  const type=document.querySelector('.sadType.active')?.dataset.type||'desmatamento';
-  const terr=document.querySelector('.sadTerr.active')?.dataset.territory||'municipios';
-  const csvUrl=(CFG.SAD.csv[type]||{})[terr];
-  if(!csvUrl){ ul.innerHTML='<li class="muted">Camada não configurada.</li>'; return; }
+  const csvUrl = CFG.SAD.csv;
 
   d3.csv(csvUrl).then(rows=>{
-    rows.forEach(r=>{ r.ANO=parseInt(onlyDigitsKeepMinus(r[CFG.SAD.yearField]),10); r.MES=parseInt(onlyDigitsKeepMinus(r[CFG.SAD.monthField]),10); });
+    rows.forEach(r=>{ r.__ANO = parseYearFlexible(r, CFG.SAD.yearFieldCandidates); });
     const byYear=new Map();
-    rows.forEach(r=>{
-      if(!Number.isFinite(r.ANO)||!Number.isFinite(r.MES)) return;
-      if(!byYear.has(r.ANO)) byYear.set(r.ANO,new Map());
-      const m = byYear.get(r.ANO);
-      if(!m.has(r.MES)) m.set(r.MES,[]);
-      m.get(r.MES).push(r);
-    });
-
+    rows.forEach(r=>{ if(!Number.isFinite(r.__ANO)) return; if(!byYear.has(r.__ANO)) byYear.set(r.__ANO, []); byYear.get(r.__ANO).push(r); });
     const years=[...byYear.keys()].sort((a,b)=>b-a);
-    if(!years.length){ ul.innerHTML='<li class="muted">Sem dados para esta camada.</li>'; return; }
+    if(!years.length){ ul.innerHTML='<li class="muted">Sem dados disponíveis.</li>'; return; }
 
     years.forEach(y=>{
       const details=document.createElement('details');
       const summary=document.createElement('summary'); summary.innerHTML='<span class="year">'+y+'</span>'; details.appendChild(summary);
 
-      const actions=document.createElement('div'); actions.className='actions';
-      const bCSV=document.createElement('button'); bCSV.className='btn-mini'; bCSV.textContent='Baixar tudo (CSV)';
-      bCSV.onclick=e=>{
-        e.preventDefault();
-        const zip=new JSZip();
-        [...byYear.get(y).keys()].sort((a,b)=>a-b).forEach(m=>{
-          zip.file(`sad_${type}_${terr}_${y}_${String(m).padStart(2,'0')}.csv`, rowsToCSV(byYear.get(y).get(m)));
-        });
-        zip.generateAsync({type:'blob'}).then(b=>downloadBlob(b,'application/zip',`sad_${type}_${terr}_${y}_csv.zip`));
-      };
-      const bGJ=document.createElement('button'); bGJ.className='btn-mini'; bGJ.textContent='Baixar tudo (GeoJSON)';
-      bGJ.onclick=e=>{
-        e.preventDefault();
-        const zip=new JSZip();
-        [...byYear.get(y).keys()].sort((a,b)=>a-b).forEach(m=>{
-          zip.file(`sad_${type}_${terr}_${y}_${String(m).padStart(2,'0')}.geojson`, rowsToGeoJSON(byYear.get(y).get(m)));
-        });
-        zip.generateAsync({type:'blob'}).then(b=>downloadBlob(b,'application/zip',`sad_${type}_${terr}_${y}_geojson.zip`));
-      };
-      actions.appendChild(bCSV); actions.appendChild(bGJ); details.appendChild(actions);
-
       const formats=document.createElement('div'); formats.className='format-wrap';
-
       const fCSV=document.createElement('div'); fCSV.className='format-card'; fCSV.innerHTML='<div class="format-title">CSV</div>';
       const l1=document.createElement('ul'); l1.className='chiplist';
-      [...byYear.get(y).keys()].sort((a,b)=>a-b).forEach(m=>{
-        const li=document.createElement('li'); const a=document.createElement('button');
-        a.type='button'; a.className='chiplink'; a.textContent=PT_MONTH[m];
-        a.onclick=()=>downloadBlob(rowsToCSV(byYear.get(y).get(m)),'text/csv',`sad_${type}_${terr}_${y}_${String(m).padStart(2,'0')}.csv`);
-        li.appendChild(a); l1.appendChild(li);
-      });
-      fCSV.appendChild(l1);
+      const li=document.createElement('li'); const a=document.createElement('button');
+      a.type='button'; a.className='chiplink'; a.textContent='Ano '+y;
+      a.onclick=()=>downloadBlob(rowsToCSVWith(byYear.get(y), ',', '\r\n'),'text/csv',`sad_${y}.csv`);
+      li.appendChild(a); l1.appendChild(li); fCSV.appendChild(l1);
 
-      const fGJ=document.createElement('div'); fGJ.className='format-card'; fGJ.innerHTML='<div class="format-title">GeoJSON</div>';
-      const l2=document.createElement('ul'); l2.className='chiplist';
-      [...byYear.get(y).keys()].sort((a,b)=>a-b).forEach(m=>{
-        const li=document.createElement('li'); const a=document.createElement('button');
-        a.type='button'; a.className='chiplink'; a.textContent=PT_MONTH[m];
-        a.onclick=()=>downloadBlob(rowsToGeoJSON(byYear.get(y).get(m)),'application/geo+json',`sad_${type}_${terr}_${y}_${String(m).padStart(2,'0')}.geojson`);
-        li.appendChild(a); l2.appendChild(li);
-      });
-      fGJ.appendChild(l2);
-
-      formats.appendChild(fCSV); formats.appendChild(fGJ);
-      details.appendChild(formats); ul.appendChild(details);
+      formats.appendChild(fCSV); details.appendChild(formats); ul.appendChild(details);
     });
-  }).catch(()=>ul.innerHTML='<li class="muted">Falha ao carregar a camada.</li>');
+  }).catch(()=>ul.innerHTML='<li class="muted">Não foi possível carregar SAD.</li>');
 }
-document.getElementById('sadToolbar').addEventListener('click',e=>{
-  const chip=e.target.closest('.chip'); if(!chip) return;
-  if(chip.classList.contains('sadType')) document.querySelectorAll('.sadType').forEach(c=>c.classList.toggle('active', c===chip));
-  if(chip.classList.contains('sadTerr')) document.querySelectorAll('.sadTerr').forEach(c=>c.classList.toggle('active', c===chip));
-  buildSAD();
-});
 
-/* =================== AP =================== */
-function getApSelected(){
-  const klass=document.querySelector('.apClass.active')?.dataset.class||'ameaca';
-  const scope=document.querySelector('.apScope.active')?.dataset.scope||'geral';
-  return {klass, scope};
-}
-async function buildAP(){
+/* =================== AP - Simplificado =================== */
+function buildAP(){
   const ul=document.getElementById('ap-list'); ul.innerHTML='';
-  const {klass, scope}=getApSelected();
-  const base=CFG.AP.base;
-  const currentYear=(new Date()).getFullYear();
-  const foundYears=[];
-  let consecutiveMiss=0;
+  const csvUrl = CFG.AP.csv;
 
-  for(let y=currentYear; y>=2000; y--){
-    const fname=CFG.AP.filename(scope, klass, y); if(!fname) continue;
-    const ok = await probeUrlExists(base+fname);
-    if(ok){ foundYears.push({y, url: base+fname}); consecutiveMiss=0; }
-    else { consecutiveMiss++; }
-    if(foundYears.length===0 && consecutiveMiss>7) break;
-    if(foundYears.length>0 && foundYears[0].y - y > 40) break;
-  }
-
-  if(foundYears.length===0){ ul.innerHTML='<li class="muted">Nenhum ano disponível para a seleção atual.</li>'; return; }
-
-  foundYears.forEach(({y,url})=>{
-    const details=document.createElement('details');
-    const summary=document.createElement('summary'); summary.innerHTML='<span class="year">'+y+'</span>'; details.appendChild(summary);
-
-    const formats=document.createElement('div'); formats.className='format-wrap';
-    const fCSV=document.createElement('div'); fCSV.className='format-card'; fCSV.innerHTML='<div class="format-title">CSV</div>';
-    const l1=document.createElement('ul'); l1.className='chiplist';
-    const li=document.createElement('li'); const span=document.createElement('span'); span.className='chiplink'; span.textContent='Não disponível'; span.style.opacity='.5'; span.style.pointerEvents='none'; li.appendChild(span); l1.appendChild(li); fCSV.appendChild(l1);
-
-    const fGJ=document.createElement('div'); fGJ.className='format-card'; fGJ.innerHTML='<div class="format-title">GeoJSON</div>';
-    const l2=document.createElement('ul'); l2.className='chiplist';
-    const li2=document.createElement('li'); const a=document.createElement('a'); a.href=url; a.className='chiplink'; a.setAttribute('download',''); a.textContent='Baixar GeoJSON'; li2.appendChild(a); l2.appendChild(li2); fGJ.appendChild(l2);
-
-    formats.appendChild(fCSV); formats.appendChild(fGJ); details.appendChild(formats); ul.appendChild(details);
-  });
-}
-document.getElementById('apToolbar').addEventListener('click', e=>{
-  const chip=e.target.closest('.chip'); if(!chip) return;
-  if(chip.classList.contains('apClass')) document.querySelectorAll('.apClass').forEach(c=>c.classList.toggle('active', c===chip));
-  if(chip.classList.contains('apScope')) document.querySelectorAll('.apScope').forEach(c=>c.classList.toggle('active', c===chip));
-  buildAP();
-});
-
-/* =================== SIMEX =================== */
-const SIMEX_DATASETS={
-  assentamentos:{csv:'/dataset/simex/csv/simex_amazonia_PAMT2007_2023_assentamentos.csv',parse:d=>({year:+d.ano||null,month:null,q:+(d.trimestre||d.tri||d.quarter||d.tr)||null})},
-  imoveis:{csv:'/dataset/simex/csv/simex_amazonia_PAMT2007_2023_imoveisrurais.csv',parse:d=>({year:+d.ano||null,month:null,q:+(d.trimestre||d.tri||d.quarter||d.tr)||null})},
-  municipios:{csv:'/dataset/simex/csv/simex_amazonia_PAMT2007_2023_municipios.csv',parse:d=>({year:+d.ano||null,month:+d.mes||null,q:+(d.trimestre||d.tri||d.quarter||d.tr)||null})},
-  estados:{csv:'/dataset/simex/csv/simex_amazonia_PAMT2007_2023_municipios.csv',parse:d=>({year:+d.ano||null,month:+d.mes||null,q:+(d.trimestre||d.tri||d.quarter||d.tr)||null})},
-  terras:{csv:'/dataset/simex/csv/simex_amazonia_PAMT2007_2023_TI.csv',parse:d=>({year:+d.ano||null,month:null,q:+(d.trimestre||d.tri||d.quarter||d.tr)||null})},
-  terras_sem_destinacao:{csv:'/dataset/simex/csv/simex_amazonia_PAMT2007_2023_TerrasNDest.csv',parse:d=>({year:+d.ano||null,month:null,q:+(d.trimestre||d.tri||d.quarter||d.tr)||null})},
-  uc:{csv:'/dataset/simex/csv/simex_amazonia_PAMT2007_2023_UC.csv',parse:d=>({year:+d.ano||null,month:null,q:+(d.trimestre||d.tri||d.quarter||d.tr)||null})}
-};
-function buildSIMEX(){
-  const ul=document.getElementById('simex-list'); ul.innerHTML='';
-  const mode=document.querySelector('.simexMode.active')?.dataset.mode||'mensal';
-  const ds=document.querySelector('.simexDs.active')?.dataset.ds||'municipios';
-  const cfg=SIMEX_DATASETS[ds];
-
-  d3.csv(cfg.csv).then(rows=>{
-    const parsed=rows.map(cfg.parse).filter(r=>r.year);
-    const byYear=new Map(); parsed.forEach(r=>{ if(!byYear.has(r.year)) byYear.set(r.year,[]); byYear.get(r.year).push(r); });
+  d3.csv(csvUrl).then(rows=>{
+    rows.forEach(r=>{ r.__ANO = parseYearFlexible(r, CFG.AP.yearFieldCandidates); });
+    const byYear=new Map();
+    rows.forEach(r=>{ if(!Number.isFinite(r.__ANO)) return; if(!byYear.has(r.__ANO)) byYear.set(r.__ANO, []); byYear.get(r.__ANO).push(r); });
     const years=[...byYear.keys()].sort((a,b)=>b-a);
+    if(!years.length){ ul.innerHTML='<li class="muted">Sem dados disponíveis.</li>'; return; }
 
     years.forEach(y=>{
       const details=document.createElement('details');
       const summary=document.createElement('summary'); summary.innerHTML='<span class="year">'+y+'</span>'; details.appendChild(summary);
+
       const formats=document.createElement('div'); formats.className='format-wrap';
+      const fCSV=document.createElement('div'); fCSV.className='format-card'; fCSV.innerHTML='<div class="format-title">CSV</div>';
+      const l1=document.createElement('ul'); l1.className='chiplist';
+      const li=document.createElement('li'); const a=document.createElement('button');
+      a.type='button'; a.className='chiplink'; a.textContent='Ano '+y;
+      a.onclick=()=>downloadBlob(rowsToCSVWith(byYear.get(y), ',', '\r\n'),'text/csv',`ap_${y}.csv`);
+      li.appendChild(a); l1.appendChild(li); fCSV.appendChild(l1);
 
-      const fCSV=document.createElement('div'); fCSV.className='format-card'; fCSV.innerHTML='<div class="format-title">CSV</div>'; const l1=document.createElement('ul'); l1.className='chiplist';
-      const fGJ=document.createElement('div'); fGJ.className='format-card'; fGJ.innerHTML='<div class="format-title">GeoJSON</div>'; const l2=document.createElement('ul'); l2.className='chiplist';
+      formats.appendChild(fCSV); details.appendChild(formats); ul.appendChild(details);
+    });
+  }).catch(()=>ul.innerHTML='<li class="muted">Não foi possível carregar Ameaça & Pressão.</li>');
+}
 
-      const hasMonth=byYear.get(y).some(r=>r.month>=1&&r.month<=12);
-      const hasQuarter=byYear.get(y).some(r=>r.q>=1&&r.q<=4);
-      const chip=(list,label,fn)=>{const li=document.createElement('li'); const b=document.createElement('button'); b.type='button'; b.className='chiplink'; b.textContent=label; b.onclick=fn; li.appendChild(b); list.appendChild(li);};
+/* =================== SIMEX - Simplificado =================== */
+function buildSIMEX(){
+  const ul=document.getElementById('simex-list'); ul.innerHTML='';
+  const csvUrl = CFG.SIMEX.csv;
 
-      if(mode==='mensal' && hasMonth){
-        const months=[...new Set(byYear.get(y).map(r=>r.month).filter(m=>m>=1&&m<=12))].sort((a,b)=>a-b);
-        months.forEach(m=>{
-          const arr=byYear.get(y).filter(r=>r.month===m);
-          chip(l1, PT_MONTH[m], ()=>downloadBlob(rowsToCSV(arr),'text/csv',`simex_${ds}_${y}_${String(m).padStart(2,'0')}.csv`));
-          chip(l2, PT_MONTH[m], ()=>downloadBlob(rowsToGeoJSON(arr),'application/geo+json',`simex_${ds}_${y}_${String(m).padStart(2,'0')}.geojson`));
-        });
-      } else if(mode==='trimestral'){
-        function qOf(m){return Math.floor((m-1)/3)+1;}
-        const qMap=new Map();
-        if(hasMonth){
-          byYear.get(y).forEach(r=>{ if(r.month>=1&&r.month<=12){ const q=qOf(r.month); if(!qMap.has(q)) qMap.set(q,[]); qMap.get(q).push(r); }});
-        } else if(hasQuarter){
-          byYear.get(y).forEach(r=>{ if(r.q>=1&&r.q<=4){ if(!qMap.has(r.q)) qMap.set(r.q,[]); qMap.get(r.q).push(r); }});
-        }
-        if(qMap.size){
-          [1,2,3,4].forEach(q=>{
-            if(!qMap.has(q)) return;
-            const arr=qMap.get(q);
-            chip(l1, 'T'+q, ()=>downloadBlob(rowsToCSV(arr),'text/csv',`simex_${ds}_${y}_T${q}.csv`));
-            chip(l2, 'T'+q, ()=>downloadBlob(rowsToGeoJSON(arr),'application/geo+json',`simex_${ds}_${y}_T${q}.geojson`));
-          });
-        } else {
-          const li1=document.createElement('li'); li1.textContent='Sem recorte trimestral disponível para '+y; l1.appendChild(li1);
-          const li2=document.createElement('li'); li2.textContent='Sem recorte trimestral disponível para '+y; l2.appendChild(li2);
-        }
-      } else {
-        const arr=byYear.get(y);
-        chip(l1, 'Ano '+y, ()=>downloadBlob(rowsToCSV(arr),'text/csv',`simex_${ds}_${y}.csv`));
-        chip(l2, 'Ano '+y, ()=>downloadBlob(rowsToGeoJSON(arr),'application/geo+json',`simex_${ds}_${y}.geojson`));
-      }
+  d3.csv(csvUrl).then(rows=>{
+    rows.forEach(r=>{ r.__ANO = parseYearFlexible(r, CFG.SIMEX.yearFieldCandidates); });
+    const byYear=new Map();
+    rows.forEach(r=>{ if(!Number.isFinite(r.__ANO)) return; if(!byYear.has(r.__ANO)) byYear.set(r.__ANO, []); byYear.get(r.__ANO).push(r); });
+    const years=[...byYear.keys()].sort((a,b)=>b-a);
+    if(!years.length){ ul.innerHTML='<li class="muted">Sem dados disponíveis.</li>'; return; }
 
-      fCSV.appendChild(l1); fGJ.appendChild(l2); formats.appendChild(fCSV); formats.appendChild(fGJ); details.appendChild(formats); ul.appendChild(details);
+    years.forEach(y=>{
+      const details=document.createElement('details');
+      const summary=document.createElement('summary'); summary.innerHTML='<span class="year">'+y+'</span>'; details.appendChild(summary);
+
+      const formats=document.createElement('div'); formats.className='format-wrap';
+      const fCSV=document.createElement('div'); fCSV.className='format-card'; fCSV.innerHTML='<div class="format-title">CSV</div>';
+      const l1=document.createElement('ul'); l1.className='chiplist';
+      const li=document.createElement('li'); const a=document.createElement('button');
+      a.type='button'; a.className='chiplink'; a.textContent='Ano '+y;
+      a.onclick=()=>downloadBlob(rowsToCSVWith(byYear.get(y), ',', '\r\n'),'text/csv',`simex_${y}.csv`);
+      li.appendChild(a); l1.appendChild(li); fCSV.appendChild(l1);
+
+      formats.appendChild(fCSV); details.appendChild(formats); ul.appendChild(details);
     });
   }).catch(()=>ul.innerHTML='<li class="muted">Não foi possível carregar SIMEX.</li>');
 }
-document.getElementById('simexToolbar').addEventListener('click', e=>{
-  const m=e.target.closest('.simexMode'); const d=e.target.closest('.simexDs');
-  if(m){ document.querySelectorAll('.simexMode').forEach(c=>c.classList.toggle('active', c===m)); }
-  if(d){ document.querySelectorAll('.simexDs').forEach(c=>c.classList.toggle('active', c===d)); }
-  buildSIMEX();
-});
 
-/* =================== FLORESER (CSV only) =================== */
+/* =================== FLORESER =================== */
 function buildFLORESER(){
   const ul=document.getElementById('floreser-list'); ul.innerHTML='';
   const csvUrl = CFG.FLORESER.csv;
@@ -495,10 +285,10 @@ function buildFLORESER(){
 
       formats.appendChild(fCSV); details.appendChild(formats); ul.appendChild(details);
     });
-  }).catch(()=>ul.innerHTML='<li class="muted">Não foi possível carregar FLORESER. Verifique o caminho do CSV.</li>');
+  }).catch(()=>ul.innerHTML='<li class="muted">Não foi possível carregar FLORESER.</li>');
 }
 
-/* =================== Collapse + Tabs + Fix Clicks =================== */
+/* =================== Collapse + Tabs =================== */
 document.getElementById('content').addEventListener('click', (e)=>{
   const btn=e.target.closest('.collapse-btn');
   if(!btn) return;
@@ -506,8 +296,7 @@ document.getElementById('content').addEventListener('click', (e)=>{
   const collapsed=card.classList.toggle('collapsed');
   btn.setAttribute('aria-expanded', !collapsed);
   btn.innerHTML = collapsed ? '<i class="fa fa-chevron-down"></i>' : '<i class="fa fa-chevron-up"></i>';
-  // mostra/esconde conteúdo abaixo da faixa do título
-  card.querySelectorAll(':scope > .subtoolbar, :scope > details, :scope > ul.list-divider')
+  card.querySelectorAll(':scope > ul.list-divider')
       .forEach(el=>{ el.style.display= collapsed ? 'none' : ''; });
 });
 
@@ -523,13 +312,6 @@ document.getElementById('tabbar').addEventListener('click', e=>{
   const t=e.target.closest('.tab'); if(!t) return;
   showSection(t.dataset.ds);
 });
-
-/* garante que clicks em chips/botões não sejam “capturados” por summary */
-document.addEventListener('click', (e)=>{
-  const clickable = e.target.closest('a.chiplink, button.chiplink, .btn-mini, .chip');
-  if(!clickable) return;
-  if (e.target.closest('summary')) { e.stopPropagation(); e.preventDefault(); clickable.click(); }
-}, true);
 
 /* init */
 showSection('sad');
