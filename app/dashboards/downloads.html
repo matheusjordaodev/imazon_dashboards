@@ -9,9 +9,9 @@
 
 <style>
   :root{
-    --brand:#008055;      /* verde principal */
-    --brand-700:#066644;  /* mais escuro */
-    --brand-200:#D6EFE6;  /* claro */
+    --brand:#008055;
+    --brand-700:#066644;
+    --brand-200:#D6EFE6;
   }
   *{box-sizing:border-box}
   body{font-family:'Montserrat',sans-serif;background:#F5F5F5;color:#212121;padding:20px;line-height:1.55}
@@ -20,58 +20,67 @@
   h2{font-size:1.6rem;text-align:center;margin:10px 0 22px;color:#2d2d2d}
   h2:after{content:"";display:block;width:120px;height:3px;background:var(--brand);margin:10px auto 0;border-radius:3px}
 
-  /* Tabs */
   .tabbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--brand);border-radius:8px;padding:14px;margin:10px 0 22px}
   .tabbar .tab{color:#fff;font-weight:600;background:rgba(255,255,255,.14);padding:10px 14px;border-radius:999px;cursor:pointer;user-select:none;border:1px solid rgba(255,255,255,.25)}
   .tabbar .tab.active{background:#fff;color:var(--brand);border-color:#fff}
 
-  /* Cards */
   h3{margin:0;color:var(--brand);font-size:1.08rem}
   .card{background:#fff;border:1px solid #e8e8e8;border-radius:14px;margin:18px 0;padding:16px;box-shadow:0 6px 20px rgba(0,0,0,.04);position:relative}
   .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
 
-  /* Collapse button */
+  /* ---- Botão moderno de colapso ---- */
   .collapse-btn{
-    position:static;display:inline-flex;align-items:center;gap:6px;
-    border:1px solid #e0e0e0;background:#fff;border-radius:10px;
-    padding:6px 10px;color:var(--brand);cursor:pointer
+    position:relative; display:inline-flex; align-items:center; justify-content:center;
+    width:38px; height:38px; border-radius:999px;
+    border:1px solid rgba(0,0,0,.08); background:#fff;
+    color:var(--brand); cursor:pointer; transition:all .18s ease;
+    box-shadow:0 2px 10px rgba(0,0,0,.05);
   }
-  .collapse-btn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .collapse-btn:hover{ transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,0,0,.08); }
+  .collapse-btn i{ font-size:15px; transition:transform .25s ease; }
 
-  /* Anos (details) */
+  /* alterna o ícone automaticamente via pseudo-elemento */
+  .card.collapsed .collapse-btn i::before {
+    content: "\f065"; /* fa-expand */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+  }
+
+  .collapse-btn.ghost{
+    background:rgba(255,255,255,.9);
+    border:1px solid rgba(0,128,85,.18);
+    backdrop-filter:saturate(140%) blur(6px);
+  }
+  .collapse-btn:focus-visible{
+    outline:2px solid color-mix(in oklab, var(--brand) 60%, white 40%);
+    outline-offset:2px;
+  }
+
   details{border:1px solid #e8e8e8;border-radius:12px;margin:16px 0;background:#fff;position:relative}
   summary{cursor:pointer;list-style:none;padding:16px 20px;font-weight:700;position:relative;z-index:2}
   summary::-webkit-details-marker{display:none}
   .year{font-weight:700}
 
-  /* Formatos */
   .format-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 20px 14px}
   .format-card{border:1px dashed #e3e3e3;border-radius:12px;padding:10px 14px;background:#fafafa}
   .format-title{font-size:.9rem;color:#2a2a2a;margin:0 0 6px;font-weight:700}
 
-  /* Botões de download */
   .chiplist{display:flex;flex-wrap:wrap;gap:10px;padding:12px 0 4px;margin:0;list-style:none}
   .chiplink{display:inline-block;padding:8px 12px;border:1px solid #e0e0e0;border-radius:999px;background:#fff;font-size:.9rem;color:var(--brand);text-decoration:none;cursor:pointer}
   .chiplink:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
 
   .muted{color:#777}
-  .actions{display:flex;gap:10px;align-items:center;margin:8px 20px 14px;flex-wrap:wrap}
-  .btn-mini{border:1px solid #e0e0e0;border-radius:10px;padding:6px 12px;background:#fff;cursor:pointer;font-size:.9rem}
-  .btn-mini.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
-
-  /* Divisão de lista */
   .list-divider{list-style:none;padding:8px 24px 16px;margin:0}
   .list-divider > li{padding:10px 0;border-bottom:1px solid #eee}
   .list-divider > li:last-child{border-bottom:none}
 
   @media (max-width:820px){.format-wrap{grid-template-columns:1fr}}
 
-  /* Fix de clicabilidade */
   #content{position:relative;isolation:isolate}
   details{ position: relative; overflow: visible; }
   details[open] > summary ~ *{ position: relative; z-index: 3; }
   a.chiplink, button.chiplink, .btn-mini, .collapse-btn{
-    position:relative; z-index: 10000 !important; pointer-events: auto !important;
+    position:relative; z-index:10000 !important; pointer-events:auto !important;
   }
 </style>
 </head>
@@ -79,7 +88,6 @@
 <div class="wrap">
   <h2>Downloads</h2>
 
-  <!-- Tabs -->
   <div class="tabbar" id="tabbar">
     <div class="tab active" data-ds="sad"><strong>SAD</strong></div>
     <div class="tab" data-ds="ap"><strong>Ameaça e Pressão</strong></div>
@@ -88,76 +96,64 @@
   </div>
 
   <div id="content">
-    <!-- SAD - Simplificado como FLORESER -->
     <div class="card" data-section="sad">
       <div class="card-head">
         <h3>Sistema de Alerta de Desmatamento (SAD)</h3>
-        <button class="collapse-btn" title="Recolher/Expandir" aria-expanded="true"><i class="fa fa-chevron-up"></i></button>
+        <button class="collapse-btn ghost" title="Recolher/Expandir" aria-expanded="true">
+          <i class="fa-solid fa-compress" aria-hidden="true"></i>
+        </button>
       </div>
       <ul id="sad-list" class="list-divider"><li class="muted">Carregando anos...</li></ul>
     </div>
 
-    <!-- AP - Simplificado como FLORESER -->
     <div class="card" data-section="ap" style="display:none">
       <div class="card-head">
         <h3>Ameaça & Pressão</h3>
-        <button class="collapse-btn" title="Recolher/Expandir" aria-expanded="true"><i class="fa fa-chevron-up"></i></button>
+        <button class="collapse-btn ghost" title="Recolher/Expandir" aria-expanded="true">
+          <i class="fa-solid fa-compress" aria-hidden="true"></i>
+        </button>
       </div>
       <ul id="ap-list" class="list-divider"><li class="muted">Carregando anos...</li></ul>
     </div>
 
-    <!-- SIMEX - Simplificado como FLORESER -->
     <div class="card" data-section="simex" style="display:none">
       <div class="card-head">
         <h3>SIMEX</h3>
-        <button class="collapse-btn" title="Recolher/Expandir" aria-expanded="true"><i class="fa fa-chevron-up"></i></button>
+        <button class="collapse-btn ghost" title="Recolher/Expandir" aria-expanded="true">
+          <i class="fa-solid fa-compress" aria-hidden="true"></i>
+        </button>
       </div>
       <ul id="simex-list" class="list-divider"><li class="muted">Carregando anos...</li></ul>
     </div>
 
-    <!-- FLORESER - Mantido como está -->
     <div class="card" data-section="floreser" style="display:none">
       <div class="card-head">
         <h3>FLORESER</h3>
-        <button class="collapse-btn" title="Recolher/Expandir" aria-expanded="true"><i class="fa fa-chevron-up"></i></button>
+        <button class="collapse-btn ghost" title="Recolher/Expandir" aria-expanded="true">
+          <i class="fa-solid fa-compress" aria-hidden="true"></i>
+        </button>
       </div>
       <ul id="floreser-list" class="list-divider"><li class="muted">Carregando anos...</li></ul>
     </div>
   </div>
 </div>
 
-<!-- libs -->
 <script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-/* =================== CONFIG =================== */
 const CFG = {
-  SAD: {
-    csv: '/dataset/sad/csv/sad_completo_anual.csv',
-    yearFieldCandidates: ['ANO', 'ano', 'year', 'Ano']
-  },
-  AP: {
-    csv: '/dataset/ap/csv/ap_completo_anual.csv',
-    yearFieldCandidates: ['ANO', 'ano', 'year', 'Ano']
-  },
-  SIMEX: {
-    csv: '/dataset/simex/csv/simex_completo_anual.csv',
-    yearFieldCandidates: ['ANO', 'ano', 'year', 'Ano']
-  },
-  FLORESER: {
-    csv: '/dataset/floreser-9-22-1-ages-sf.csv',
-    yearFieldCandidates: ['year','ANO','ano','Ano','ano_ref','ANO_REF']
-  }
+  SAD:{csv:'/dataset/sad/csv/sad_completo_anual.csv',yearFieldCandidates:['ANO','ano','year','Ano']},
+  AP:{csv:'/dataset/ap/csv/ap_completo_anual.csv',yearFieldCandidates:['ANO','ano','year','Ano']},
+  SIMEX:{csv:'/dataset/simex/csv/simex_completo_anual.csv',yearFieldCandidates:['ANO','ano','year','Ano']},
+  FLORESER:{csv:'/dataset/floreser-9-22-1-ages-sf.csv',yearFieldCandidates:['year','ANO','ano','Ano','ano_ref','ANO_REF']}
 };
 
-/* =================== HELPERS =================== */
-const onlyDigitsKeepMinus = s => String(s==null?'':s).replace(/[^0-9-]/g,'');
-function parseYearFlexible(row, candidates){
-  for(const k of candidates){ if(row[k]!=null && row[k]!==''){ const v=parseInt(onlyDigitsKeepMinus(row[k]),10); if(Number.isFinite(v)) return v; } }
+const onlyDigitsKeepMinus=s=>String(s==null?'':s).replace(/[^0-9-]/g,'');
+function parseYearFlexible(row,candidates){
+  for(const k of candidates){if(row[k]!=null&&row[k]!==''){const v=parseInt(onlyDigitsKeepMinus(row[k]),10);if(Number.isFinite(v))return v;}}
   return null;
 }
-function rowsToCSVWith(rows, sep, newline){
-  if(!rows||!rows.length) return '';
+function rowsToCSVWith(rows,sep,newline){
+  if(!rows||!rows.length)return'';
   const cols=Object.keys(rows[0]);
   const esc=v=>('"'+String(v==null?'':v).replace(/"/g,'""')+'"');
   const out=[cols.join(sep)];
@@ -165,155 +161,55 @@ function rowsToCSVWith(rows, sep, newline){
   return out.join(newline)+newline;
 }
 function downloadBlob(strOrBlob,mime,filename){
-  let blob; const isCsv = /csv/i.test(mime) || /\.csv$/i.test(filename);
-  if(strOrBlob instanceof Blob){ blob = strOrBlob; }
-  else { const bom = isCsv ? '\ufeff' : ''; const type = isCsv ? (mime.includes('charset')? mime : (mime+';charset=utf-8')) : mime; blob = new Blob([bom, strOrBlob], {type}); }
+  let blob; const isCsv=/csv/i.test(mime)||/\.csv$/i.test(filename);
+  if(strOrBlob instanceof Blob){blob=strOrBlob;}
+  else{const bom=isCsv?'\ufeff':'';const type=isCsv?(mime.includes('charset')?mime:(mime+';charset=utf-8')):mime;blob=new Blob([bom,strOrBlob],{type});}
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
 }
 
-/* =================== SAD - Simplificado =================== */
-function buildSAD(){
-  const ul=document.getElementById('sad-list'); ul.innerHTML='';
-  const csvUrl = CFG.SAD.csv;
-
+function buildSection(sec){
+  const ul=document.getElementById(sec.toLowerCase()+'-list'); ul.innerHTML='';
+  const csvUrl=CFG[sec].csv;
   d3.csv(csvUrl).then(rows=>{
-    rows.forEach(r=>{ r.__ANO = parseYearFlexible(r, CFG.SAD.yearFieldCandidates); });
+    rows.forEach(r=>{r.__ANO=parseYearFlexible(r,CFG[sec].yearFieldCandidates);});
     const byYear=new Map();
-    rows.forEach(r=>{ if(!Number.isFinite(r.__ANO)) return; if(!byYear.has(r.__ANO)) byYear.set(r.__ANO, []); byYear.get(r.__ANO).push(r); });
+    rows.forEach(r=>{if(!Number.isFinite(r.__ANO))return;if(!byYear.has(r.__ANO))byYear.set(r.__ANO,[]);byYear.get(r.__ANO).push(r);});
     const years=[...byYear.keys()].sort((a,b)=>b-a);
-    if(!years.length){ ul.innerHTML='<li class="muted">Sem dados disponíveis.</li>'; return; }
-
+    if(!years.length){ul.innerHTML='<li class="muted">Sem dados disponíveis.</li>';return;}
     years.forEach(y=>{
       const details=document.createElement('details');
-      const summary=document.createElement('summary'); summary.innerHTML='<span class="year">'+y+'</span>'; details.appendChild(summary);
-
-      const formats=document.createElement('div'); formats.className='format-wrap';
-      const fCSV=document.createElement('div'); fCSV.className='format-card'; fCSV.innerHTML='<div class="format-title">CSV</div>';
-      const l1=document.createElement('ul'); l1.className='chiplist';
-      const li=document.createElement('li'); const a=document.createElement('button');
-      a.type='button'; a.className='chiplink'; a.textContent='Ano '+y;
-      a.onclick=()=>downloadBlob(rowsToCSVWith(byYear.get(y), ',', '\r\n'),'text/csv',`sad_${y}.csv`);
-      li.appendChild(a); l1.appendChild(li); fCSV.appendChild(l1);
-
-      formats.appendChild(fCSV); details.appendChild(formats); ul.appendChild(details);
+      const summary=document.createElement('summary');summary.innerHTML='<span class="year">'+y+'</span>';details.appendChild(summary);
+      const formats=document.createElement('div');formats.className='format-wrap';
+      const fCSV=document.createElement('div');fCSV.className='format-card';fCSV.innerHTML='<div class="format-title">CSV</div>';
+      const l1=document.createElement('ul');l1.className='chiplist';
+      const li=document.createElement('li');const a=document.createElement('button');
+      a.type='button';a.className='chiplink';a.textContent='Ano '+y;
+      a.onclick=()=>downloadBlob(rowsToCSVWith(byYear.get(y),',','\r\n'),'text/csv',`${sec.toLowerCase()}_${y}.csv`);
+      li.appendChild(a);l1.appendChild(li);fCSV.appendChild(l1);
+      formats.appendChild(fCSV);details.appendChild(formats);ul.appendChild(details);
     });
-  }).catch(()=>ul.innerHTML='<li class="muted">Não foi possível carregar SAD.</li>');
+  }).catch(()=>ul.innerHTML=`<li class="muted">Não foi possível carregar ${sec}.</li>`);
 }
 
-/* =================== AP - Simplificado =================== */
-function buildAP(){
-  const ul=document.getElementById('ap-list'); ul.innerHTML='';
-  const csvUrl = CFG.AP.csv;
-
-  d3.csv(csvUrl).then(rows=>{
-    rows.forEach(r=>{ r.__ANO = parseYearFlexible(r, CFG.AP.yearFieldCandidates); });
-    const byYear=new Map();
-    rows.forEach(r=>{ if(!Number.isFinite(r.__ANO)) return; if(!byYear.has(r.__ANO)) byYear.set(r.__ANO, []); byYear.get(r.__ANO).push(r); });
-    const years=[...byYear.keys()].sort((a,b)=>b-a);
-    if(!years.length){ ul.innerHTML='<li class="muted">Sem dados disponíveis.</li>'; return; }
-
-    years.forEach(y=>{
-      const details=document.createElement('details');
-      const summary=document.createElement('summary'); summary.innerHTML='<span class="year">'+y+'</span>'; details.appendChild(summary);
-
-      const formats=document.createElement('div'); formats.className='format-wrap';
-      const fCSV=document.createElement('div'); fCSV.className='format-card'; fCSV.innerHTML='<div class="format-title">CSV</div>';
-      const l1=document.createElement('ul'); l1.className='chiplist';
-      const li=document.createElement('li'); const a=document.createElement('button');
-      a.type='button'; a.className='chiplink'; a.textContent='Ano '+y;
-      a.onclick=()=>downloadBlob(rowsToCSVWith(byYear.get(y), ',', '\r\n'),'text/csv',`ap_${y}.csv`);
-      li.appendChild(a); l1.appendChild(li); fCSV.appendChild(l1);
-
-      formats.appendChild(fCSV); details.appendChild(formats); ul.appendChild(details);
-    });
-  }).catch(()=>ul.innerHTML='<li class="muted">Não foi possível carregar Ameaça & Pressão.</li>');
-}
-
-/* =================== SIMEX - Simplificado =================== */
-function buildSIMEX(){
-  const ul=document.getElementById('simex-list'); ul.innerHTML='';
-  const csvUrl = CFG.SIMEX.csv;
-
-  d3.csv(csvUrl).then(rows=>{
-    rows.forEach(r=>{ r.__ANO = parseYearFlexible(r, CFG.SIMEX.yearFieldCandidates); });
-    const byYear=new Map();
-    rows.forEach(r=>{ if(!Number.isFinite(r.__ANO)) return; if(!byYear.has(r.__ANO)) byYear.set(r.__ANO, []); byYear.get(r.__ANO).push(r); });
-    const years=[...byYear.keys()].sort((a,b)=>b-a);
-    if(!years.length){ ul.innerHTML='<li class="muted">Sem dados disponíveis.</li>'; return; }
-
-    years.forEach(y=>{
-      const details=document.createElement('details');
-      const summary=document.createElement('summary'); summary.innerHTML='<span class="year">'+y+'</span>'; details.appendChild(summary);
-
-      const formats=document.createElement('div'); formats.className='format-wrap';
-      const fCSV=document.createElement('div'); fCSV.className='format-card'; fCSV.innerHTML='<div class="format-title">CSV</div>';
-      const l1=document.createElement('ul'); l1.className='chiplist';
-      const li=document.createElement('li'); const a=document.createElement('button');
-      a.type='button'; a.className='chiplink'; a.textContent='Ano '+y;
-      a.onclick=()=>downloadBlob(rowsToCSVWith(byYear.get(y), ',', '\r\n'),'text/csv',`simex_${y}.csv`);
-      li.appendChild(a); l1.appendChild(li); fCSV.appendChild(l1);
-
-      formats.appendChild(fCSV); details.appendChild(formats); ul.appendChild(details);
-    });
-  }).catch(()=>ul.innerHTML='<li class="muted">Não foi possível carregar SIMEX.</li>');
-}
-
-/* =================== FLORESER =================== */
-function buildFLORESER(){
-  const ul=document.getElementById('floreser-list'); ul.innerHTML='';
-  const csvUrl = CFG.FLORESER.csv;
-
-  d3.csv(csvUrl).then(rows=>{
-    rows.forEach(r=>{ r.__ANO = parseYearFlexible(r, CFG.FLORESER.yearFieldCandidates); });
-    const byYear=new Map();
-    rows.forEach(r=>{ if(!Number.isFinite(r.__ANO)) return; if(!byYear.has(r.__ANO)) byYear.set(r.__ANO, []); byYear.get(r.__ANO).push(r); });
-    const years=[...byYear.keys()].sort((a,b)=>b-a);
-    if(!years.length){ ul.innerHTML='<li class="muted">Sem dados disponíveis.</li>'; return; }
-
-    years.forEach(y=>{
-      const details=document.createElement('details');
-      const summary=document.createElement('summary'); summary.innerHTML='<span class="year">'+y+'</span>'; details.appendChild(summary);
-
-      const formats=document.createElement('div'); formats.className='format-wrap';
-      const fCSV=document.createElement('div'); fCSV.className='format-card'; fCSV.innerHTML='<div class="format-title">CSV</div>';
-      const l1=document.createElement('ul'); l1.className='chiplist';
-      const li=document.createElement('li'); const a=document.createElement('button');
-      a.type='button'; a.className='chiplink'; a.textContent='Ano '+y;
-      a.onclick=()=>downloadBlob(rowsToCSVWith(byYear.get(y), ';', '\n'),'text/csv',`floreser_${y}.csv`);
-      li.appendChild(a); l1.appendChild(li); fCSV.appendChild(l1);
-
-      formats.appendChild(fCSV); details.appendChild(formats); ul.appendChild(details);
-    });
-  }).catch(()=>ul.innerHTML='<li class="muted">Não foi possível carregar FLORESER.</li>');
-}
-
-/* =================== Collapse + Tabs =================== */
-document.getElementById('content').addEventListener('click', (e)=>{
-  const btn=e.target.closest('.collapse-btn');
-  if(!btn) return;
+document.getElementById('content').addEventListener('click',e=>{
+  const btn=e.target.closest('.collapse-btn'); if(!btn)return;
   const card=btn.closest('.card');
   const collapsed=card.classList.toggle('collapsed');
-  btn.setAttribute('aria-expanded', !collapsed);
-  btn.innerHTML = collapsed ? '<i class="fa fa-chevron-down"></i>' : '<i class="fa fa-chevron-up"></i>';
+  btn.setAttribute('aria-expanded',String(!collapsed));
   card.querySelectorAll(':scope > ul.list-divider')
-      .forEach(el=>{ el.style.display= collapsed ? 'none' : ''; });
+      .forEach(el=>{el.style.display=collapsed?'none':'';});
 });
 
 function showSection(ds){
-  document.querySelectorAll('.tabbar .tab').forEach(t=>t.classList.toggle('active', t.dataset.ds===ds));
+  document.querySelectorAll('.tabbar .tab').forEach(t=>t.classList.toggle('active',t.dataset.ds===ds));
   document.querySelectorAll('[data-section]').forEach(s=>s.style.display=(s.getAttribute('data-section')===ds)?'block':'none');
-  if(ds==='sad') buildSAD();
-  if(ds==='ap') buildAP();
-  if(ds==='simex') buildSIMEX();
-  if(ds==='floreser') buildFLORESER();
+  buildSection(ds.toUpperCase());
 }
-document.getElementById('tabbar').addEventListener('click', e=>{
-  const t=e.target.closest('.tab'); if(!t) return;
+document.getElementById('tabbar').addEventListener('click',e=>{
+  const t=e.target.closest('.tab'); if(!t)return;
   showSection(t.dataset.ds);
 });
-
-/* init */
 showSection('sad');
 </script>
 </body>
