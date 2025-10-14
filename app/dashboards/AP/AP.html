@@ -125,27 +125,29 @@
 </head>
 <body>
   <!-- Overlay de carregamento -->
-  <div id="loader-overlay" aria-live="polite" aria-busy="true">
-    <div class="loader-card">
-      <div class="loader-arc" aria-hidden="true"></div>
-      <div class="loader-text">Carregando dados...</div>
-    </div>
+<div id="loader-overlay" style="position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;z-index:9999">
+  <div class="bg-white p-4 rounded-4 shadow text-center">
+    <div class="spinner-border" role="status" style="width:3rem;height:3rem;color:#008055"></div>
+    <div class="loader-text mt-2">Carregando Dados...</div>
   </div>
+</div>
 
   <div class="container-fluid">
-    <!-- CABEÇALHO REMOVIDO - PARTE EM VERDE FOI EXCLUÍDA -->
+    <div class="dashboard-header">
+    <img src="../../img/ameaca_e_pressao.png" alt="Logo Ameaça e Pressão" style="max-width:150px;height:auto;display:block;margin:0 auto">
+  </div> 
 
-    <!-- NOVA SEÇÃO DE FILTROS PADRONIZADA -->
+
     <div class="filter-section">
       <div class="filter-container">
         
-        <!-- Filtro de Tipo (substitui os botões) -->
+
         <div class="filter-item span-2">
-          <label class="form-label fw-semibold" for="typeFilter">Tipo</label>
+          <label class="form-label" for="typeFilter">Ameça e Pressão</label>
           <select id="typeFilter" class="form-select">
             <option value="ameaca">Ameaça</option>
             <option value="pressao">Pressão</option>
-            <option value="geral">Geral</option>
+            <option value="Todos">Todos</option>
           </select>
         </div>
 
@@ -214,13 +216,13 @@
         <div class="filter-item span-2">
           <label class="form-label fw-semibold">&nbsp;</label>
           <button id="applyFilters" class="btn btn-primary w-100">
-            <i class="fas fa-filter me-1"></i> Aplicar
+            <i class="fas fa-filter me-1"></i> Aplicar Filtro
           </button>
         </div>
         <div class="filter-item span-2">
           <label class="form-label fw-semibold">&nbsp;</label>
           <button id="clearFilters" class="btn btn-secondary w-100">
-            <i class="fas fa-eraser me-1"></i> Limpar
+            <i class="fas fa-eraser me-1"></i> Limpar Filtros
           </button>
         </div>
       </div>
@@ -504,7 +506,7 @@
   ======================== */
   let map, geojsonLayer=null, geojsonData=null, filteredData=[], dataTable=null, barChart=null;
   const chartsStore={};
-  const classColors={ameaca:'#FF6D00', pressao:'#c62828', geral:'#008055'};
+  const classColors={ameaca:'#FF6D00', pressao:'#c62828', Todos:'#008055'};
   let currentClass = 'ameaca';
   let currentFilter = null;     // null | 'ti' | 'uc' | 'allap'
   let ucSubtype = 'all';        // manter 'all' (UCE+UCF)
@@ -519,7 +521,7 @@
 
   function getProp(p, ...names){ for(const k of names){ if(p && p[k]!=null && p[k]!=='') return p[k]; } return null; }
   function mkKey(p){ const nome=getProp(p,'nome'); const estado=getProp(p,'estado'); return `${(nome||'').trim()}|${(estado||'').trim()}`; }
-  function fallbackColor(){ if (currentClass === 'geral') return d3.interpolateGreys(0.6); if (currentClass === 'ameaca') return d3.interpolateOranges(0.6); return d3.interpolateReds(0.6); }
+  function fallbackColor(){ if (currentClass === 'Todos') return d3.interpolateGreys(0.6); if (currentClass === 'ameaca') return d3.interpolateOranges(0.6); return d3.interpolateReds(0.6); }
   function getColorFor(p){ const key=mkKey(p||{}); return colorMap.get(key) || fallbackColor(); }
 
   /* ========================
@@ -635,7 +637,7 @@
     return { type: 'FeatureCollection', features: norm };
   }
   function fileContextBase(){
-    const scope = currentFilter || 'geral';
+    const scope = currentFilter || 'Todos';
     const cls = currentClass || 'ameaca';
     const year = selectedYear ?? 'todos';
     const ucSub = (scope==='uc') ? `_${ucSubtype}` : '';
@@ -959,18 +961,18 @@
     const addTI = (c)=>{ t.push(filename('ti', c, year)); };
 
     if(scope===null){
-      if(cls==='geral'){ t.push(filename(null,'ameaca',year)); t.push(filename(null,'pressao',year)); }
+      if(cls==='Todos'){ t.push(filename(null,'ameaca',year)); t.push(filename(null,'pressao',year)); }
       else{ t.push(filename(null,cls,year)); }
       return t;
     }
     if(scope==='ti'){
-      if(cls==='geral'){ addTI('ameaca'); addTI('pressao'); }
+      if(cls==='Todos'){ addTI('ameaca'); addTI('pressao'); }
       else{ addTI(cls); }
       return t;
     }
     if(scope==='uc'){
       // Como removemos o subfiltro, sempre busca UCE + UCF
-      if(cls==='geral'){
+      if(cls==='Todos'){
         addUC('ameaca','uce'); addUC('pressao','uce');
         addUC('ameaca','ucf'); addUC('pressao','ucf');
       }else{
@@ -979,7 +981,7 @@
       return t;
     }
     if(scope==='allap'){
-      if(cls==='geral'){
+      if(cls==='Todos'){
         addTI('ameaca'); addTI('pressao');
         addUC('ameaca','uce'); addUC('pressao','uce');
         addUC('ameaca','ucf'); addUC('pressao','ucf');
@@ -1148,7 +1150,7 @@
     const tSeq = (from, to, n) =>
       Array.from({ length: n }, (_, i) => from + (to - from) * (i / Math.max(1, n - 1)));
     const colors = tSeq(0.9, 0.35, n).map(t =>
-      currentClass === 'geral'   ? d3.interpolateGreys(t) :
+      currentClass === 'Todos'   ? d3.interpolateGreys(t) :
       currentClass === 'ameaca' ? d3.interpolateOranges(t) :
                                   d3.interpolateReds(t)
     );
@@ -1209,7 +1211,7 @@
               title: (items) => {
                 const idx = items[0].dataIndex;
                 const cls = (barItems[idx]?._f?.properties?.class) || currentClass;
-                const clsTxt = cls === 'ameaca' ? 'Ameaça' : cls === 'pressao' ? 'Pressão' : 'Geral';
+                const clsTxt = cls === 'ameaca' ? 'Ameaça' : cls === 'pressao' ? 'Pressão' : 'Todos';
                 return `${barItems[idx].name} — ${clsTxt}`;
               },
               afterLabel: (ctx) => {

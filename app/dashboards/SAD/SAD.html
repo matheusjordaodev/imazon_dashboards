@@ -242,7 +242,7 @@
           <div class="d-flex align-items-center">
             <div class="download-group">
               <button class="btn btn-sm btn-outline-secondary" id="btn-bar-png" title="PNG"><i class="fa-solid fa-image me-1"></i>PNG</button>
-              <button class="btn btn-sm btn-outline-secondary" id="btn-bar-csv" title="CSV (geral)"><i class="fa-solid fa-file-csv me-1"></i>CSV</button>
+              <button class="btn btn-sm btn-outline-secondary" id="btn-bar-csv" title="CSV (todos)"><i class="fa-solid fa-file-csv me-1"></i>CSV</button>
             </div>
             <button class="btn btn-sm btn-outline-secondary dl-toggle ms-2" aria-pressed="false" title="Ocultar downloads"><i class="fas fa-eye-slash me-1"></i>Ocultar</button>
           </div>
@@ -1222,7 +1222,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
     updateTitles(); 
     toggleDatasetButtonsInFilters();
   });
-  document.getElementById('sadFilter').addEventListener('change', ()=>{});
+  document.getElementById('sadFilter').addEventListener('change', ()=>{
+    // feedback visual
+    showLoader('Aplicando filtro do SAD...');
+    // opcional: resetar a paginação do ranking ao trocar o tipo
+    rankPage = 0;
+    updateDashboard();
+  });
+
   document.getElementById('estadoFilter').addEventListener('change', ()=>{});
 
   document.getElementById('yearStart').addEventListener('change', ()=>{ toggleMonthLabels(); updateTitles(); });
@@ -1246,6 +1253,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   document.getElementById('btn-bar-csv').addEventListener('click', exportRankingCSVAll);
   document.getElementById('btn-map-png').addEventListener('click', mapPNG);
+  // Esconde os grupos de download por padrão e ajusta o botão de toggle
+  document.querySelectorAll('.download-group').forEach(g=>{
+    g.classList.add('d-none');
+  });
+  document.querySelectorAll('.dl-toggle').forEach(btn=>{
+    btn.setAttribute('aria-pressed','true');
+    btn.innerHTML = '<i class="fas fa-eye me-1"></i>Mostrar';
+  });
+  
 
   document.querySelectorAll('.dl-toggle').forEach(btn=>{
     btn.addEventListener('click',()=>{
