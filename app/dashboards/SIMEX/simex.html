@@ -156,6 +156,22 @@
     <div class="filter-section">
       <div class="filter-container">
         <!-- Estado -->
+
+                <!-- Categoria (Tipo de Território) -->
+        <div class="filter-item span-2">
+          <label class="form-label fw-bold" for="categoriaFilter">SIMEX</label>
+          <select id="categoriaFilter" class="form-select">
+            <option value="estados">Estados</option>
+            <option value="municipios">Municípios</option>
+            <option value="terras">Terras Indígenas</option>
+            <option value="uc">Unidades de Conservação</option>
+            <option value="assentamentos">Assentamentos</option>
+            <option value="terras_sem_destinacao">Terras Sem Destinação</option>
+            <option value="imoveis">Imóveis Rurais</option>
+          </select>
+        </div>
+
+
         <div class="filter-item span-2">
           <label class="form-label fw-bold" for="estadoFilter">Estado</label>
           <select id="estadoFilter" class="form-select">
@@ -172,23 +188,11 @@
           </select>
         </div>
 
-        <!-- Categoria (Tipo de Território) -->
-        <div class="filter-item span-2">
-          <label class="form-label fw-bold" for="categoriaFilter">Categoria</label>
-          <select id="categoriaFilter" class="form-select">
-            <option value="estados">Estados</option>
-            <option value="municipios">Municípios</option>
-            <option value="terras">Terras Indígenas</option>
-            <option value="uc">Unidades de Conservação</option>
-            <option value="assentamentos">Assentamentos</option>
-            <option value="terras_sem_destinacao">Terras Sem Destinação</option>
-            <option value="imoveis">Imóveis Rurais</option>
-          </select>
-        </div>
+
 
         <!-- Categoria de exploração (substitui botões por select no mesmo padrão) -->
         <div class="filter-item span-2">
-          <label class="form-label fw-bold" for="exploracaoFilter">Categoria de exploração</label>
+          <label class="form-label fw-bold" for="exploracaoFilter">Modalidade Territorial</label>
           <select id="exploracaoFilter" class="form-select">
             <option value="all">Todas</option>
             <option value="autorizada">Autorizada</option>
