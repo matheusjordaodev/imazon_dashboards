@@ -857,35 +857,35 @@
     document.getElementById('yearFilter').addEventListener('change', (e) => {
       selectedYear = e.target.value === 'all' ? null : parseInt(e.target.value);
       updateQuarterOptions();
-      loadDashboard();
+      // Não carregar dashboard aqui - apenas atualizar as opções de trimestre
     });
 
     // Filtro de trimestre
     document.getElementById('quarterFilter').addEventListener('change', (e) => {
       selectedQuarter = e.target.value === 'all' ? null : parseInt(e.target.value);
-      loadDashboard();
+      // Não carregar dashboard aqui - será carregado quando aplicar filtros
     });
 
     // Filtro de estado
     document.getElementById('stateFilter').addEventListener('change', (e) => {
       selectedEstado = e.target.value === 'all' ? null : e.target.value;
-      loadDashboard();
+      // Não carregar dashboard aqui - será carregado quando aplicar filtros
     });
 
     // Filtros específicos para UC
     document.getElementById('categoryFilter').addEventListener('change', (e) => {
       selectedCategoria = e.target.value === 'all' ? null : e.target.value;
-      loadDashboard();
+      // Não carregar dashboard aqui - será carregado quando aplicar filtros
     });
 
     document.getElementById('modalityFilter').addEventListener('change', (e) => {
       selectedModalidade = e.target.value === 'all' ? null : e.target.value;
-      loadDashboard();
+      // Não carregar dashboard aqui - será carregado quando aplicar filtros
     });
 
     document.getElementById('jurisdictionFilter').addEventListener('change', (e) => {
       ucSubtype = e.target.value === 'all' ? 'all' : e.target.value.toLowerCase();
-      loadDashboard();
+      // Não carregar dashboard aqui - será carregado quando aplicar filtros
     });
 
     // Botão aplicar (redundante, mas mantido para consistência)
@@ -1015,6 +1015,9 @@
 
       // Atualizar menus dinâmicos
       populateDynamicMenus();
+      
+      // ATUALIZAÇÃO: Atualizar opções de trimestre após carregar os dados
+      updateQuarterOptions();
 
       const feats = geojsonData.features || [];
       filteredData = feats.filter(f=>{
@@ -1504,7 +1507,7 @@
       const option = document.createElement('option');
       option.value = year;
       option.textContent = year;
-      if (year === 2023) option.selected = true; // Seleciona 2023 por padrão
+      if (year === 2023) option.selected = true;
       yearSelect.appendChild(option);
     });
 
@@ -1522,9 +1525,6 @@
       stateSelect.appendChild(option);
     });
 
-    // Trimestres
-    updateQuarterOptions();
-    
     // Categorias (para UC)
     const categories = ['Floresta', 'Cerrado', 'Caatinga', 'Mata Atlântica', 'Pampa', 'Pantanal'];
     const categorySelect = document.getElementById('categoryFilter');
@@ -1546,6 +1546,9 @@
       option.textContent = modality;
       modalitySelect.appendChild(option);
     });
+
+    // Inicializar trimestres
+    updateQuarterOptions();
   }
 
   function updateQuarterOptions() {
@@ -1555,14 +1558,19 @@
     // Limpar opções atuais
     quarterSelect.innerHTML = '<option value="all">Todos os Trimestres</option>';
     
-    if (year !== 'all') {
+    if (year !== 'all' && geojsonData) {
+      // Obter trimestres presentes nos dados para o ano selecionado
+      const quarters = availableQuarters(parseInt(year));
+      
       // Adicionar trimestres específicos para o ano selecionado
-      for (let i = 1; i <= 4; i++) {
+      quarters.forEach(q => {
         const option = document.createElement('option');
-        option.value = i;
-        option.textContent = `T${i}`;
+        option.value = q;
+        // Usar a legenda correspondente, se disponível, ou simplesmente T1, T2, etc.
+        const legenda = findLegendaFor(parseInt(year), q) || `T${q}`;
+        option.textContent = legenda;
         quarterSelect.appendChild(option);
-      }
+      });
     }
   }
 
