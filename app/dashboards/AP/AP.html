@@ -143,7 +143,7 @@
         
 
         <div class="filter-item span-2">
-          <label class="form-label" for="typeFilter">Ameça e Pressão</label>
+          <label class="form-label fw-bold" for="typeFilter">Ameça e Pressão</label>
           <select id="typeFilter" class="form-select">
             <option value="ameaca">Ameaça</option>
             <option value="pressao">Pressão</option>
@@ -151,14 +151,22 @@
           </select>
         </div>
 
+
+                <!-- Filtro de Estado -->
+        <div class="filter-item span-2">
+          <label class="form-label fw-semibold" for="stateFilter">Estado</label>
+          <select id="stateFilter" class="form-select">
+            <option value="all">Amazônia Legal</option>
+          </select>
+        </div>
         <!-- Filtro de Área -->
         <div class="filter-item span-2">
-          <label class="form-label fw-semibold" for="areaFilter">Área</label>
+          <label class="form-label fw-semibold" for="areaFilter">Modalidade Territorial</label>
           <select id="areaFilter" class="form-select">
-            <option value="all">Todas as Áreas</option>
+            <option value="all">Todos</option>
             <option value="ti">Terras Indígenas</option>
             <option value="uc">Unidades de Conservação</option>
-            <option value="allap">Áreas Protegidas</option>
+            <!--<option value="allap">Áreas Protegidas</option> !-->
           </select>
         </div>
 
@@ -178,27 +186,21 @@
           </select>
         </div>
 
-        <!-- Filtro de Estado -->
-        <div class="filter-item span-2">
-          <label class="form-label fw-semibold" for="stateFilter">Estado</label>
-          <select id="stateFilter" class="form-select">
-            <option value="all">Todos os Estados</option>
-          </select>
-        </div>
+
 
         <!-- Filtro de Categoria (visível apenas para UC) -->
         <div class="filter-item span-2" id="categoryFilterWrapper" style="display:none">
           <label class="form-label fw-semibold" for="categoryFilter">Categoria</label>
           <select id="categoryFilter" class="form-select">
-            <option value="all">Todas as Categorias</option>
+            <option value="all">Todos</option>
           </select>
         </div>
 
         <!-- Filtro de Modalidade (visível apenas para UC) -->
         <div class="filter-item span-2" id="modalityFilterWrapper" style="display:none">
-          <label class="form-label fw-semibold" for="modalityFilter">Modalidade</label>
+          <label class="form-label fw-semibold" for="modalityFilter">Tipos de Uso</label>
           <select id="modalityFilter" class="form-select">
-            <option value="all">Todas as Modalidades</option>
+            <option value="all">Todos</option>
           </select>
         </div>
 
@@ -694,7 +696,7 @@
       else if (ucSub === 'ucf') escopo = 'Unidade de Conservação Federal';
       else escopo = 'Unidades de Conservação';
     }
-    if (scope === 'allap') escopo = 'Todas as Áreas Protegidas';
+    if (scope === 'allap') escopo = 'Todos Protegidas';
     let extra = '';
     if (ano)    extra += ` — ${ano}`;
     if (triNum) extra += ` T${triNum}`;
@@ -713,7 +715,7 @@
       mapTitleEl.textContent=`Mapa das Unidades de Conservação ${pressionadasDe}`;
       rankTitleEl.textContent=`Ranking das 10 Unidades de Conservação ${pressionadasDe}`;
     }else if(scope==='allap'){
-      mapTitleEl.textContent=`Mapa de Todas as Áreas Protegidas ${pressionadasDe}`;
+      mapTitleEl.textContent=`Mapa de Todos Protegidas ${pressionadasDe}`;
       rankTitleEl.textContent=`Ranking das 10 Áreas Protegidas ${pressionadasDe}`;
     }else{
       mapTitleEl.textContent=`Mapa das Áreas Protegidas ${pressionadasDe}`;
@@ -1517,7 +1519,7 @@
                     'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
     
     const stateSelect = document.getElementById('stateFilter');
-    stateSelect.innerHTML = '<option value="all">Todos os Estados</option>';
+    stateSelect.innerHTML = '<option value="all">Amazônia Legal</option>';
     estados.forEach(estado => {
       const option = document.createElement('option');
       option.value = estado;
@@ -1528,7 +1530,7 @@
     // Categorias (para UC)
     const categories = ['Floresta', 'Cerrado', 'Caatinga', 'Mata Atlântica', 'Pampa', 'Pantanal'];
     const categorySelect = document.getElementById('categoryFilter');
-    categorySelect.innerHTML = '<option value="all">Todas as Categorias</option>';
+    categorySelect.innerHTML = '<option value="all">Todos</option>';
     categories.forEach(category => {
       const option = document.createElement('option');
       option.value = category;
@@ -1593,7 +1595,7 @@
     
     const stateSelect = document.getElementById('stateFilter');
     const currentState = stateSelect.value;
-    stateSelect.innerHTML = '<option value="all">Todos os Estados</option>';
+    stateSelect.innerHTML = '<option value="all">Amazônia Legal</option>';
     
     Array.from(estadosSet)
       .sort((a, b) => ufCodeToName(a).localeCompare(ufCodeToName(b)))
@@ -1614,7 +1616,7 @@
     
     const categorySelect = document.getElementById('categoryFilter');
     const currentCategory = categorySelect.value;
-    categorySelect.innerHTML = '<option value="all">Todas as Categorias</option>';
+    categorySelect.innerHTML = '<option value="all">Todos</option>';
     
     Array.from(categoriasSet)
       .sort()

@@ -161,9 +161,7 @@ const CATALOG = {
     2021: {geojson: 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/ameaca_e_pressao/ameaca_e_pressao_2021.geojson'},
     2022: {geojson: 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/ameaca_e_pressao/ameaca_e_pressao_2022.geojson'},
     2023: {geojson: 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/ameaca_e_pressao/ameaca_e_pressao_2023.geojson'} },
-  SIMEX:{ 
-   
-  }
+  SIMEX:{}
 };
 
 /* Utils */
@@ -200,10 +198,38 @@ function computeYears(sec, extraYearsSet=new Set()){
   return [...all].sort((a,b)=>b-a);
 }
 
+/* Helpers de UI para chips mock e reais */
+function makeMockChip(label){
+  const li=document.createElement('li');
+  const a=document.createElement('a');
+  a.className='chiplink';
+  a.textContent=label;
+  a.href="#";
+  a.addEventListener('click',(ev)=>{ ev.preventDefault(); ev.stopPropagation(); });
+  li.appendChild(a);
+  return li;
+}
+function makeRealChip(label, url){
+  const li=document.createElement('li');
+  const a=document.createElement('a');
+  a.className='chiplink';
+  a.textContent=label;
+  a.href=url; a.target='_blank'; a.rel='noopener';
+  li.appendChild(a);
+  return li;
+}
+function monthsPT(){
+  return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+}
+function quartersPT(){
+  return ['Q1 (Jan–Mar)','Q2 (Abr–Jun)','Q3 (Jul–Set)','Q4 (Out–Dez)'];
+}
+
 /* === Seção ===
-   - SAD/AP: GeoJSON do catálogo (sem link -> chip desabilitado).
-   - SIMEX: sem link -> chip clicável (mock), impede navegação e não faz nada.
-   - FLORESER: apenas CSV dinâmico.
+   - FLORESER: CSV dinâmico (igual).
+   - SIMEX: mock (sem links).
+   - AP: GeoJSON anual (real se existir) + Trimestral .
+   - SAD: GeoJSON anual (real se existir) + Mensal .
 */
 function buildSection(sec){
   const ul=document.getElementById(sec.toLowerCase()+'-list');
@@ -211,6 +237,8 @@ function buildSection(sec){
 
   const isFloreser = (sec === 'FLORESER');
   const isSimex    = (sec === 'SIMEX');
+  const isAP       = (sec === 'AP');
+  const isSAD      = (sec === 'SAD');
   const csvUrl=CFG[sec]?.csv;
 
   if(isFloreser){
@@ -230,6 +258,8 @@ function buildSection(sec){
         details.appendChild(summary);
 
         const formats=document.createElement('div'); formats.className='format-wrap';
+
+        // CSV anual
         const fCSV=document.createElement('div'); fCSV.className='format-card';
         fCSV.innerHTML='<div class="format-title">CSV</div>';
         const list=document.createElement('ul'); list.className='chiplist';
@@ -245,7 +275,7 @@ function buildSection(sec){
     return;
   }
 
-  // SAD/AP/SIMEX: GeoJSON
+  // SAD/AP/SIMEX: estrutura por ano
   const baseYears = computeYears(sec);
   if(!baseYears.length){ ul.innerHTML='<li class="muted">Sem anos configurados.</li>'; return; }
 
@@ -256,35 +286,51 @@ function buildSection(sec){
     details.appendChild(summary);
 
     const formats=document.createElement('div'); formats.className='format-wrap';
+
+    // Bloco GeoJSON anual (real se houver link)
     const fGJ=document.createElement('div'); fGJ.className='format-card';
-    fGJ.innerHTML='<div class="format-title">GeoJSON</div>';
-
+    fGJ.innerHTML='<div class="format-title">GeoJSON — anual</div>';
     const gjList=document.createElement('ul'); gjList.className='chiplist';
-    const li=document.createElement('li');
     const url = (CATALOG[sec]||{})[y]?.geojson;
-
     if(url && String(url).trim()){
-      const a=document.createElement('a');
-      a.className='chiplink'; a.textContent='Ano '+y;
-      a.href=url; a.target='_blank'; a.rel='noopener';
-      li.appendChild(a);
+      gjList.appendChild(makeRealChip('Ano '+y, url));
     } else if(isSimex){
-      // MOCK: clicável, mas impede navegação e não faz nada.
-      const a=document.createElement('a');
-      a.className='chiplink'; a.textContent='Ano '+y;
-      a.href="#";
-      a.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); });
-      li.appendChild(a);
+      gjList.appendChild(makeMockChip('Ano '+y));
     } else {
-      // SAD/AP sem link -> desabilitado
+      const li=document.createElement('li');
       const a=document.createElement('a');
       a.className='chiplink disabled'; a.textContent='Ano '+y+' (em breve)';
       a.setAttribute('aria-disabled','true');
       li.appendChild(a);
+      gjList.appendChild(li);
+    }
+    fGJ.appendChild(gjList);
+    formats.appendChild(fGJ);
+
+    // Bloco extra conforme dataset
+    if(isSAD){
+      // Mensal 
+      const fMensal=document.createElement('div'); fMensal.className='format-card';
+      fMensal.innerHTML='<div class="format-title">Mensal </div>';
+      const mList=document.createElement('ul'); mList.className='chiplist';
+      monthsPT().forEach((m,i)=>{
+        mList.appendChild(makeMockChip(`${m}/${y}`));
+      });
+      fMensal.appendChild(mList);
+      formats.appendChild(fMensal);
     }
 
-    gjList.appendChild(li); fGJ.appendChild(gjList);
-    formats.appendChild(fGJ);
+    if(isAP){
+      // Trimestral 
+      const fTrim=document.createElement('div'); fTrim.className='format-card';
+      fTrim.innerHTML='<div class="format-title">Trimestral </div>';
+      const qList=document.createElement('ul'); qList.className='chiplist';
+      quartersPT().forEach((q,idx)=>{
+        qList.appendChild(makeMockChip(`${q} ${y}`));
+      });
+      fTrim.appendChild(qList);
+      formats.appendChild(fTrim);
+    }
 
     details.appendChild(formats); ul.appendChild(details);
   });
