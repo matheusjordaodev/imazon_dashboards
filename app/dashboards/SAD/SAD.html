@@ -91,7 +91,7 @@
     <div class="filter-container">
 
       <div class="filter-item span-2">
-        <label class="filter-label" for="sadFilter">SAD</label>
+        <label class="filter-label fw-bold" for="sadFilter">SAD</label>
         <select id="sadFilter" class="form-select">
           <option value="desmatamento">Desmatamento</option>
           <option value="degradacao">Degradação</option>
@@ -100,9 +100,8 @@
 
       <!-- ESTADO AGORA VEM ANTES DE CATEGORIA -->
       <div class="filter-item span-2">
-        <label class="filter-label" for="estadoFilter">Estado</label>
+        <label class="filter-label fw-bold" for="estadoFilter">Estado</label>
         <select id="estadoFilter" class="form-select">
-          <option value="all">Todos os Estados</option>
           <option value="__AMAZONIA_LEGAL__">Amazônia Legal</option>
           <option value="AC">Acre</option><option value="AP">Amapá</option><option value="AM">Amazonas</option>
           <option value="MA">Maranhão</option><option value="MT">Mato Grosso</option><option value="PA">Pará</option>
@@ -111,7 +110,7 @@
       </div>
 
       <div class="filter-item span-2">
-        <label class="filter-label" for="categoriaFilter">Modalidade Territorial</label>
+        <label class="filter-label fw-bold" for="categoriaFilter">Modalidade Territorial</label>
         <select id="categoriaFilter" class="form-select">
           <option value="estados">Estados</option>
           <option value="municipios">Municípios</option>
@@ -123,38 +122,38 @@
 
       <!-- Jurisdição/Modalidade (apenas UCs) -->
       <div id="jurisdicaoFilterWrap" class="filter-item span-2" style="display:none">
-        <label class="filter-label" for="jurisdicaoFilter">Jurisdição</label>
+        <label class="filter-label fw-bold" for="jurisdicaoFilter">Jurisdição</label>
         <select id="jurisdicaoFilter" class="form-select">
-          <option value="all">Todas</option>
+          <option value="all">Todos</option>
           <option value="Federal">Federal</option>
           <option value="Estadual">Estadual</option>
         </select>
       </div>
       <div id="modalidadeFilterWrap" class="filter-item span-2" style="display:none">
-        <label class="filter-label" for="modalidadeFilter">Modalidade</label>
+        <label class="filter-label fw-bold" for="modalidadeFilter">Tipos de Uso</label>
         <select id="modalidadeFilter" class="form-select">
-          <option value="all">Todas</option>
+          <option value="all">Todos</option>
           <option value="Uso Sustentável">Uso Sustentável</option>
           <option value="Proteção Integral">Proteção Integral</option>
         </select>
       </div>
 
-      <!-- Ano/Mês -->
+      <!-- Ano/Mês (sempre visíveis e lado a lado) -->
       <div class="filter-item span-2">
-        <label class="filter-label" for="yearStart">Ano Inicial</label>
+        <label class="filter-label fw-bold" for="yearStart">Ano Inicial</label>
         <select id="yearStart" class="form-select"></select>
       </div>
-      <div id="monthStartWrap" class="filter-item span-2" style="display:none">
-        <label class="filter-label" for="monthStart">Mês Inicial</label>
+      <div id="monthStartWrap" class="filter-item span-2">
+        <label class="filter-label fw-bold" for="monthStart">Mês Inicial</label>
         <select id="monthStart" class="form-select"></select>
       </div>
 
       <div class="filter-item span-2">
-        <label class="filter-label" for="yearEnd">Ano Final</label>
+        <label class="filter-label fw-bold" for="yearEnd">Ano Final</label>
         <select id="yearEnd" class="form-select"></select>
       </div>
-      <div id="monthEndWrap" class="filter-item span-2" style="display:none">
-        <label class="filter-label" for="monthEnd">Mês Final</label>
+      <div id="monthEndWrap" class="filter-item span-2">
+        <label class="filter-label fw-bold" for="monthEnd">Mês Final</label>
         <select id="monthEnd" class="form-select"></select>
       </div>
 
@@ -866,8 +865,8 @@ function updateTitles(){
     `<i class="fas fa-chart-bar me-2"></i>Ranking ${art} ${nome} ${tipo}`;
 
   const sY=document.getElementById('yearStart').value, eY=document.getElementById('yearEnd').value;
-  const sM=document.getElementById('monthStartWrap').style.display==='none' ? '01' : document.getElementById('monthStart').value;
-  const eM=document.getElementById('monthEndWrap').style.display==='none' ? '12' : document.getElementById('monthEnd').value;
+  const sM=document.getElementById('monthStart').value;
+  const eM=document.getElementById('monthEnd').value;
 
   const singular=territorySingular[tkey]; const label=(dkey==='desmatamento')?'Desmatamento':'Degradação';
   document.getElementById('map-title').innerHTML =
@@ -896,8 +895,8 @@ async function updateDashboard(){
 
     const yS=parseInt(document.getElementById('yearStart').value||'2008',10);
     const yE=parseInt(document.getElementById('yearEnd').value||String(new Date().getFullYear()),10);
-    const mS = (document.getElementById('monthStartWrap').style.display==='none') ? '01' : document.getElementById('monthStart').value;
-    const mE = (document.getElementById('monthEndWrap').style.display==='none') ? '12' : document.getElementById('monthEnd').value;
+    const mS=document.getElementById('monthStart').value || '01';
+    const mE=document.getElementById('monthEnd').value   || '12';
 
     const startVal = parseInt(`${yS}${mS}`);
     const endVal   = parseInt(`${yE}${mE}`);
@@ -1033,12 +1032,6 @@ function toggleDatasetButtonsInFilters() {
     if (el) el.style.display = '';
   }
 }
-function toggleMonthLabels(){
-  const yS = document.getElementById('yearStart').value;
-  const yE = document.getElementById('yearEnd').value;
-  document.getElementById('monthStartWrap').style.display = yS ? '' : 'none';
-  document.getElementById('monthEndWrap').style.display   = yE ? '' : 'none';
-}
 function populateMonthSelect(sel){
   sel.innerHTML = MONTHS.map((nm,i)=>`<option value="${String(i+1).padStart(2,'0')}">${nm}</option>`).join('');
 }
@@ -1049,14 +1042,14 @@ function setCurrentYear() {
 }
 function populateYearSelects(){
   const cur = new Date().getFullYear();
+  const curMonth = String(new Date().getMonth()+1).padStart(2,'0');
   const ys = document.getElementById('yearStart'), ye = document.getElementById('yearEnd');
   for(let y=2008; y<=cur; y++){ ys.add(new Option(y,y)); ye.add(new Option(y,y)); }
   setCurrentYear();
   populateMonthSelect(document.getElementById('monthStart'));
   populateMonthSelect(document.getElementById('monthEnd'));
   document.getElementById('monthStart').value = '01';
-  document.getElementById('monthEnd').value = '08';
-  toggleMonthLabels();
+  document.getElementById('monthEnd').value = curMonth;
 }
 
 function clearFilters() {
@@ -1069,10 +1062,11 @@ function clearFilters() {
   document.getElementById('estadoFilter').value = 'all';
   document.getElementById('jurisdicaoFilter').value = 'all';
   document.getElementById('modalidadeFilter').value = 'all';
-  document.getElementById('jurisdicaoFilterWrap').style.display = 'none';
-  document.getElementById('modalidadeFilterWrap').style.display = 'none';
+  document.getElementById('monthStart').value = '01';
+  document.getElementById('monthEnd').value = String(new Date().getMonth()+1).padStart(2,'0');
   setCurrentYear();
   toggleDatasetButtonsInFilters();
+  updateTitles();
   updateDashboard();
 }
 
@@ -1212,7 +1206,6 @@ window.addEventListener('resize', debounce(refreshChartsOnResize, 200));
 document.addEventListener('DOMContentLoaded', ()=>{
   populateYearSelects();
   toggleUCFields();
-  toggleMonthLabels();
   updateTitles();
   toggleDatasetButtonsInFilters();
   setUpModalListeners();
@@ -1223,17 +1216,18 @@ document.addEventListener('DOMContentLoaded', ()=>{
     toggleDatasetButtonsInFilters();
   });
   document.getElementById('sadFilter').addEventListener('change', ()=>{
-    // feedback visual
     showLoader('Aplicando filtro do SAD...');
-    // opcional: resetar a paginação do ranking ao trocar o tipo
     rankPage = 0;
     updateDashboard();
   });
 
   document.getElementById('estadoFilter').addEventListener('change', ()=>{});
 
-  document.getElementById('yearStart').addEventListener('change', ()=>{ toggleMonthLabels(); updateTitles(); });
-  document.getElementById('yearEnd').addEventListener('change',   ()=>{ toggleMonthLabels(); updateTitles(); });
+  // Atualiza os títulos ao trocar ano ou mês
+  document.getElementById('yearStart').addEventListener('change', updateTitles);
+  document.getElementById('yearEnd').addEventListener('change',   updateTitles);
+  document.getElementById('monthStart').addEventListener('change', updateTitles);
+  document.getElementById('monthEnd').addEventListener('change',   updateTitles);
 
   document.getElementById('apply-filters').addEventListener('click', updateDashboard);
   document.getElementById('clear-filters').addEventListener('click', clearFilters);
@@ -1253,6 +1247,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   document.getElementById('btn-bar-csv').addEventListener('click', exportRankingCSVAll);
   document.getElementById('btn-map-png').addEventListener('click', mapPNG);
+
   // Esconde os grupos de download por padrão e ajusta o botão de toggle
   document.querySelectorAll('.download-group').forEach(g=>{
     g.classList.add('d-none');
@@ -1262,7 +1257,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     btn.innerHTML = '<i class="fas fa-eye me-1"></i>Mostrar';
   });
   
-
   document.querySelectorAll('.dl-toggle').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const header = btn.closest('.card-header');
