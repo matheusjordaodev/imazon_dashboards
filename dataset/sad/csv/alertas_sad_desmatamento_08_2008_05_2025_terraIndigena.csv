@@ -1,4 +1,4 @@
-ALERTA,MES,ANO,SENSOR,ESTADO,AREAKM2,MUNICIPIO,TI
+ALERTA,MES,ANO,SENSOR,ESTADO,AREAKM2,MUNICIPIO,TERRA_INDI
 desmatamento,3,2025,Landsat-8,TO,0.07,Santa Fé do Araguaia,TI Xambioá
 desmatamento,3,2025,Landsat-8,RR,0.04,Cantá,TI Malacacheta
 desmatamento,3,2025,Sentinel-2,RR,0.05,Amajari,TI Santa Inês
