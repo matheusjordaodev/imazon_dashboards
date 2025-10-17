@@ -32,7 +32,7 @@
     .card-title-wrap{display:flex;align-items:center;gap:.5rem;min-width:0}
     .card-title-wrap span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-    /* NOVA SEÇÃO DE FILTROS PADRONIZADA */
+    /* FILTROS */
     .filter-section{background:var(--card-color);padding:1.5rem;border-radius:var(--border-radius);box-shadow:var(--box-shadow);margin-bottom:2rem}
     .filter-container{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;align-items:end}
     .filter-item{display:flex;flex-direction:column;gap:6px}
@@ -82,11 +82,11 @@
     #download-actions .dt-buttons{display:flex;gap:10px;flex-wrap:wrap;margin:0!important}
     #export-table_wrapper .dt-buttons{display:none!important}
     .leaflet-tooltip.hover-tooltip{
-  background:#fff; color:#111; border:1px solid #ddd; border-radius:10px;
-  box-shadow:0 8px 24px rgba(0,0,0,.15); padding:8px 10px; font-family:'Montserrat',sans-serif;
-}
+      background:#fff; color:#111; border:1px solid #ddd; border-radius:10px;
+      box-shadow:0 8px 24px rgba(0,0,0,.15); padding:8px 10px; font-family:'Montserrat',sans-serif;
+    }
 
-    /* ===== Overlay global de carregamento ===== */
+    /* Overlay de carregamento */
     #loader-overlay{
       position:fixed; inset:0; display:none;
       align-items:center; justify-content:center;
@@ -95,13 +95,9 @@
       z-index:20000;
     }
     #loader-overlay .loader-card{
-      background:#fff;
-      border-radius:16px;
-      box-shadow:0 16px 40px rgba(0,0,0,.14);
-      padding:20px 24px;
-      display:flex; flex-direction:column; align-items:center; gap:10px;
-      min-width:220px;
-      font-family:'Montserrat',sans-serif;
+      background:#fff; border-radius:16px; box-shadow:0 16px 40px rgba(0,0,0,.14);
+      padding:20px 24px; display:flex; flex-direction:column; align-items:center; gap:10px;
+      min-width:220px; font-family:'Montserrat',sans-serif;
     }
     #loader-overlay .loader-arc{
       width:44px; height:44px; border-radius:50%;
@@ -111,37 +107,32 @@
       animation: loader-rotate 0.9s linear infinite;
     }
     @keyframes loader-rotate{ to{ transform: rotate(360deg) } }
-    #loader-overlay .loader-text{
-      font-weight:700; font-size:15px; color:#4B5563;
-    }
+    #loader-overlay .loader-text{ font-weight:700; font-size:15px; color:#4B5563; }
 
     /* Responsividade dos filtros */
     @media(max-width:576px){
       .filter-container{grid-template-columns:repeat(2,1fr)}
       .span-3,.span-2,.span-4,.span-1{grid-column:span 2}
     }
-
   </style>
 </head>
 <body>
   <!-- Overlay de carregamento -->
-<div id="loader-overlay" style="position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;z-index:9999">
-  <div class="bg-white p-4 rounded-4 shadow text-center">
-    <div class="spinner-border" role="status" style="width:3rem;height:3rem;color:#008055"></div>
-    <div class="loader-text mt-2">Carregando Dados...</div>
+  <div id="loader-overlay" style="position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;z-index:9999">
+    <div class="bg-white p-4 rounded-4 shadow text-center">
+      <div class="spinner-border" role="status" style="width:3rem;height:3rem;color:#008055"></div>
+      <div class="loader-text mt-2">Carregando Dados...</div>
+    </div>
   </div>
-</div>
 
   <div class="container-fluid">
     <div class="dashboard-header">
-    <img src="../../img/ameaca_e_pressao.png" alt="Logo Ameaça e Pressão" style="max-width:150px;height:auto;display:block;margin:0 auto">
-  </div> 
+      <img src="../../img/ameaca_e_pressao.png" alt="Logo Ameaça e Pressão" style="max-width:150px;height:auto;display:block;margin:0 auto">
+    </div>
 
-
+    <!-- Filtros -->
     <div class="filter-section">
       <div class="filter-container">
-        
-
         <div class="filter-item span-2">
           <label class="form-label fw-bold" for="typeFilter">Ameça e Pressão</label>
           <select id="typeFilter" class="form-select">
@@ -151,26 +142,25 @@
           </select>
         </div>
 
-
-                <!-- Filtro de Estado -->
+        <!-- Estado -->
         <div class="filter-item span-2">
           <label class="form-label fw-semibold" for="stateFilter">Estado</label>
           <select id="stateFilter" class="form-select">
             <option value="all">Amazônia Legal</option>
           </select>
         </div>
-        <!-- Filtro de Área -->
+
+        <!-- Área -->
         <div class="filter-item span-2">
           <label class="form-label fw-semibold" for="areaFilter">Modalidade Territorial</label>
           <select id="areaFilter" class="form-select">
             <option value="all">Todos</option>
             <option value="ti">Terras Indígenas</option>
             <option value="uc">Unidades de Conservação</option>
-            <!--<option value="allap">Áreas Protegidas</option> !-->
           </select>
         </div>
 
-        <!-- Filtro de Ano -->
+        <!-- Ano -->
         <div class="filter-item span-2">
           <label class="form-label fw-semibold" for="yearFilter">Ano</label>
           <select id="yearFilter" class="form-select">
@@ -178,7 +168,7 @@
           </select>
         </div>
 
-        <!-- Filtro de Trimestre -->
+        <!-- Trimestre -->
         <div class="filter-item span-2">
           <label class="form-label fw-semibold" for="quarterFilter">Trimestre</label>
           <select id="quarterFilter" class="form-select">
@@ -186,9 +176,7 @@
           </select>
         </div>
 
-
-
-        <!-- Filtro de Categoria (visível apenas para UC) -->
+        <!-- Categoria (UC) -->
         <div class="filter-item span-2" id="categoryFilterWrapper" style="display:none">
           <label class="form-label fw-semibold" for="categoryFilter">Categoria</label>
           <select id="categoryFilter" class="form-select">
@@ -196,7 +184,7 @@
           </select>
         </div>
 
-        <!-- Filtro de Modalidade (visível apenas para UC) -->
+        <!-- Modalidade (UC) -->
         <div class="filter-item span-2" id="modalityFilterWrapper" style="display:none">
           <label class="form-label fw-semibold" for="modalityFilter">Tipos de Uso</label>
           <select id="modalityFilter" class="form-select">
@@ -204,7 +192,7 @@
           </select>
         </div>
 
-        <!-- Filtro de Jurisdição (visível apenas para UC) -->
+        <!-- Jurisdição (UC) -->
         <div class="filter-item span-2" id="jurisdictionFilterWrapper" style="display:none">
           <label class="form-label fw-semibold" for="jurisdictionFilter">Jurisdição</label>
           <select id="jurisdictionFilter" class="form-select">
@@ -214,7 +202,7 @@
           </select>
         </div>
 
-        <!-- Botões de Ação -->
+        <!-- Botões -->
         <div class="filter-item span-2">
           <label class="form-label fw-semibold">&nbsp;</label>
           <button id="applyFilters" class="btn btn-primary w-100">
@@ -238,20 +226,28 @@
       <div class="col-md-3"><div class="stat-card" style="background:#6c757d"><div class="stat-label">Variação Anual</div><div class="stat-value" id="unique-states">0</div></div></div>
     </div>
 
-    <!-- Ranking e Mapa -->
+    <!-- Ranking (esq) e Mapa (dir) LADO A LADO -->
     <div class="row mb-4">
       <div class="col-lg-6">
-        <div class="card">
+        <div class="card h-100">
           <div class="card-header">
-            <div class="card-title-wrap"><i class="fas fa-chart-bar me-2"></i><span id="rank-card-title">Ranking das 10 Áreas Protegidas mais Pressionadas</span></div>
+            <div class="card-title-wrap">
+              <i class="fas fa-chart-bar me-2"></i>
+              <span id="rank-card-title">Ranking das 10 Áreas Protegidas mais Pressionadas</span>
+            </div>
           </div>
-          <div class="card-body"><div class="chart-container"><canvas id="barChart"></canvas></div></div>
+          <div class="card-body">
+            <div class="chart-container"><canvas id="barChart"></canvas></div>
+          </div>
         </div>
       </div>
       <div class="col-lg-6">
-        <div class="card">
+        <div class="card h-100">
           <div class="card-header">
-            <div class="card-title-wrap"><i class="fas fa-map-marked-alt me-2"></i><span id="map-card-title">Mapa das Áreas Protegidas mais Pressionadas</span></div>
+            <div class="card-title-wrap">
+              <i class="fas fa-map-marked-alt me-2"></i>
+              <span id="map-card-title">Mapa das Áreas Protegidas mais Pressionadas</span>
+            </div>
           </div>
           <div class="card-body"><div id="map"></div></div>
         </div>
@@ -262,8 +258,10 @@
     <div id="donuts-block">
       <div id="donuts-row-1" class="row mb-4">
         <div id="donut-col-1" class="col-lg-6 col-md-12">
-          <div class="card donut-card">
-            <div class="card-header"><div class="card-title-wrap"><i class="fas fa-chart-pie me-2"></i><span>Distribuição por Uso</span></div></div>
+          <div class="card donut-card h-100">
+            <div class="card-header">
+              <div class="card-title-wrap"><i class="fas fa-chart-pie me-2"></i><span>Distribuição por Uso</span></div>
+            </div>
             <div class="card-body">
               <div id="legend-donutChart1" class="legend-grid"></div>
               <div class="donut-chart-container"><canvas id="donutChart1"></canvas></div>
@@ -271,8 +269,10 @@
           </div>
         </div>
         <div id="donut-col-2" class="col-lg-6 col-md-12">
-          <div class="card donut-card">
-            <div class="card-header"><div class="card-title-wrap"><i class="fas fa-chart-pie me-2"></i><span>Distribuição por Estado</span></div></div>
+          <div class="card donut-card h-100">
+            <div class="card-header">
+              <div class="card-title-wrap"><i class="fas fa-chart-pie me-2"></i><span>Distribuição por Estado</span></div>
+            </div>
             <div class="card-body">
               <div id="legend-donutChart2" class="legend-grid"></div>
               <div class="donut-chart-container"><canvas id="donutChart2"></canvas></div>
@@ -282,8 +282,10 @@
       </div>
       <div id="donuts-row-2" class="row mb-4">
         <div id="donut-col-3" class="col-lg-6 col-md-12">
-          <div class="card donut-card">
-            <div class="card-header"><div class="card-title-wrap"><i class="fas fa-chart-pie me-2"></i><span>Distribuição por Modalidade</span></div></div>
+          <div class="card donut-card h-100">
+            <div class="card-header">
+              <div class="card-title-wrap"><i class="fas fa-chart-pie me-2"></i><span>Distribuição por Modalidade</span></div>
+            </div>
             <div class="card-body">
               <div id="legend-donutChart3" class="legend-grid"></div>
               <div class="donut-chart-container"><canvas id="donutChart3"></canvas></div>
@@ -291,8 +293,10 @@
           </div>
         </div>
         <div id="donut-col-4" class="col-lg-6 col-md-12">
-          <div class="card donut-card">
-            <div class="card-header"><div class="card-title-wrap"><i class="fas fa-chart-pie me-2"></i><span>Distribuição por Categoria</span></div></div>
+          <div class="card donut-card h-100">
+            <div class="card-header">
+              <div class="card-title-wrap"><i class="fas fa-chart-pie me-2"></i><span>Distribuição por Categoria</span></div>
+            </div>
             <div class="card-body">
               <div id="legend-donutChart4" class="legend-grid"></div>
               <div class="donut-chart-container"><canvas id="donutChart4"></canvas></div>
@@ -380,7 +384,7 @@
     return val;
   }
 
-  /* ===== Estados (UF) — nomes por extenso e parsing de combos ===== */
+  /* ===== Estados (UF) ===== */
   const UF_NAMES = {
     AC:'Acre', AL:'Alagoas', AP:'Amapá', AM:'Amazonas', BA:'Bahia', CE:'Ceará',
     DF:'Distrito Federal', ES:'Espírito Santo', GO:'Goiás', MA:'Maranhão',
@@ -403,7 +407,6 @@
     }
     return null;
   }
-  // ["AM/RO", "Amazonas / Pará"] -> ["AM","RO"] / ["AM","PA"]
   function parseUFs(value){
     if (value == null) return [];
     const raw = String(value);
@@ -411,7 +414,6 @@
       raw.split(/[\/,;|+&]/).map(s=>tokenToUF(s)).filter(Boolean)
     ));
   }
-  // label por extenso mantendo combos: "AM/RO" -> "Amazonas / Rondônia"
   function formatEstadoFull(value){
     const codes = parseUFs(value);
     if (!codes.length) return value || '-';
@@ -543,22 +545,16 @@
     if (!/\(mês a mês\)/i.test(s) && /mês a mês/i.test(s)) s = s.replace(/mês a mês/gi, '(mês a mês)');
     return s;
   }
-  
-  // FUNÇÃO ATUALIZADA PARA RECONHECER TRIMESTRES CORRETAMENTE
   function readQuarterFromValue(v){
     if (v == null) return null;
     const s = _norm(v);
-    
-    // Padrão específico para trimestres conforme solicitado
     if (/(^|[^a-z])t1|primeiro|1º|1o|jan|fev|mar|janeiro|fevereiro|março/.test(s)) return 1;
     if (/(^|[^a-z])t2|segundo|2º|2o|abr|mai|jun|abril|maio|junho/.test(s)) return 2;
     if (/(^|[^a-z])t3|terceiro|3º|3o|jul|ago|set|julho|agosto|setembro/.test(s)) return 3;
     if (/(^|[^a-z])t4|quarto|4º|4o|out|nov|dez|outubro|novembro|dezembro/.test(s)) return 4;
-    
     const m = s.match(/([1-4])/);
     return m ? Number(m[1]) : null;
   }
-  
   function getQuarter(p = {}) {
     const candNum = [
       p.periodo, p.Periodo, p.PERIODO, p['Período'], p['PERÍODO'],
@@ -570,15 +566,10 @@
     }
     return readQuarterFromValue(getLegenda(p));
   }
-  
-  // LEGENDAS PADRÃO ATUALIZADAS
   const DEFAULT_LEGENDS = {
-    1: 'janeiro a março', 
-    2: 'abril a junho', 
-    3: 'julho a setembro', 
-    4: 'outubro a dezembro'
+    1: 'janeiro a março', 2: 'abril a junho',
+    3: 'julho a setembro', 4: 'outubro a dezembro'
   };
-  
   function periodLabel(p = {}) {
     const q = getQuarter(p);
     const legRaw = getLegenda(p) || (q ? DEFAULT_LEGENDS[q] : null);
@@ -666,13 +657,13 @@
   }
 
   /* ========================
-     Boot inicial - CORRIGIDO
+     Boot inicial
   ======================== */
   document.addEventListener('DOMContentLoaded', ()=>{
     initializeMap();
     setupButtons();
-    populateFilterOptions(); // Popula os filtros
-    loadDashboard(); // Carrega os dados automaticamente
+    populateFilterOptions();
+    loadDashboard();
   });
 
   /* ========================
@@ -704,7 +695,6 @@
   };
   function setTitles(){
     const scope=currentFilter;
-    // Título removido - cabeçalho foi excluído
     const mapTitleEl=document.getElementById('map-card-title');
     const rankTitleEl=document.getElementById('rank-card-title');
     const pressionadasDe = (currentClass==='ameaca')?'Mais Ameaçadas':(currentClass==='pressao')?'Mais Pressionadas':'Mais Relevantes';
@@ -747,34 +737,62 @@
   }
 
   /* ========================
-     Mapa
+     Mapa (fundo igual ao SAD)
   ======================== */
   function initializeMap(){
     if (map) { try{ map.off(); map.remove(); }catch(e){} }
-    map = L.map('map').setView([-5,-55],5);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(map);
+    map = L.map('map', { zoomControl: true });
+
+    // Pane para base (atrás dos dados)
+    if (!map.getPane('amzBase')){
+      map.createPane('amzBase');
+      map.getPane('amzBase').style.zIndex = 350; // tiles=200, overlay=400
+      map.getPane('amzBase').style.pointerEvents = 'none';
+    }
+
+    // Basemap Carto Light (SAD)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+      subdomains: 'abcd', maxZoom: 20, crossOrigin: true
+    }).addTo(map);
+
+    // Camada fixa da Amazônia Legal
+    const BASE_GEOJSON_URL = '/dataset/AMZ_legal_amz_legal.geojson';
+    const amazoniaBounds = L.latLngBounds([[-18,-75],[6,-44]]);
+    let baseLayer = null;
+
+    function baseStyle(){ return { color:'#00695c', weight:1.5, fillColor:'#A5D6A7', fillOpacity:0.25 }; }
+
+    fetch(BASE_GEOJSON_URL, { cache: 'no-cache' }).then(r=>r.json()).then(gj=>{
+      try{ if (baseLayer) map.removeLayer(baseLayer); }catch(_){}
+      baseLayer = L.geoJSON(gj, { pane:'amzBase', style: baseStyle, interactive:false }).addTo(map);
+      const b = baseLayer.getBounds?.();
+      if (b && b.isValid()) { map.fitBounds(b, { padding:[20,20] }); }
+      else { map.fitBounds(amazoniaBounds, { padding:[20,20] }); }
+    }).catch(e=>{
+      console.error('Erro ao carregar base da Amazônia Legal:', e);
+      map.fitBounds(amazoniaBounds, { padding:[20,20] });
+    });
   }
+
   function paintLayer(layer, color){
     if (!layer) return;
     if (layer.setStyle) layer.setStyle({ color, fillColor: color, weight:2, opacity:0.95, fillOpacity:0.6 });
     if (layer.eachLayer) layer.eachLayer(child => paintLayer(child, color));
   }
   function updateMap(){
-    // Remove a camada anterior
     if (geojsonLayer){ try{ geojsonLayer.remove(); }catch(e){} }
     featureLayerIndex = new Map();
 
-    // Trabalhamos apenas com os itens do ranking atual (top 10)
+    // itens do ranking (top 10)
     const featuresToDraw = (barItems || []).map(r => r._f).filter(Boolean);
 
-    // chave -> posição no ranking (1..10)
     const rankByKey = new Map();
     (barItems || []).forEach((r, i) => {
       const key = mkKey(r?._f?.properties || {});
       rankByKey.set(key, i + 1);
     });
 
-    // Tooltip HTML (exibido no HOVER)
     const buildHoverHTML = (p, rank) => `
       <div style="font-family:Montserrat,sans-serif;min-width:240px">
         <div style="font-weight:700;font-size:14px;margin-bottom:6px">
@@ -808,7 +826,6 @@
         featureLayerIndex.set(key, layer);
         mapFeatures.push(layer);
 
-        // Somente tooltip (hover) — sem popup ao clique
         layer.unbindPopup?.();
 
         const rank = rankByKey.get(key) || null;
@@ -817,7 +834,6 @@
           { sticky:true, direction:'top', opacity:1, className:'ap-hover-card' }
         );
 
-        // realce no hover
         layer.on('mouseover', () => {
           layer.bringToFront?.();
           layer.setStyle?.({ weight:4, opacity:1 });
@@ -828,7 +844,6 @@
           layer.setStyle?.({ weight:2, opacity:0.95 });
         });
 
-        // cor inicial
         paintLayer(layer, getColorFor(p));
       }
     }).addTo(map);
@@ -839,65 +854,43 @@
   }
 
   /* ========================
-     Botões / eventos - CORRIGIDO
+     Botões / eventos
   ======================== */
   function setupButtons(){
-    // Botões de tipo (substituídos por select)
     document.getElementById('typeFilter').addEventListener('change', (e) => {
       currentClass = e.target.value;
       loadDashboard();
     });
-
-    // Filtro de área
     document.getElementById('areaFilter').addEventListener('change', (e) => {
       currentFilter = e.target.value === 'all' ? null : e.target.value;
       updateAttributeControlsVisibility();
       loadDashboard();
     });
-
-    // Filtro de ano
     document.getElementById('yearFilter').addEventListener('change', (e) => {
       selectedYear = e.target.value === 'all' ? null : parseInt(e.target.value);
       updateQuarterOptions();
-      // Não carregar dashboard aqui - apenas atualizar as opções de trimestre
     });
-
-    // Filtro de trimestre
     document.getElementById('quarterFilter').addEventListener('change', (e) => {
       selectedQuarter = e.target.value === 'all' ? null : parseInt(e.target.value);
-      // Não carregar dashboard aqui - será carregado quando aplicar filtros
     });
-
-    // Filtro de estado
     document.getElementById('stateFilter').addEventListener('change', (e) => {
       selectedEstado = e.target.value === 'all' ? null : e.target.value;
-      // Não carregar dashboard aqui - será carregado quando aplicar filtros
     });
-
-    // Filtros específicos para UC
     document.getElementById('categoryFilter').addEventListener('change', (e) => {
       selectedCategoria = e.target.value === 'all' ? null : e.target.value;
-      // Não carregar dashboard aqui - será carregado quando aplicar filtros
     });
-
     document.getElementById('modalityFilter').addEventListener('change', (e) => {
       selectedModalidade = e.target.value === 'all' ? null : e.target.value;
-      // Não carregar dashboard aqui - será carregado quando aplicar filtros
     });
-
     document.getElementById('jurisdictionFilter').addEventListener('change', (e) => {
       ucSubtype = e.target.value === 'all' ? 'all' : e.target.value.toLowerCase();
-      // Não carregar dashboard aqui - será carregado quando aplicar filtros
     });
 
-    // Botão aplicar (redundante, mas mantido para consistência)
     document.getElementById('applyFilters').addEventListener('click', () => {
       loadDashboard();
     });
 
-    // Botão limpar
     document.getElementById('clearFilters').addEventListener('click', () => {
-      // Resetar todos os filtros
       document.getElementById('typeFilter').value = 'ameaca';
       document.getElementById('areaFilter').value = 'all';
       document.getElementById('yearFilter').value = 'all';
@@ -906,7 +899,7 @@
       document.getElementById('categoryFilter').value = 'all';
       document.getElementById('modalityFilter').value = 'all';
       document.getElementById('jurisdictionFilter').value = 'all';
-      
+
       currentClass = 'ameaca';
       currentFilter = null;
       selectedYear = null;
@@ -915,10 +908,8 @@
       selectedCategoria = null;
       selectedModalidade = null;
       ucSubtype = 'all';
-      
-      // Ocultar filtros de UC
+
       updateAttributeControlsVisibility();
-      
       loadDashboard();
     });
 
@@ -973,7 +964,6 @@
       return t;
     }
     if(scope==='uc'){
-      // Como removemos o subfiltro, sempre busca UCE + UCF
       if(cls==='Todos'){
         addUC('ameaca','uce'); addUC('pressao','uce');
         addUC('ameaca','ucf'); addUC('pressao','ucf');
@@ -997,7 +987,7 @@
   }
 
   /* ========================
-     Carregar dashboard - CORRIGIDO
+     Carregar dashboard
   ======================== */
   async function loadDashboard(){
     showLoader();
@@ -1015,10 +1005,8 @@
       const results = await Promise.all(allTargets.map(f => safeFetch(basePath + f)));
       geojsonData = mergeCollections(results.filter(Boolean));
 
-      // Atualizar menus dinâmicos
+      // Menus dinâmicos + trimestre
       populateDynamicMenus();
-      
-      // ATUALIZAÇÃO: Atualizar opções de trimestre após carregar os dados
       updateQuarterOptions();
 
       const feats = geojsonData.features || [];
@@ -1032,9 +1020,9 @@
         let estOK = true;
         if (selectedEstado){
           if (selectedEstado.includes('/')){
-            estOK = arraysEqualAsSets(codes, parseUFs(selectedEstado)); // combinação exata
+            estOK = arraysEqualAsSets(codes, parseUFs(selectedEstado));
           }else{
-            estOK = codes.includes(String(selectedEstado).toUpperCase()); // contém UF simples
+            estOK = codes.includes(String(selectedEstado).toUpperCase());
           }
         }
 
@@ -1109,20 +1097,12 @@
   }
 
   function highlightBarOnMap(idx){
-    // volta estilos originais de todas as feições
     resetAllLayerStyles();
-
-    // fecha qualquer tooltip que possa estar aberto de interações anteriores
     featureLayerIndex.forEach(layer => layer.closeTooltip?.());
-
-    // se o mouse saiu da barra, não faz nada no mapa
     if (idx == null) return;
-
-    // destaque visual APENAS na feição correspondente
     const item  = barItems[idx];
     const layer = featureLayerIndex.get(item.key);
     if (!layer) return;
-
     if (layer.bringToFront) layer.bringToFront();
     if (layer.setStyle)     layer.setStyle({ weight: 4, opacity: 1 });
   }
@@ -1131,7 +1111,6 @@
     const ctx = document.getElementById('barChart').getContext('2d');
     if (barChart) barChart.destroy();
 
-    // === Top 10 (sem UF no rótulo do eixo Y) ===
     const rows = (filteredData || [])
       .map(f => ({
         name: f.properties?.nome || '-',
@@ -1150,7 +1129,6 @@
     const maxVal = values.reduce((m, v) => Math.max(m, v), 0);
     const suggestedMax = maxVal > 0 ? Math.ceil(maxVal * 1.25) : 10;
 
-    // Paleta coerente por classe
     const n = values.length || 1;
     const tSeq = (from, to, n) =>
       Array.from({ length: n }, (_, i) => from + (to - from) * (i / Math.max(1, n - 1)));
@@ -1164,7 +1142,7 @@
     rows.forEach((r, i) => colorMap.set(r.key, colors[i]));
 
     const BAR_THICK = 20;
-    const RADIUS    = 6; // mantenho leve arredondamento
+    const RADIUS    = 6;
 
     barChart = new Chart(ctx, {
       type: 'bar',
@@ -1192,8 +1170,6 @@
         indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
-
-        // 🔧 Dá espaço para os rótulos ficarem fora da barra
         layout: { padding: { top: 16, right: 48, left: 6, bottom: 12 } },
 
         onHover: (evt, elements) => {
@@ -1226,14 +1202,12 @@
               label: (ctx) => ` ${Number(ctx.parsed?.x ?? ctx.raw ?? 0).toLocaleString('pt-BR')} células`
             }
           },
-
-          // ✅ Rótulo FORA da barra
           datalabels: {
-            anchor: 'end',   // ancora na ponta direita da barra (horizontal)
-            align: 'end',    // posiciona depois da âncora (fora da barra)
-            offset: 12,      // distância para fora
-            clamp: false,    // não força ficar dentro
-            clip: false,     // permite desenhar fora da área do gráfico
+            anchor: 'end',
+            align: 'end',
+            offset: 12,
+            clamp: false,
+            clip: false,
             color: '#111',
             font: { weight: '700', size: 12 },
             formatter: v => Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 2 })
@@ -1332,14 +1306,13 @@
               }
             }
           },
-          // ⬇️ Números com preenchimento preto e contorno branco
           datalabels:{
             display:(ctx)=>{
               const d=ctx.dataset.data||[];
               const sum=d.reduce((a,b)=>a+Number(b||0),0);
               const v=Number(d[ctx.dataIndex]||0);
               const pct=sum?(v/sum)*100:0;
-              return pct>=3; // exibe apenas se tiver >=3% para evitar poluição
+              return pct>=3;
             },
             formatter:(v)=>Number(v||0).toFixed(0),
             font:(ctx)=>{
@@ -1347,8 +1320,8 @@
               const s=Math.max(12,Math.min(16,Math.round(w*.02)));
               return { weight:'bold', size:s };
             },
-            color:'#000',            // 🔁 agora PRETO dentro
-            textStrokeColor:'#fff',  // 🔁 contorno BRANCO
+            color:'#000',
+            textStrokeColor:'#fff',
             textStrokeWidth:3,
             anchor:'center',
             align:'center',
@@ -1498,10 +1471,9 @@
   }
 
   /* ========================
-     População dos Filtros Padronizados - CORRIGIDO
+     Filtros (estáticos + dinâmicos)
   ======================== */
   function populateFilterOptions() {
-    // Anos
     const years = [2023, 2022, 2021, 2020];
     const yearSelect = document.getElementById('yearFilter');
     yearSelect.innerHTML = '<option value="all">Todos os Anos</option>';
@@ -1513,11 +1485,7 @@
       yearSelect.appendChild(option);
     });
 
-    // Estados
-    const estados = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 
-                    'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 
-                    'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
-    
+    const estados = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
     const stateSelect = document.getElementById('stateFilter');
     stateSelect.innerHTML = '<option value="all">Amazônia Legal</option>';
     estados.forEach(estado => {
@@ -1527,8 +1495,7 @@
       stateSelect.appendChild(option);
     });
 
-    // Categorias (para UC)
-    const categories = ['Floresta', 'Cerrado', 'Caatinga', 'Mata Atlântica', 'Pampa', 'Pantanal'];
+    const categories = ['Floresta','Cerrado','Caatinga','Mata Atlântica','Pampa','Pantanal'];
     const categorySelect = document.getElementById('categoryFilter');
     categorySelect.innerHTML = '<option value="all">Todos</option>';
     categories.forEach(category => {
@@ -1538,8 +1505,7 @@
       categorySelect.appendChild(option);
     });
 
-    // Modalidades (para UC)
-    const modalities = ['Proteção Integral', 'Uso Sustentável'];
+    const modalities = ['Proteção Integral','Uso Sustentável'];
     const modalitySelect = document.getElementById('modalityFilter');
     modalitySelect.innerHTML = '<option value="all">Todas as Modalidades</option>';
     modalities.forEach(modality => {
@@ -1549,26 +1515,19 @@
       modalitySelect.appendChild(option);
     });
 
-    // Inicializar trimestres
     updateQuarterOptions();
   }
 
   function updateQuarterOptions() {
     const year = document.getElementById('yearFilter').value;
     const quarterSelect = document.getElementById('quarterFilter');
-    
-    // Limpar opções atuais
     quarterSelect.innerHTML = '<option value="all">Todos os Trimestres</option>';
-    
+
     if (year !== 'all' && geojsonData) {
-      // Obter trimestres presentes nos dados para o ano selecionado
       const quarters = availableQuarters(parseInt(year));
-      
-      // Adicionar trimestres específicos para o ano selecionado
       quarters.forEach(q => {
         const option = document.createElement('option');
         option.value = q;
-        // Usar a legenda correspondente, se disponível, ou simplesmente T1, T2, etc.
         const legenda = findLegendaFor(parseInt(year), q) || `T${q}`;
         option.textContent = legenda;
         quarterSelect.appendChild(option);
@@ -1576,27 +1535,18 @@
     }
   }
 
-  /* ========================
-     Menus dinâmicos para os filtros
-  ======================== */
   function populateDynamicMenus() {
-    // Esta função popula os menus com base nos dados carregados
     const feats = (geojsonData?.features) || [];
-    
+
     // Estados
     const estadosSet = new Set();
     feats.forEach(f => {
       const estado = f.properties?.estado;
-      if (estado) {
-        const codes = parseUFs(estado);
-        codes.forEach(code => estadosSet.add(code));
-      }
+      if (estado) parseUFs(estado).forEach(code => estadosSet.add(code));
     });
-    
     const stateSelect = document.getElementById('stateFilter');
     const currentState = stateSelect.value;
     stateSelect.innerHTML = '<option value="all">Amazônia Legal</option>';
-    
     Array.from(estadosSet)
       .sort((a, b) => ufCodeToName(a).localeCompare(ufCodeToName(b)))
       .forEach(estado => {
@@ -1613,20 +1563,16 @@
       const categoria = f.properties?.categoria;
       if (categoria) categoriasSet.add(categoria);
     });
-    
     const categorySelect = document.getElementById('categoryFilter');
     const currentCategory = categorySelect.value;
     categorySelect.innerHTML = '<option value="all">Todos</option>';
-    
-    Array.from(categoriasSet)
-      .sort()
-      .forEach(categoria => {
-        const option = document.createElement('option');
-        option.value = categoria;
-        option.textContent = mapAcronymLabel(categoria);
-        if (categoria === currentCategory) option.selected = true;
-        categorySelect.appendChild(option);
-      });
+    Array.from(categoriasSet).sort().forEach(categoria => {
+      const option = document.createElement('option');
+      option.value = categoria;
+      option.textContent = mapAcronymLabel(categoria);
+      if (categoria === currentCategory) option.selected = true;
+      categorySelect.appendChild(option);
+    });
 
     // Modalidades
     const modalidadesSet = new Set();
@@ -1634,25 +1580,20 @@
       const modalidade = f.properties?.modalidade;
       if (modalidade) modalidadesSet.add(modalidade);
     });
-    
     const modalitySelect = document.getElementById('modalityFilter');
     const currentModality = modalitySelect.value;
     modalitySelect.innerHTML = '<option value="all">Todas as Modalidades</option>';
-    
-    Array.from(modalidadesSet)
-      .sort()
-      .forEach(modalidade => {
-        const option = document.createElement('option');
-        option.value = modalidade;
-        option.textContent = mapAcronymLabel(modalidade);
-        if (modalidade === currentModality) option.selected = true;
-        modalitySelect.appendChild(option);
-      });
+    Array.from(modalidadesSet).sort().forEach(modalidade => {
+      const option = document.createElement('option');
+      option.value = modalidade;
+      option.textContent = mapAcronymLabel(modalidade);
+      if (modalidade === currentModality) option.selected = true;
+      modalitySelect.appendChild(option);
+    });
   }
 
-  // Inicializar os filtros
+  // Inicializa filtros default (caso o DOMContentLoaded seja adiado)
   populateFilterOptions();
-
   </script>
 </body>
 </html>
