@@ -184,8 +184,6 @@
         <div class="filter-item span-2">
           <label class="form-label fw-bold" for="categoriaFilter">Modalidade Territorial</label>
           <select id="categoriaFilter" class="form-select">
-            <option value="estados">Estados</option>
-            <option value="municipios">Municípios</option>
             <option value="terras">Terras Indígenas</option>
             <option value="uc">Unidades de Conservação</option>
             <option value="assentamentos">Assentamentos</option>
@@ -500,7 +498,7 @@
     const selectedAreaEl = document.getElementById('selected-area');
     const infoPanel = document.getElementById('info-panel');
 
-    let currentDataset = 'estados';
+    let currentDataset = 'terras';
     let currentCategoryFilter = 'all';
     let csvData = [], geojson, featureMap = new Map();
 
@@ -1157,7 +1155,7 @@
         selectedTerras=[]; selectedMunicipios=[]; selectedEstados=[];
         selectedImoveis=[]; selectedAssentamentos=[]; selectedTerrasSemDestinacao=[]; selectedUCs=[];
         currentCategoryFilter='all'; exploracaoFilter.value='all'; faseFilter.value='all';
-        estadoFilter.value='all'; categoriaFilter.value='estados';
+        estadoFilter.value='all'; categoriaFilter.value='terras';
         jurisdicaoFilter.value='all'; usoFilter.value='all'; toggleUCFilters();
         const yearsInSelect = Array.from(yearFilter.options).map(o=>+o.value).filter(Boolean);
         const maxYear = yearsInSelect.length ? Math.max(...yearsInSelect) : new Date().getFullYear();
