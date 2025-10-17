@@ -91,8 +91,10 @@
       <div class="filter-item span-2">
         <label class="filter-label fw-bold" for="sadFilter">SAD</label>
         <select id="sadFilter" class="form-select">
+          <option value="todos">Todos </option>
           <option value="desmatamento">Desmatamento</option>
           <option value="degradacao">Degradação</option>
+          <!-- NOVO: modo combinado -->
         </select>
       </div>
 
@@ -106,7 +108,7 @@
           <option value="RO">Rondônia</option><option value="RR">Roraima</option><option value="TO">Tocantins</option>
         </select>
       </div>
-      <!-- Município (novo) -->
+      <!-- Município -->
       <div class="filter-item span-2">
         <label class="filter-label fw-bold" for="municipioFilter">Município</label>
         <select id="municipioFilter" class="form-select">
@@ -122,8 +124,6 @@
           <option value="assentamentos">Assentamentos</option>
         </select>
       </div>
-
-
 
       <!-- Jurisdição/Modalidade (apenas UCs) -->
       <div id="jurisdicaoFilterWrap" class="filter-item span-2" style="display:none">
@@ -243,7 +243,7 @@
               <button class="btn btn-sm btn-outline-secondary" id="btn-bar-png" title="PNG"><i class="fa-solid fa-image me-1"></i>PNG</button>
               <button class="btn btn-sm btn-outline-secondary" id="btn-bar-csv" title="CSV (todos)"><i class="fa-solid fa-file-csv me-1"></i>CSV</button>
             </div>
-            <button class="btn btn-sm btn-outline-secondary dl-toggle ms-2" aria-pressed="false" title="Ocultar downloads"><i class="fas fa-eye-slash me-1"></i>Ocultar</button>
+            <button class="btn btn-sm btn-outline-secondary dl-toggle ms-2" aria-pressed="true" title="Mostrar downloads"><i class="fas fa-eye me-1"></i>Mostrar</button>
           </div>
         </div>
         <div class="card-body"><div class="chart-container"><canvas id="barChart"></canvas></div></div>
@@ -258,7 +258,7 @@
             <div class="download-group">
               <button class="btn btn-sm btn-outline-secondary" id="btn-map-png" title="PNG (toda a camada)"><i class="fa-solid fa-image me-1"></i>PNG</button>
             </div>
-            <button class="btn btn-sm btn-outline-secondary dl-toggle ms-2" aria-pressed="false" title="Ocultar downloads"><i class="fas fa-eye-slash me-1"></i>Ocultar</button>
+            <button class="btn btn-sm btn-outline-secondary dl-toggle ms-2" aria-pressed="true" title="Mostrar downloads"><i class="fas fa-eye me-1"></i>Mostrar</button>
           </div>
         </div>
         <div class="card-body p-2 position-relative">
@@ -281,7 +281,7 @@
                 <i class="fa-solid fa-file-csv me-1"></i>CSV
               </button>
             </div>
-            <button class="btn btn-sm btn-outline-secondary dl-toggle ms-2" aria-pressed="false" title="Ocultar downloads"><i class="fas fa-eye-slash me-1"></i>Ocultar</button>
+            <button class="btn btn-sm btn-outline-secondary dl-toggle ms-2" aria-pressed="true" title="Mostrar downloads"><i class="fas fa-eye me-1"></i>Mostrar</button>
           </div>
         </div>
         <div class="card-body"><div class="chart-container"><canvas id="lineChart"></canvas></div></div>
@@ -297,7 +297,7 @@
               <button class="btn btn-sm btn-outline-secondary" id="btn-yearly-png" title="PNG"><i class="fa-solid fa-image me-1"></i>PNG</button>
               <button class="btn btn-sm btn-outline-secondary" id="btn-yearly-csv" title="CSV"><i class="fa-solid fa-file-csv me-1"></i>CSV</button>
             </div>
-            <button class="btn btn-sm btn-outline-secondary dl-toggle ms-2" aria-pressed="false" title="Ocultar downloads"><i class="fas fa-eye-slash me-1"></i>Ocultar</button>
+            <button class="btn btn-sm btn-outline-secondary dl-toggle ms-2" aria-pressed="true" title="Mostrar downloads"><i class="fas fa-eye me-1"></i>Mostrar</button>
           </div>
         </div>
         <div class="card-body"><div class="chart-container"><canvas id="yearlyChart"></canvas></div></div>
@@ -414,13 +414,36 @@ function nowStamp(){const d=new Date();const p=n=>String(n).padStart(2,'0');retu
 function toCSV(rows, sep=';'){ return rows.map(r => r.map(v=>{ if(v==null) return ''; const s=String(v); return (s.includes(sep)||/["\n]/.test(s))?`"${s.replace(/"/g,'""')}"`:s;}).join(sep)).join('\n'); }
 function monthName(m){const i=Math.max(1,Math.min(12,parseInt(m,10)))-1; return MONTHS[i];}
 
+/* ====== NOVO: corte em D-2 ====== */
+function getTwoMonthsAgo(){
+  const d = new Date();
+  d.setMonth(d.getMonth() - 2);
+  return { 
+    year: d.getFullYear(),
+    month: String(d.getMonth() + 1).padStart(2, '0')
+  };
+}
+function clampEndToCutoff(){
+  const cutoff = getTwoMonthsAgo();
+  const yEndEl = document.getElementById('yearEnd');
+  const mEndEl = document.getElementById('monthEnd');
+  const curEnd = parseInt((yEndEl.value||'0') + (mEndEl.value||'00'), 10);
+  const cutEnd = parseInt(String(cutoff.year) + cutoff.month, 10);
+  if (curEnd > cutEnd){
+    yEndEl.value = String(cutoff.year);
+    mEndEl.value = cutoff.month;
+  }
+}
+
 const DEGRADACAO_COLOR_STOPS=[
   {p:0.00,c:'#F4F2F8'},{p:0.15,c:'#990FF9'},{p:0.30,c:'#DAD0ED'},{p:0.50,c:'#B7A7DB'},
   {p:0.65,c:'#8D7CC2'},{p:0.80,c:'#684EA7'},{p:0.92,c:'#362563'},{p:1.00,c:'#1F114D'}
 ];
 const PALETTE = {
   desmatamento: { type:'sequential', interpolator: d3.interpolateReds },
-  degradacao:   { type:'stops',      stops: DEGRADACAO_COLOR_STOPS }
+  degradacao:   { type:'stops',      stops: DEGRADACAO_COLOR_STOPS },
+  // NOVO: “todos” usa um sequencial (Reds/OrRd) para manter leitura simples
+  todos:        { type:'sequential', interpolator: d3.interpolateOrRd }
 };
 function buildColorScale(kind, values){
   const maxVal = values && values.length ? Math.max(...values) : 1;
@@ -441,7 +464,7 @@ const amazoniaBounds = L.latLngBounds([[-18,-75],[6,-44]]);
 const map = L.map('map',{zoomControl:true});
 // Pane exclusivo para a Amazônia Legal (sempre atrás dos dados do ranking)
 map.createPane('amzBase');
-map.getPane('amzBase').style.zIndex = 350;        // tiles = 200, overlay = 400
+map.getPane('amzBase').style.zIndex = 350;
 map.getPane('amzBase').style.pointerEvents = 'none';
 
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -449,8 +472,8 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
   subdomains: 'abcd', maxZoom: 20, crossOrigin: true
 }).addTo(map);
 
-// BASE FIXA (sem interação)
-const BASE_GEOJSON_URL = '/dataset/AMZ_legal_amz_legal.geojson'; // caminho absoluto
+// BASE FIXA
+const BASE_GEOJSON_URL = '/dataset/AMZ_legal_amz_legal.geojson';
 
 let baseLayer = null;
 
@@ -476,7 +499,6 @@ async function loadBaseGeojson(){
     if (baseLayer) { try{ map.removeLayer(baseLayer); } catch(e){} }
     baseLayer = L.geoJSON(gj, { pane:'amzBase', style: baseStyle, interactive:false }).addTo(map);
     baseLayer.bringToBack();
-
 
     const b = baseLayer.getBounds?.();
     if (b && b.isValid()) {
@@ -555,8 +577,14 @@ const dataSources={
   },
   degradacao:{
     assentamentos:{csv:"/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_assentamento.csv",geojson:"/dataset/sad/geojson/AMZ_assentamentos.geojson"},
-    terrasIndigenas:{csv:"/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_terraindigena.csv",geojson:"/dataset/sad/geojson/AMZ_terra_indigena.geojson"},
+    terrasIndigenas:{csv:"/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_terra_indigena.csv",geojson:"/dataset/sad/geojson/AMZ_terra_indigena.geojson"},
     unidadesConservacao:{csv:"/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_ucs.csv",geojson:"/dataset/sad/geojson/AMZ_unidade_conservacao.geojson"}
+  },
+  // NOVO modo “todos” aponta para os mesmos GeoJSONs, CSV será combinado no loadData()
+  todos:{
+    assentamentos:{csv:null, geojson:"/dataset/sad/geojson/AMZ_assentamentos.geojson"},
+    terrasIndigenas:{csv:null, geojson:"/dataset/sad/geojson/AMZ_terra_indigena.geojson"},
+    unidadesConservacao:{csv:null, geojson:"/dataset/sad/geojson/AMZ_unidade_conservacao.geojson"}
   }
 };
 
@@ -631,18 +659,71 @@ function populateMunicipioSelect(){
   sel.value = canRestore ? prev : 'all';
 }
 
+/** NOVO: carrega CSV(s) conforme o SAD selecionado.
+ *  - desmatamento/degradacao: comportamento original
+ *  - todos: busca CSV de ambos, concatena linhas e devolve em um único array
+ *  GeoJSON: é único por categoria (pode usar o do desmatamento, pois a malha é a mesma)
+ */
 function loadData(){
-  const dataType=dataTypeAtual(); const territoryType=categoriaAtual();
-  if(!dataSources[dataType]||!dataSources[dataType][territoryType]) return Promise.resolve({csvData:[],geojsonData:null});
+  const dType = dataTypeAtual();
+  const tType = categoriaAtual();
+
+  // função auxiliar para carregar um CSV (se existir) e normalizar tipos
+  const loadCsv = async (csvUrl) => {
+    const rows = await d3.csv(csvUrl);
+    rows.forEach(d=>{
+      d.AREAKM2 = +d.AREAKM2 || 0;
+      d.ANO     = parseInt(d.ANO,10);
+      d.MES     = parseInt(d.MES,10);
+    });
+    return rows;
+  };
+
+  // GeoJSON sempre vem do mapeamento da categoria (pode usar o do “desmatamento”/“degradação”; no “todos” usamos o apontado em dataSources.todos)
+  const geoUrl = (dataSources[dType] && dataSources[dType][tType] && dataSources[dType][tType].geojson)
+                  || (dataSources.desmatamento[tType]?.geojson);
+
+  if (dType !== 'todos') {
+    // Modo normal (um CSV)
+    if(!dataSources[dType] || !dataSources[dType][tType]) {
+      return Promise.resolve({ csvData:[], geojsonData:null });
+    }
+    return Promise.all([
+      loadCsv(dataSources[dType][tType].csv),
+      fetch(geoUrl).then(r=>r.json())
+    ]).then(([csv, geojsonData])=>{
+      csvData = csv;
+      populateMunicipioSelect();
+      return { csvData: csv, geojsonData };
+    }).catch(e=>{
+      console.error('Erro ao carregar dados:', e);
+      return { csvData: [], geojsonData: null };
+    });
+  }
+
+  // --- Modo “todos”: carrega desmatamento + degradação e concatena
+  const dCsv = dataSources.desmatamento[tType]?.csv;
+  const gCsv = dataSources.degradacao[tType]?.csv;
+
+  if (!dCsv || !gCsv) {
+    console.warn('URLs de CSV para modo "todos" ausentes para', tType);
+    return Promise.resolve({ csvData: [], geojsonData: null });
+  }
+
   return Promise.all([
-    d3.csv(dataSources[dataType][territoryType].csv),
-    fetch(dataSources[dataType][territoryType].geojson).then(r=>r.json())
-  ]).then(([csv,geojsonData])=>{
-    csv.forEach(d=>{ d.AREAKM2=+d.AREAKM2||0; d.ANO=parseInt(d.ANO,10); d.MES=parseInt(d.MES,10); });
-    csvData = csv;
+    loadCsv(dCsv),
+    loadCsv(gCsv),
+    fetch(geoUrl).then(r=>r.json())
+  ]).then(([csvDes, csvDeg, geojsonData])=>{
+    // concatena linhas (mesmas colunas), a agregação por território virá depois
+    const combined = csvDes.concat(csvDeg);
+    csvData = combined;
     populateMunicipioSelect();
-    return {csvData: csv,geojsonData};
-  }).catch(e=>{ console.error('Erro ao carregar dados:',e); return {csvData:[],geojsonData:null}; });
+    return { csvData: combined, geojsonData };
+  }).catch(e=>{
+    console.error('Erro no modo "todos":', e);
+    return { csvData: [], geojsonData: null };
+  });
 }
 
 function applySpecificFilters(data,territoryType){
@@ -829,14 +910,19 @@ function updateYearlyChart(csvDataCompleto){
   const values=years.map(y=> yearly[y]||0);
   const maxVal = Math.max(...values, 1);
 
-  const isDesmat = dataTypeAtual()==='desmatamento';
-  const bg=isDesmat?'rgba(198,40,40,.7)':'rgba(104,78,167,.7)';
-  const br=isDesmat?'rgba(198,40,40,1)':'rgba(31,17,77,1)';
+  // Paleta por modo
+  const mode = dataTypeAtual();
+  const palettes = {
+    desmatamento: {bg:'rgba(198,40,40,.7)', br:'rgba(198,40,40,1)'},
+    degradacao:   {bg:'rgba(104,78,167,.7)', br:'rgba(31,17,77,1)'},
+    todos:        {bg:'rgba(255,167,38,.75)', br:'rgba(230,81,0,1)'} // laranja para o combinado
+  };
+  const sel = palettes[mode] || palettes.desmatamento;
 
   yearlyChart=new Chart(ctx,{
     type:'bar',
     plugins: (typeof ChartDataLabels!=='undefined') ? [ChartDataLabels] : [],
-    data:{labels:years,datasets:[{label:'Área Total (km²)',data:values,backgroundColor:bg,borderColor:br,borderWidth:2,borderRadius:4}]},
+    data:{labels:years,datasets:[{label:'Área Total (km²)',data:values,backgroundColor:sel.bg,borderColor:sel.br,borderWidth:2,borderRadius:4}]},
     options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{
@@ -860,7 +946,7 @@ function updateYearlyChart(csvDataCompleto){
   window.yearlyChart = yearlyChart;
 }
 
-// -------- UPDATE MAP (com base fixa por baixo) --------
+// -------- UPDATE MAP --------
 function updateMap(geojsonData, aggregatedData, territoryType){
   if (baseLayer) { try{ baseLayer.bringToBack(); }catch(e){} }
 
@@ -916,7 +1002,12 @@ const territoryNaming={
   unidadesConservacao:{nome:'Unidades de Conservação',genero:'f'}, 
   assentamentos:{nome:'Assentamentos',genero:'m'}
 };
-const dataTypeLabel={desmatamento:{m:'Mais Desmatados',f:'Mais Desmatadas'},degradacao:{m:'Mais Degradados',f:'Mais Degradadas'}};
+const dataTypeLabel={
+  desmatamento:{m:'Mais Desmatados',f:'Mais Desmatadas'},
+  degradacao:{m:'Mais Degradados',f:'Mais Degradadas'},
+  // NOVO: rótulo para o modo combinado
+  todos:{m:'Mais Impactados', f:'Mais Impactadas'}
+};
 const territorySingular={
   terrasIndigenas:'Terra Indígena',
   unidadesConservacao:'Unidade de Conservação',
@@ -933,9 +1024,12 @@ function updateTitles(){
   const sM=document.getElementById('monthStart').value;
   const eM=document.getElementById('monthEnd').value;
 
-  const singular=territorySingular[tkey]; const label=(dkey==='desmatamento')?'Desmatamento':'Degradação';
+  const singular=territorySingular[tkey];
+  const labelMap = (dkey==='desmatamento') ? 'Desmatamento'
+                  : (dkey==='degradacao') ? 'Degradação'
+                  : 'Desmatamento + Degradação';
   document.getElementById('map-title').innerHTML =
-    `<i class="fas fa-map me-2"></i>Mapa de ${label} por ${singular} (${monthName(sM)}/${sY} a ${monthName(eM)}/${eY})`;
+    `<i class="fas fa-map me-2"></i>Mapa de ${labelMap} por ${singular} (${monthName(sM)}/${sY} a ${monthName(eM)}/${eY})`;
 
   const anosDisponiveis = (csvData && csvData.length)
     ? Array.from(new Set(csvData.map(d=>+d.ANO))).filter(Boolean).sort((a,b)=>a-b)
@@ -943,8 +1037,12 @@ function updateTitles(){
   const minY = anosDisponiveis.length ? anosDisponiveis[0] : '—';
   const maxY = anosDisponiveis.length ? anosDisponiveis[anosDisponiveis.length-1] : '—';
 
+  const labelSerie = (dkey==='desmatamento') ? 'Desmatamento'
+                    : (dkey==='degradacao') ? 'Degradação'
+                    : 'Desmatamento + Degradação';
+
   document.getElementById('line-chart-title').innerHTML =
-    `<i class="fas fa-chart-line me-2"></i>Série Histórica do ${label} - ${nome} (${minY}–${maxY})`;
+    `<i class="fas fa-chart-line me-2"></i>Série Histórica de ${labelSerie} - ${nome} (${minY}–${maxY})`;
   document.getElementById('yearly-chart-title').innerHTML =
     `<i class="fas fa-chart-area me-2"></i>Série Histórica Anual (${minY}–${maxY})`;
 }
@@ -958,10 +1056,15 @@ async function updateDashboard(){
     const ttype=categoriaAtual();
     const key=territoryNameMapping[ttype];
 
-    const yS=parseInt(document.getElementById('yearStart').value||'2008',10);
-    const yE=parseInt(document.getElementById('yearEnd').value||String(new Date().getFullYear()),10);
-    const mS=document.getElementById('monthStart').value || '01';
-    const mE=document.getElementById('monthEnd').value   || '12';
+    let yS=parseInt(document.getElementById('yearStart').value||'2008',10);
+    let yE=parseInt(document.getElementById('yearEnd').value||String(new Date().getFullYear()),10);
+    let mS=document.getElementById('monthStart').value || '01';
+    let mE=document.getElementById('monthEnd').value   || '12';
+
+    /* NOVO: garante que fim do período não passe do corte D-2 */
+    clampEndToCutoff();
+    yE = parseInt(document.getElementById('yearEnd').value,10);
+    mE = document.getElementById('monthEnd').value;
 
     const startVal = parseInt(`${yS}${mS}`);
     const endVal   = parseInt(`${yE}${mE}`);
@@ -1104,18 +1207,19 @@ function populateMonthSelect(sel){
 function setCurrentYear() {
   const currentYear = new Date().getFullYear();
   document.getElementById('yearStart').value = currentYear;
-  document.getElementById('yearEnd').value = currentYear;
+  // yearEnd é definido pelo corte D-2 em populateYearSelects()
 }
 function populateYearSelects(){
   const cur = new Date().getFullYear();
-  const curMonth = String(new Date().getMonth()+1).padStart(2,'0');
   const ys = document.getElementById('yearStart'), ye = document.getElementById('yearEnd');
   for(let y=2008; y<=cur; y++){ ys.add(new Option(y,y)); ye.add(new Option(y,y)); }
   setCurrentYear();
   populateMonthSelect(document.getElementById('monthStart'));
   populateMonthSelect(document.getElementById('monthEnd'));
   document.getElementById('monthStart').value = '01';
-  document.getElementById('monthEnd').value = curMonth;
+  const cutoff = getTwoMonthsAgo();
+  document.getElementById('yearEnd').value  = String(cutoff.year);
+  document.getElementById('monthEnd').value = cutoff.month;
 }
 
 function clearFilters() {
@@ -1129,8 +1233,10 @@ function clearFilters() {
   document.getElementById('jurisdicaoFilter').value = 'all';
   document.getElementById('modalidadeFilter').value = 'all';
   document.getElementById('monthStart').value = '01';
-  document.getElementById('monthEnd').value = String(new Date().getMonth()+1).padStart(2,'0');
-  setCurrentYear();
+  const cutoff = getTwoMonthsAgo();
+  document.getElementById('yearEnd').value  = String(cutoff.year);
+  document.getElementById('monthEnd').value = cutoff.month;
+  setCurrentYear(); // mantém o ano inicial = ano corrente
   toggleDatasetButtonsInFilters();
   updateTitles();
   updateDashboard();
@@ -1351,9 +1457,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('btn-bar-csv').addEventListener('click', exportRankingCSVAll);
   document.getElementById('btn-map-png').addEventListener('click', mapPNG);
 
-  document.querySelectorAll('.download-group').forEach(g=>{
-    g.classList.add('d-none');
-  });
+  // Downloads começam ocultos
+  document.querySelectorAll('.download-group').forEach(g=>g.classList.add('d-none'));
   document.querySelectorAll('.dl-toggle').forEach(btn=>{
     btn.setAttribute('aria-pressed','true');
     btn.innerHTML = '<i class="fas fa-eye me-1"></i>Mostrar';
