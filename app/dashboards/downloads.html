@@ -22,7 +22,7 @@
 
   h3{margin:0;color:var(--brand);font-size:1.08rem}
   .card{background:#fff;border:1px solid #e8e8e8;border-radius:14px;margin:18px 0;padding:16px;box-shadow:0 6px 20px rgba(0,0,0,.04);position:relative}
-  .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap}
 
   .collapse-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:999px;border:1px solid rgba(0,0,0,.08);background:#fff;color:var(--brand);cursor:pointer;transition:all .18s ease;box-shadow:0 2px 10px rgba(0,0,0,.05)}
   .collapse-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.08)}
@@ -51,6 +51,13 @@
   .list-divider > li{padding:10px 0;border-bottom:1px solid #eee}
   .list-divider > li:last-child{border-bottom:none}
 
+  /* Seletor de tipo (SAD) */
+  .typebar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .typebtn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;border:1px solid #e0e0e0;background:#fff;color:#2b2b2b;cursor:pointer;font-weight:600}
+  .typebtn:hover{border-color:var(--brand)}
+  .typebtn.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .typebtn i{font-size:14px}
+
   #content{position:relative;isolation:isolate}
   details{position:relative;overflow:visible}
   details[open] > summary ~ *{position:relative;z-index:3}
@@ -70,8 +77,22 @@
 
   <div id="content">
     <div class="card" data-section="sad">
-      <div class="card-head">
+      <div class="card-head" style="row-gap:10px">
         <h3>Sistema de Alerta de Desmatamento (SAD)</h3>
+
+        <!-- Seletor de Tipo -->
+        <div class="typebar" id="sad-typebar" role="tablist" aria-label="Tipos de arquivo do SAD">
+          <button class="typebtn active" data-type="geojson" role="tab" aria-selected="true" title="GeoJSON mensal">
+            <i class="fa-regular fa-map"></i> GeoJSON
+          </button>
+          <button class="typebtn" data-type="csv" role="tab" aria-selected="false" title="CSV mensal">
+            <i class="fa-regular fa-file-lines"></i> CSV
+          </button>
+          <button class="typebtn" data-type="shp" role="tab" aria-selected="false" title="Shapefile mensal (ZIP)">
+            <i class="fa-regular fa-file-zipper"></i> Shapefile
+          </button>
+        </div>
+
         <button class="collapse-btn ghost" title="Recolher/Expandir" aria-expanded="true">
           <i class="fa-solid fa-compress" aria-hidden="true"></i>
         </button>
@@ -96,7 +117,7 @@
           <i class="fa-solid fa-compress" aria-hidden="true"></i>
         </button>
       </div>
-      <ul id="simex-list" class="list-divider"><li class="muted">Em breve.</li></ul>
+      <ul id="simex-list" class="list-divider"><li class="muted">Carregando anos...</li></ul>
     </div>
 
     <div class="card" data-section="floreser" style="display:none">
@@ -125,9 +146,10 @@ const CFG = {
 
 const YEAR_RANGE = { SAD:[2004,2025], AP:[2020,2025], SIMEX:[2007,2023] };
 
-/* Buckets base */
-const SAD_BASE = 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos';
-const AP_BASE  = 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/ameaca_e_pressao/geojson';
+/* Bases dos artefatos SAD */
+const SAD_GEOJSON_BASE = 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos';
+const SAD_CSV_BASE     = '/dataset/sad/csv/mensal';              // ajuste conforme seu servidor
+const SAD_SHP_BASE     = 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/shp/todos'; // ZIP de shapefile
 
 /* Evita falso "indisponível" (CORS) */
 const VERIFY_LINKS = false;
@@ -163,9 +185,19 @@ async function urlExists(url){
 }
 
 /* =========================
-   SAD — apenas MENSAL (até mês atual - 2)
+   SAD — seletor de tipo + MENSAL (até mês atual - 2)
 ========================= */
-function sadMonthlyUrl(y,m){const mm=String(m).padStart(2,'0');return`${SAD_BASE}/sad_${y}_${mm}.geojson`;}
+let SAD_SELECTED_TYPE = 'geojson'; // 'geojson' | 'csv' | 'shp'
+
+/* gera a URL mensal conforme o tipo selecionado */
+function sadMonthlyUrl(y,m,type=SAD_SELECTED_TYPE){
+  const mm=String(m).padStart(2,'0');
+  if(type==='geojson') return `${SAD_GEOJSON_BASE}/sad_${y}_${mm}.geojson`;
+  if(type==='csv')     return `${SAD_CSV_BASE}/sad_${y}_${mm}.csv`;
+  // shapefile (zip)
+  return `${SAD_SHP_BASE}/sad_${y}_${mm}.zip`;
+}
+
 function monthsForSADYear(y){
   const now=new Date(), cy=now.getFullYear(), cm=now.getMonth()+1; // 1..12
   const lastComplete = Math.max(cm-2, 0); // até mês atual - 2
@@ -174,6 +206,7 @@ function monthsForSADYear(y){
   if(y===cy)   return Array.from({length:lastComplete},(_,i)=>i+1);
   return [];
 }
+
 async function buildSADYearBlock(y){
   const details=document.createElement('details');
   details.open=false;
@@ -183,16 +216,19 @@ async function buildSADYearBlock(y){
 
   const formats=document.createElement('div');formats.className='format-wrap';
 
-  // SOMENTE MENSAL
+  // MENSAL
   const fMensal=document.createElement('div');fMensal.className='format-card';
-  fMensal.innerHTML='<div class="format-title">Mensal</div>';
+  const titleKind = SAD_SELECTED_TYPE==='geojson' ? 'GeoJSON mensal'
+                    : SAD_SELECTED_TYPE==='csv'   ? 'CSV mensal'
+                    : 'Shapefile mensal (ZIP)';
+  fMensal.innerHTML=`<div class="format-title">${titleKind}</div>`;
   const mList=document.createElement('ul');mList.className='chiplist';
 
   const months = monthsForSADYear(y);
   const names  = monthsPT();
   const checks = months.map(async m=>{
     const label=`${names[m-1]}/${y}`;
-    const url=sadMonthlyUrl(y,m);
+    const url=sadMonthlyUrl(y,m,SAD_SELECTED_TYPE);
     const ok=await urlExists(url);
     mList.appendChild(ok?makeRealChip(label,url):makeDisabledChip(`${label} (indisponível)`));
   });
@@ -207,16 +243,13 @@ async function buildSADYearBlock(y){
 /* =========================
    AP — TRIMESTRAL com limite em 2025 (apenas T1 e T2)
 ========================= */
+const AP_BASE  = 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/ameaca_e_pressao/geojson';
 function apQuarterUrl(y,q){return `${AP_BASE}/ameaca_e_pressao_${q}_trimestre_${y}.geojson`;}
-
-/* Quais trimestres exibir por ano */
 function quartersForAPYear(y){
-  if (y < 2025) return [1,2,3,4];   // anos completos
-  if (y === 2025) return [1,2];     // só 1º semestre (T1 e T2)
-  return [];                        // nada após 2025
+  if (y < 2025) return [1,2,3,4];
+  if (y === 2025) return [1,2];
+  return [];
 }
-
-/* Lê anos do CSV de AP (filtrando >2025) */
 async function getAPYearsFromCSV(){
   const csvUrl=CFG.AP.csv;
   try{
@@ -224,7 +257,7 @@ async function getAPYearsFromCSV(){
     const years=new Set();
     rows.forEach(r=>{
       const y=parseYearFlexible(r, CFG.AP.yearFieldCandidates);
-      if(Number.isFinite(y) && y<=2025) years.add(y); // filtro extra
+      if(Number.isFinite(y) && y<=2025) years.add(y);
     });
     const sorted=[...years].sort((a,b)=>b-a);
     return sorted.length?sorted:yearsFromRange(YEAR_RANGE.AP);
@@ -232,7 +265,6 @@ async function getAPYearsFromCSV(){
     return yearsFromRange(YEAR_RANGE.AP);
   }
 }
-
 async function buildAPYearBlock(y){
   const details=document.createElement('details');
   details.open=false;
@@ -241,8 +273,6 @@ async function buildAPYearBlock(y){
   details.appendChild(summary);
 
   const formats=document.createElement('div');formats.className='format-wrap';
-
-  // SOMENTE TRIMESTRAL (T1..T4 ou T1..T2 em 2025)
   const fTrim=document.createElement('div');fTrim.className='format-card';
   fTrim.innerHTML='<div class="format-title">Trimestral</div>';
   const qList=document.createElement('ul');qList.className='chiplist';
@@ -271,11 +301,35 @@ async function buildAPYearBlock(y){
 }
 
 /* =========================
-   SIMEX (placeholder) & FLORESER (CSV por ano)
+   SIMEX — MOCK por ano (chips desativados)
 ========================= */
-async function buildSIMEX(ul){
-  ul.innerHTML='<li class="muted">Em breve.</li>';
+function buildSIMEXMock(ul){
+  ul.innerHTML='';
+  const years = yearsFromRange(YEAR_RANGE.SIMEX);
+  years.forEach(y=>{
+    const details=document.createElement('details');
+    const summary=document.createElement('summary');
+    summary.innerHTML=`<span class="year">${y}</span>`;
+    details.appendChild(summary);
+
+    const formats=document.createElement('div');formats.className='format-wrap';
+    const fAnual=document.createElement('div');fAnual.className='format-card';
+    fAnual.innerHTML='<div class="format-title">Relatório anual</div>';
+    const list=document.createElement('ul');list.className='chiplist';
+
+    // Mock: ainda indisponível
+    list.appendChild(makeDisabledChip(`Ano ${y} (indisponível)`));
+
+    fAnual.appendChild(list);
+    formats.appendChild(fAnual);
+    details.appendChild(formats);
+    ul.appendChild(details);
+  });
 }
+
+/* =========================
+   FLORESER (CSV por ano)
+========================= */
 function rowsToCSVWith(rows, sep, newline){
   if(!rows||!rows.length) return '';
   const cols=Object.keys(rows[0]);
@@ -329,12 +383,12 @@ async function buildSection(sec){
   }
 
   if(sec==='AP'){
-    const ys=await getAPYearsFromCSV(); // anos (capados até 2025)
+    const ys=await getAPYearsFromCSV();
     for(const y of ys){ const blk=await buildAPYearBlock(y); ul.appendChild(blk); }
     return;
   }
 
-  if(sec==='SIMEX'){ await buildSIMEX(ul); return; }
+  if(sec==='SIMEX'){ buildSIMEXMock(ul); return; }
   if(sec==='FLORESER'){ buildFLORESER(ul); return; }
 
   ul.innerHTML='<li class="muted">Seção desconhecida.</li>';
@@ -351,7 +405,7 @@ function downloadBlob(text, mime, filename){
 }
 
 /* =========================
-   INIT + abas/colapso
+   INIT + abas/colapso + tipo SAD
 ========================= */
 document.addEventListener('DOMContentLoaded',()=>{
   const content=document.getElementById('content');
@@ -364,6 +418,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       card.querySelectorAll(':scope > ul.list-divider').forEach(el=>el.style.display=collapsed?'none':'');
     });
   }
+
   const tabbar=document.getElementById('tabbar');
   if(tabbar){
     tabbar.addEventListener('click',e=>{
@@ -373,7 +428,23 @@ document.addEventListener('DOMContentLoaded',()=>{
       buildSection(t.dataset.ds.toUpperCase());
     });
   }
-  buildSection('SAD'); // tela inicial (SAD mensal)
+
+  // Seletor de tipo do SAD
+  const typebar = document.getElementById('sad-typebar');
+  if(typebar){
+    typebar.addEventListener('click',async (e)=>{
+      const btn = e.target.closest('.typebtn'); if(!btn) return;
+      document.querySelectorAll('#sad-typebar .typebtn').forEach(b=>{
+        b.classList.toggle('active', b===btn);
+        b.setAttribute('aria-selected', b===btn ? 'true' : 'false');
+      });
+      SAD_SELECTED_TYPE = btn.dataset.type; // geojson | csv | shp
+      // Reconstroi a lista de anos/meses do SAD conforme o tipo
+      await buildSection('SAD');
+    });
+  }
+
+  buildSection('SAD'); // tela inicial (SAD mensal, tipo GeoJSON)
 });
 </script>
 </body>
