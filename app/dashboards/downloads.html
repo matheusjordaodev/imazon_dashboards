@@ -36,7 +36,6 @@
   summary::-webkit-details-marker{display:none}
   .year{font-weight:700}
 
-  /* UM cartão por linha (igual ao print) */
   .format-wrap{display:block;padding:0 20px 14px}
   .format-card{border:1px dashed #e3e3e3;border-radius:12px;padding:10px 14px;background:#fafafa;margin-bottom:10px}
   .format-title{font-size:.9rem;color:#2a2a2a;margin:0 0 6px;font-weight:700}
@@ -97,7 +96,7 @@
           <i class="fa-solid fa-compress" aria-hidden="true"></i>
         </button>
       </div>
-      <ul id="simex-list" class="list-divider"><li class="muted">Carregando anos...</li></ul>
+      <ul id="simex-list" class="list-divider"><li class="muted">Em breve.</li></ul>
     </div>
 
     <div class="card" data-section="floreser" style="display:none">
@@ -114,7 +113,9 @@
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
-/* === Fontes === */
+/* =========================
+   CONFIG GERAL
+========================= */
 const CFG = {
   SAD:{csv:'/dataset/sad/csv/sad_completo_anual.csv',yearFieldCandidates:['ANO','ano','year','Ano']},
   AP:{csv:'/dataset/ap/csv/ap_completo_anual.csv',yearFieldCandidates:['ANO','ano','year','Ano']},
@@ -122,55 +123,160 @@ const CFG = {
   FLORESER:{csv:'/dataset/floreser-9-22-1-ages-sf.csv',yearFieldCandidates:['year','ANO','ano','Ano','ano_ref','ANO_REF']}
 };
 
-/* === Ranges garantidos na UI === */
-const YEAR_RANGE = {
-  SAD:[2004,2025],
-  AP:[2020,2023],
-  SIMEX:[2007,2023]
-  // FLORESER: só CSV dinâmico
-};
+const YEAR_RANGE = { SAD:[2004,2025], AP:[2020,2025], SIMEX:[2007,2023] };
 
-/* === Catálogo GeoJSON (SAD/AP). SIMEX vazio para mock === */
-const CATALOG = {
-  SAD:{ 
-    2004:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2004.geojson'},
-    2005:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2005.geojson'},
-    2006:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2006.geojson'},
-    2007:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2007.geojson'},
-    2008:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2008.geojson'},
-    2009:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2009.geojson'},
-    2010:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2010.geojson'},
-    2011:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2011.geojson'},
-    2012:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2012.geojson'},
-    2013:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2013.geojson'},
-    2014:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2014.geojson'},
-    2015:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2015.geojson'},
-    2016:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2016.geojson'},
-    2017:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2017.geojson'},
-    2018:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2018.geojson'},
-    2019:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2019.geojson'},
-    2020:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2020.geojson'},
-    2021:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2021.geojson'},
-    2022:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2022.geojson'},
-    2023:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2023.geojson'},
-    2024:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2024.geojson'},
-    2025:{ geojson:'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos/sad_final_2025.geojson'}
-  },
-  AP:{   
-    2020: {geojson: 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/ameaca_e_pressao/ameaca_e_pressao_2020.geojson'},
-    2021: {geojson: 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/ameaca_e_pressao/ameaca_e_pressao_2021.geojson'},
-    2022: {geojson: 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/ameaca_e_pressao/ameaca_e_pressao_2022.geojson'},
-    2023: {geojson: 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/ameaca_e_pressao/ameaca_e_pressao_2023.geojson'} },
-  SIMEX:{}
-};
+/* Buckets base */
+const SAD_BASE = 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/sad/geojson/todos';
+const AP_BASE  = 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/geojson/ameaca_e_pressao/geojson';
 
-/* Utils */
+/* Evita falso "indisponível" (CORS) */
+const VERIFY_LINKS = false;
+
+/* =========================
+   HELPERS
+========================= */
 const onlyDigitsKeepMinus=s=>String(s==null?'':s).replace(/[^0-9-]/g,'');
 function parseYearFlexible(row,candidates){
-  for(const k of candidates){ if(row[k]!=null&&row[k]!==''){ const v=parseInt(onlyDigitsKeepMinus(row[k]),10); if(Number.isFinite(v)) return v; } }
+  for(const k of candidates){
+    if(row[k]!=null && row[k]!==''){
+      const v=parseInt(onlyDigitsKeepMinus(row[k]),10);
+      if(Number.isFinite(v)) return v;
+    }
+  }
   return null;
 }
-function rowsToCSVWith(rows,sep,newline){
+function yearsFromRange([a,b]){const ys=[];for(let y=b;y>=a;y--)ys.push(y);return ys;}
+function monthsPT(){return['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];}
+
+/* chips */
+function makeRealChip(label,url){const li=document.createElement('li');const a=document.createElement('a');a.className='chiplink';a.textContent=label;a.href=url;a.target='_blank';a.rel='noopener';li.appendChild(a);return li;}
+function makeDisabledChip(label){const li=document.createElement('li');const a=document.createElement('a');a.className='chiplink disabled';a.textContent=label;a.setAttribute('aria-disabled','true');li.appendChild(a);return li;}
+async function urlExists(url){
+  if(!VERIFY_LINKS) return true;
+  try{
+    const r=await fetch(url,{method:'HEAD',cache:'no-store'});
+    if(r.type==='opaque') return true;
+    if(r.ok) return true;
+    if(r.status===403||r.status===401) return true;
+    return r.status!==404;
+  }catch{ return true; }
+}
+
+/* =========================
+   SAD — apenas MENSAL (até mês atual - 2)
+========================= */
+function sadMonthlyUrl(y,m){const mm=String(m).padStart(2,'0');return`${SAD_BASE}/sad_${y}_${mm}.geojson`;}
+function monthsForSADYear(y){
+  const now=new Date(), cy=now.getFullYear(), cm=now.getMonth()+1; // 1..12
+  const lastComplete = Math.max(cm-2, 0); // até mês atual - 2
+  if(y===2004) return [8,9,10,11,12];
+  if(y<cy)     return [1,2,3,4,5,6,7,8,9,10,11,12];
+  if(y===cy)   return Array.from({length:lastComplete},(_,i)=>i+1);
+  return [];
+}
+async function buildSADYearBlock(y){
+  const details=document.createElement('details');
+  details.open=false;
+  const summary=document.createElement('summary');
+  summary.innerHTML=`<span class="year">${y}</span>`;
+  details.appendChild(summary);
+
+  const formats=document.createElement('div');formats.className='format-wrap';
+
+  // SOMENTE MENSAL
+  const fMensal=document.createElement('div');fMensal.className='format-card';
+  fMensal.innerHTML='<div class="format-title">Mensal</div>';
+  const mList=document.createElement('ul');mList.className='chiplist';
+
+  const months = monthsForSADYear(y);
+  const names  = monthsPT();
+  const checks = months.map(async m=>{
+    const label=`${names[m-1]}/${y}`;
+    const url=sadMonthlyUrl(y,m);
+    const ok=await urlExists(url);
+    mList.appendChild(ok?makeRealChip(label,url):makeDisabledChip(`${label} (indisponível)`));
+  });
+  await Promise.all(checks);
+
+  fMensal.appendChild(mList);
+  formats.appendChild(fMensal);
+  details.appendChild(formats);
+  return details;
+}
+
+/* =========================
+   AP — TRIMESTRAL com limite em 2025 (apenas T1 e T2)
+========================= */
+function apQuarterUrl(y,q){return `${AP_BASE}/ameaca_e_pressao_${q}_trimestre_${y}.geojson`;}
+
+/* Quais trimestres exibir por ano */
+function quartersForAPYear(y){
+  if (y < 2025) return [1,2,3,4];   // anos completos
+  if (y === 2025) return [1,2];     // só 1º semestre (T1 e T2)
+  return [];                        // nada após 2025
+}
+
+/* Lê anos do CSV de AP (filtrando >2025) */
+async function getAPYearsFromCSV(){
+  const csvUrl=CFG.AP.csv;
+  try{
+    const rows=await d3.csv(csvUrl);
+    const years=new Set();
+    rows.forEach(r=>{
+      const y=parseYearFlexible(r, CFG.AP.yearFieldCandidates);
+      if(Number.isFinite(y) && y<=2025) years.add(y); // filtro extra
+    });
+    const sorted=[...years].sort((a,b)=>b-a);
+    return sorted.length?sorted:yearsFromRange(YEAR_RANGE.AP);
+  }catch(e){
+    return yearsFromRange(YEAR_RANGE.AP);
+  }
+}
+
+async function buildAPYearBlock(y){
+  const details=document.createElement('details');
+  details.open=false;
+  const summary=document.createElement('summary');
+  summary.innerHTML=`<span class="year">${y}</span>`;
+  details.appendChild(summary);
+
+  const formats=document.createElement('div');formats.className='format-wrap';
+
+  // SOMENTE TRIMESTRAL (T1..T4 ou T1..T2 em 2025)
+  const fTrim=document.createElement('div');fTrim.className='format-card';
+  fTrim.innerHTML='<div class="format-title">Trimestral</div>';
+  const qList=document.createElement('ul');qList.className='chiplist';
+
+  const quarters = quartersForAPYear(y);
+  if (!quarters.length){
+    const li=document.createElement('li');
+    li.className='muted';
+    li.textContent='Sem dados para este ano.';
+    qList.appendChild(li);
+  } else {
+    const checks=quarters.map(async q=>{
+      const tLabel = ['T1','T2','T3','T4'][q-1];
+      const label=`${tLabel} • ${y}`;
+      const url=apQuarterUrl(y,q);
+      const ok=await urlExists(url);
+      qList.appendChild(ok?makeRealChip(label,url):makeDisabledChip(`${label} (indisponível)`));
+    });
+    await Promise.all(checks);
+  }
+
+  fTrim.appendChild(qList);
+  formats.appendChild(fTrim);
+  details.appendChild(formats);
+  return details;
+}
+
+/* =========================
+   SIMEX (placeholder) & FLORESER (CSV por ano)
+========================= */
+async function buildSIMEX(ul){
+  ul.innerHTML='<li class="muted">Em breve.</li>';
+}
+function rowsToCSVWith(rows, sep, newline){
   if(!rows||!rows.length) return '';
   const cols=Object.keys(rows[0]);
   const esc=v=>('"'+String(v==null?'':v).replace(/"/g,'""')+'"');
@@ -178,183 +284,97 @@ function rowsToCSVWith(rows,sep,newline){
   rows.forEach(r=>out.push(cols.map(k=>esc(r[k])).join(sep)));
   return out.join(newline)+newline;
 }
-function downloadBlob(strOrBlob,mime,filename){
-  let blob; const isCsv=/csv/i.test(mime)||/\.csv$/i.test(filename);
-  if(strOrBlob instanceof Blob){ blob=strOrBlob; }
-  else{
-    const bom=isCsv?'\ufeff':'';
-    const type=isCsv?(mime.includes('charset')?mime:(mime+';charset=utf-8')):mime;
-    blob=new Blob([bom,strOrBlob],{type});
-  }
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=filename;
-  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
-function yearsFromRange([a,b]){const ys=[]; for(let y=b;y>=a;y--) ys.push(y); return ys;}
-function computeYears(sec, extraYearsSet=new Set()){
-  const base = YEAR_RANGE[sec] ? new Set(yearsFromRange(YEAR_RANGE[sec])) : new Set();
-  const catYears = new Set(Object.keys(CATALOG[sec]||{}).map(x=>parseInt(x,10)).filter(Number.isFinite));
-  const all = new Set([...base, ...catYears, ...extraYearsSet]);
-  return [...all].sort((a,b)=>b-a);
+function buildFLORESER(ul){
+  const csvUrl=CFG.FLORESER?.csv;
+  if(!csvUrl){ ul.innerHTML='<li class="muted">Sem fonte CSV configurada.</li>'; return; }
+  d3.csv(csvUrl).then(rows=>{
+    rows.forEach(r=>{ r.__ANO = parseYearFlexible(r, CFG.FLORESER.yearFieldCandidates); });
+    const byYear=new Map();
+    rows.forEach(r=>{ if(!Number.isFinite(r.__ANO)) return; if(!byYear.has(r.__ANO)) byYear.set(r.__ANO,[]); byYear.get(r.__ANO).push(r); });
+    const years=[...byYear.keys()].sort((a,b)=>b-a);
+    ul.innerHTML='';
+    if(!years.length){ ul.innerHTML='<li class="muted">Sem dados disponíveis.</li>'; return; }
+
+    years.forEach(y=>{
+      const details=document.createElement('details');
+      const summary=document.createElement('summary'); summary.innerHTML=`<span class="year">${y}</span>`;
+      details.appendChild(summary);
+
+      const formats=document.createElement('div'); formats.className='format-wrap';
+      const fCSV=document.createElement('div'); fCSV.className='format-card';
+      fCSV.innerHTML='<div class="format-title">CSV</div>';
+      const list=document.createElement('ul'); list.className='chiplist';
+      const li=document.createElement('li'); const btn=document.createElement('button');
+      btn.type='button'; btn.className='chiplink'; btn.innerHTML='Ano '+y;
+      btn.onclick=()=>downloadBlob(rowsToCSVWith(byYear.get(y),',','\r\n'),'text/csv',`floreser_${y}.csv`);
+      li.appendChild(btn); list.appendChild(li); fCSV.appendChild(list);
+      formats.appendChild(fCSV);
+
+      details.appendChild(formats); ul.appendChild(details);
+    });
+  }).catch(()=>{ ul.innerHTML='<li class="muted">Não foi possível carregar o CSV do FLORESER.</li>'; });
 }
 
-/* Helpers de UI para chips mock e reais */
-function makeMockChip(label){
-  const li=document.createElement('li');
-  const a=document.createElement('a');
-  a.className='chiplink';
-  a.textContent=label;
-  a.href="#";
-  a.addEventListener('click',(ev)=>{ ev.preventDefault(); ev.stopPropagation(); });
-  li.appendChild(a);
-  return li;
-}
-function makeRealChip(label, url){
-  const li=document.createElement('li');
-  const a=document.createElement('a');
-  a.className='chiplink';
-  a.textContent=label;
-  a.href=url; a.target='_blank'; a.rel='noopener';
-  li.appendChild(a);
-  return li;
-}
-function monthsPT(){
-  return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-}
-function quartersPT(){
-  return ['Q1 (Jan–Mar)','Q2 (Abr–Jun)','Q3 (Jul–Set)','Q4 (Out–Dez)'];
-}
-
-/* === Seção ===
-   - FLORESER: CSV dinâmico (igual).
-   - SIMEX: mock (sem links).
-   - AP: GeoJSON anual (real se existir) + Trimestral .
-   - SAD: GeoJSON anual (real se existir) + Mensal .
-*/
-function buildSection(sec){
+/* =========================
+   ROUTER DE SEÇÕES
+========================= */
+async function buildSection(sec){
   const ul=document.getElementById(sec.toLowerCase()+'-list');
   ul.innerHTML='';
 
-  const isFloreser = (sec === 'FLORESER');
-  const isSimex    = (sec === 'SIMEX');
-  const isAP       = (sec === 'AP');
-  const isSAD      = (sec === 'SAD');
-  const csvUrl=CFG[sec]?.csv;
-
-  if(isFloreser){
-    if(!csvUrl){ ul.innerHTML='<li class="muted">Sem fonte CSV configurada.</li>'; return; }
-    d3.csv(csvUrl).then(rows=>{
-      rows.forEach(r=>{ r.__ANO = parseYearFlexible(r, CFG[sec].yearFieldCandidates); });
-      const byYear=new Map();
-      rows.forEach(r=>{ if(!Number.isFinite(r.__ANO)) return; if(!byYear.has(r.__ANO)) byYear.set(r.__ANO,[]); byYear.get(r.__ANO).push(r); });
-      const years=[...byYear.keys()].sort((a,b)=>b-a);
-      ul.innerHTML='';
-      if(!years.length){ ul.innerHTML='<li class="muted">Sem dados disponíveis.</li>'; return; }
-
-      years.forEach(y=>{
-        const details=document.createElement('details');
-        if(y===years[0]) details.open=true;
-        const summary=document.createElement('summary'); summary.innerHTML=`<span class="year">${y}</span>`;
-        details.appendChild(summary);
-
-        const formats=document.createElement('div'); formats.className='format-wrap';
-
-        // CSV anual
-        const fCSV=document.createElement('div'); fCSV.className='format-card';
-        fCSV.innerHTML='<div class="format-title">CSV</div>';
-        const list=document.createElement('ul'); list.className='chiplist';
-        const li=document.createElement('li'); const btn=document.createElement('button');
-        btn.type='button'; btn.className='chiplink'; btn.innerHTML='Ano '+y;
-        btn.onclick=()=>downloadBlob(rowsToCSVWith(byYear.get(y),',','\r\n'),'text/csv',`${sec.toLowerCase()}_${y}.csv`);
-        li.appendChild(btn); list.appendChild(li); fCSV.appendChild(list);
-        formats.appendChild(fCSV);
-
-        details.appendChild(formats); ul.appendChild(details);
-      });
-    }).catch(()=>{ ul.innerHTML='<li class="muted">Não foi possível carregar o CSV do FLORESER.</li>'; });
+  if(sec==='SAD'){
+    const ys=yearsFromRange(YEAR_RANGE.SAD);
+    for(const y of ys){ const blk=await buildSADYearBlock(y); ul.appendChild(blk); }
     return;
   }
 
-  // SAD/AP/SIMEX: estrutura por ano
-  const baseYears = computeYears(sec);
-  if(!baseYears.length){ ul.innerHTML='<li class="muted">Sem anos configurados.</li>'; return; }
+  if(sec==='AP'){
+    const ys=await getAPYearsFromCSV(); // anos (capados até 2025)
+    for(const y of ys){ const blk=await buildAPYearBlock(y); ul.appendChild(blk); }
+    return;
+  }
 
-  baseYears.forEach(y=>{
-    const details=document.createElement('details');
-    if(y===baseYears[0]) details.open=true;
-    const summary=document.createElement('summary'); summary.innerHTML=`<span class="year">${y}</span>`;
-    details.appendChild(summary);
+  if(sec==='SIMEX'){ await buildSIMEX(ul); return; }
+  if(sec==='FLORESER'){ buildFLORESER(ul); return; }
 
-    const formats=document.createElement('div'); formats.className='format-wrap';
-
-    // Bloco GeoJSON anual (real se houver link)
-    const fGJ=document.createElement('div'); fGJ.className='format-card';
-    fGJ.innerHTML='<div class="format-title">GeoJSON — anual</div>';
-    const gjList=document.createElement('ul'); gjList.className='chiplist';
-    const url = (CATALOG[sec]||{})[y]?.geojson;
-    if(url && String(url).trim()){
-      gjList.appendChild(makeRealChip('Ano '+y, url));
-    } else if(isSimex){
-      gjList.appendChild(makeMockChip('Ano '+y));
-    } else {
-      const li=document.createElement('li');
-      const a=document.createElement('a');
-      a.className='chiplink disabled'; a.textContent='Ano '+y+' (em breve)';
-      a.setAttribute('aria-disabled','true');
-      li.appendChild(a);
-      gjList.appendChild(li);
-    }
-    fGJ.appendChild(gjList);
-    formats.appendChild(fGJ);
-
-    // Bloco extra conforme dataset
-    if(isSAD){
-      // Mensal 
-      const fMensal=document.createElement('div'); fMensal.className='format-card';
-      fMensal.innerHTML='<div class="format-title">Mensal </div>';
-      const mList=document.createElement('ul'); mList.className='chiplist';
-      monthsPT().forEach((m,i)=>{
-        mList.appendChild(makeMockChip(`${m}/${y}`));
-      });
-      fMensal.appendChild(mList);
-      formats.appendChild(fMensal);
-    }
-
-    if(isAP){
-      // Trimestral 
-      const fTrim=document.createElement('div'); fTrim.className='format-card';
-      fTrim.innerHTML='<div class="format-title">Trimestral </div>';
-      const qList=document.createElement('ul'); qList.className='chiplist';
-      quartersPT().forEach((q,idx)=>{
-        qList.appendChild(makeMockChip(`${q} ${y}`));
-      });
-      fTrim.appendChild(qList);
-      formats.appendChild(fTrim);
-    }
-
-    details.appendChild(formats); ul.appendChild(details);
-  });
+  ul.innerHTML='<li class="muted">Seção desconhecida.</li>';
 }
 
-/* === Colapso e abas === */
-document.getElementById('content').addEventListener('click',e=>{
-  const btn=e.target.closest('.collapse-btn'); if(!btn)return;
-  const card=btn.closest('.card');
-  const collapsed=card.classList.toggle('collapsed');
-  btn.setAttribute('aria-expanded',String(!collapsed));
-  card.querySelectorAll(':scope > ul.list-divider').forEach(el=>{el.style.display=collapsed?'none':'';});
-});
-
-function showSection(ds){
-  document.querySelectorAll('.tabbar .tab').forEach(t=>t.classList.toggle('active',t.dataset.ds===ds));
-  document.querySelectorAll('[data-section]').forEach(s=>s.style.display=(s.getAttribute('data-section')===ds)?'block':'none');
-  buildSection(ds.toUpperCase());
+/* =========================
+   UTIL: download de Blob (FLORESER)
+========================= */
+function downloadBlob(text, mime, filename){
+  const blob=new Blob([text],{type:mime});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
 }
-document.getElementById('tabbar').addEventListener('click',e=>{
-  const t=e.target.closest('.tab'); if(!t)return;
-  showSection(t.dataset.ds);
+
+/* =========================
+   INIT + abas/colapso
+========================= */
+document.addEventListener('DOMContentLoaded',()=>{
+  const content=document.getElementById('content');
+  if(content){
+    content.addEventListener('click',e=>{
+      const btn=e.target.closest('.collapse-btn'); if(!btn) return;
+      const card=btn.closest('.card');
+      const collapsed=card.classList.toggle('collapsed');
+      btn.setAttribute('aria-expanded', String(!collapsed));
+      card.querySelectorAll(':scope > ul.list-divider').forEach(el=>el.style.display=collapsed?'none':'');
+    });
+  }
+  const tabbar=document.getElementById('tabbar');
+  if(tabbar){
+    tabbar.addEventListener('click',e=>{
+      const t=e.target.closest('.tab'); if(!t) return;
+      document.querySelectorAll('.tabbar .tab').forEach(x=>x.classList.toggle('active',x===t));
+      document.querySelectorAll('[data-section]').forEach(s=>s.style.display=(s.getAttribute('data-section')===t.dataset.ds)?'block':'none');
+      buildSection(t.dataset.ds.toUpperCase());
+    });
+  }
+  buildSection('SAD'); // tela inicial (SAD mensal)
 });
-showSection('sad');
 </script>
 </body>
 </html>
