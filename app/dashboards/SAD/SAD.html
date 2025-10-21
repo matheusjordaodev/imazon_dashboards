@@ -435,6 +435,28 @@ function zoomToTopItems(n = 5){
     else { fitBoundsWithExtra(map, amazoniaBounds, [20,20], 0); }
   } catch { fitBoundsWithExtra(map, amazoniaBounds, [20,20], 0); }
 }
+// Detecta prefixo quando o app roda em subcaminho (ex.: /floreser)
+window.__BASE_PATH = (function () {
+  const m = location.pathname.match(/^\/([^/]+)/);
+  // Se a página está em /floreser/..., usa '/floreser'; senão, root ''
+  return (m && m[1] === 'floreser') ? '/floreser' : '';
+})();
+const B = window.__BASE_PATH;
+
+// Helpers para fetch sempre em JSON (e com prefixo)
+async function getJsonOrThrow(pathname) {
+  const r = await fetch(`${B}${pathname}`, { headers: { 'Accept': 'application/json' } });
+  const txt = await r.text();
+  if (!r.ok) {
+    try {
+      const j = JSON.parse(txt);
+      throw new Error(j.error || j.details || `HTTP ${r.status}`);
+    } catch {
+      throw new Error(txt || `HTTP ${r.status}`);
+    }
+  }
+  return JSON.parse(txt);
+}
 
 const __geoCache = {};
 async function __getGeoFor(kindKey){
@@ -465,13 +487,12 @@ const dataSources={
   }
 };
 
-/* ======= FUNDO DO MAPA: contorno da Amazônia Legal ======= */
 const __bgCache = {};
 let __bgLayer = null;
 
 async function updateBackgroundOutlines(){
   try{ if(__bgLayer){ map.removeLayer(__bgLayer); __bgLayer = null; } }catch{}
-  const url = "/dataset/geojson/AMZ_legal_amz_legal.geojson";
+  const url = "/sad/dataset/sad/geojson/AMZ_legal_amz_legal.geojson";
   if(__bgCache[url]){
     __bgLayer = L.geoJSON(__bgCache[url], { style:{ color:'#9aa0a6', weight:1.2, fillOpacity:0 }, interactive:false }).addTo(map);
     try{ __bgLayer.bringToBack(); }catch{}
@@ -586,16 +607,26 @@ let pageSize = 10;
 
 function totalPages(){ return Math.max(1, Math.ceil(rankingAll.length / pageSize)); }
 
-async function setRankPage(p){
+function setRankPage(p){
   const tp = totalPages();
   rankPage = Math.max(0, Math.min(tp-1, p));
-  document.getElementById('rank-page-label').textContent = `Página ${tp ? (rankPage+1) : 0}/${tp}`;
+  
+  // Atualiza o rótulo dentro do grupo de botões
+  const pageLabelEl = document.getElementById('rank-page-label-btn');
+  if (pageLabelEl) {
+    pageLabelEl.textContent = `Página ${tp ? (rankPage+1) : 0}/${tp}`;
+  }
 
   const startIdx = rankPage*pageSize;
   const endIdxEx = Math.min(startIdx + pageSize, rankingAll.length);
   const shownStart = rankingAll.length ? (startIdx+1) : 0;
   const shownEnd   = endIdxEx;
-  document.getElementById('rank-range-label').textContent = `mostrando ${shownStart}–${shownEnd} de ${rankingAll.length}`;
+  
+  // Atualiza a faixa "mostrando x-y de z"
+  const rangeLabelEl = document.getElementById('rank-range-label');
+  if (rangeLabelEl) {
+    rangeLabelEl.textContent = `mostrando ${shownStart}–${shownEnd} de ${rankingAll.length}`;
+  }
 
   const slice = rankingAll.slice(startIdx, endIdxEx);
   const ttype = categoriaAtual();
