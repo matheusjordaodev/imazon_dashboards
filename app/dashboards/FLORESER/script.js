@@ -7,16 +7,16 @@ let municipioChartLargeInstance;
 let isApplyingYearFilter = false;
 
 const chartColors = [
-  'rgba(27, 94, 32, 0.8)',    
-  'rgba(0, 121, 107, 0.8)',   
-  'rgba(255, 109, 0, 0.8)',   
-  'rgba(21, 101, 192, 0.8)',  
-  'rgba(94, 53, 177, 0.8)',   
-  'rgba(183, 28, 28, 0.8)',   
-  'rgba(0, 150, 136, 0.8)',   
-  'rgba(255, 152, 0, 0.8)',   
-  'rgba(63, 81, 181, 0.8)',   
-  'rgba(156, 39, 176, 0.8)'   
+  'rgba(27, 94, 32, 0.8)',
+  'rgba(0, 121, 107, 0.8)',
+  'rgba(255, 109, 0, 0.8)',
+  'rgba(21, 101, 192, 0.8)',
+  'rgba(94, 53, 177, 0.8)',
+  'rgba(183, 28, 28, 0.8)',
+  'rgba(0, 150, 136, 0.8)',
+  'rgba(255, 152, 0, 0.8)',
+  'rgba(63, 81, 181, 0.8)',
+  'rgba(156, 39, 176, 0.8)'
 ];
 
 const chartBorders = [
@@ -43,7 +43,7 @@ function toTitleCasePt(str = '') {
   return words.map((w, i) => {
     // mantém "d'água" com D' minúsculo e próxima maiúscula
     if (small.has(w) && i !== 0) return w;
-    
+
     return w.charAt(0).toUpperCase() + w.slice(1);
   }).join(' ');
 }
@@ -89,7 +89,7 @@ function showWarningModal(title, message) {
   if (titleEl) titleEl.textContent = title;
   if (bodyEl) bodyEl.innerHTML = message;
 
-  
+
   if (window.bootstrap && bootstrap.Modal) {
     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     modal.show();
@@ -133,7 +133,7 @@ async function getDataYearBounds() {
 
   const data = await res.json();
 
-  
+
   let min = Infinity;
   let max = -Infinity;
 
@@ -235,7 +235,7 @@ layer.tooltip = L.tooltip({
           await loadMunicipioFilter(state);
           municipioFilter.value = municipio;
 
-          await applyYearFilter(); 
+          await applyYearFilter();
           hideLoader();
         }
       });
@@ -277,26 +277,26 @@ async function loadStateFilter() {
     if (!response.ok) throw new Error('Erro na requisição');
     let states = await response.json();
 
-    
+
     states = Array.from(new Set(states))
       .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
 
     const stateFilter = document.getElementById('stateFilter');
     stateFilter.innerHTML = '';
 
-    
+
     const optAll = document.createElement('option');
     optAll.value = '';
     optAll.textContent = 'Todos os Estados';
     stateFilter.appendChild(optAll);
 
-    
+
     const optAL = document.createElement('option');
     optAL.value = '__AMAZONIA_LEGAL__';
     optAL.textContent = 'Amazônia Legal';
     stateFilter.appendChild(optAL);
 
-    
+
     states.forEach(state => {
       const option = document.createElement('option');
       option.value = state;                      // valor bruto para casar com backend
@@ -326,7 +326,7 @@ async function loadMunicipioFilter(state) {
     if (!response.ok) throw new Error('Erro na requisição');
     let municipios = await response.json();
 
-    
+
     municipios = Array.from(new Set(municipios))
       .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
 
@@ -334,8 +334,8 @@ async function loadMunicipioFilter(state) {
     municipioFilter.innerHTML = '<option value="">Todos os Municípios</option>';
     municipios.forEach(municipio => {
       const option = document.createElement('option');
-      option.value = municipio;                         
-      option.textContent = toTitleCasePt(municipio);    
+      option.value = municipio;
+      option.textContent = toTitleCasePt(municipio);
       municipioFilter.appendChild(option);
     });
   } catch (error) {
@@ -350,7 +350,7 @@ async function loadMunicipioFilter(state) {
 }
 
 
-let applyYearFilterPending = false;     
+let applyYearFilterPending = false;
 async function applyYearFilter() {
   if (isApplyingYearFilter) {
     applyYearFilterPending = true;
@@ -364,7 +364,7 @@ async function applyYearFilter() {
     let state     = document.getElementById('stateFilter')?.value || '';
     const municipio = document.getElementById('municipioFilter')?.value || '';
 
-    
+
     if (state === '__AMAZONIA_LEGAL__') state = '';
 
     let { startYear, endYear } = getYearFilters();
@@ -433,24 +433,24 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
     const data = raw.map(d => ({
       state: d.state,
       name: d.name,
-      year: Number(d.year),                 
+      year: Number(d.year),
       area: Number(d.area) || 0
     })).filter(d => Number.isFinite(d.year));
 
-    
+
     const byYears = data.filter(d => d.year >= startYear && d.year <= endYear);
 
-    
+
     const labels = [];
     for (let y = startYear; y <= endYear; y++) labels.push(y);
 
     let datasets = [];
 
     if (municipio) {
-    
+
       const muniRows = byYears.filter(d => eqStr(d.name, municipio));
 
-    
+
       const areaByYear = new Map();
       for (const r of muniRows) {
         areaByYear.set(r.year, (areaByYear.get(r.year) || 0) + r.area);
@@ -469,7 +469,7 @@ async function loadChartByState(state = '', municipio = '', startYear = 1986, en
       }];
 
     } else if (state) {
-    
+
       const stateRows = byYears.filter(d => eqStr(d.state, state));
 
       const areaByYear = new Map();
@@ -727,16 +727,16 @@ document.getElementById('stateFilter').addEventListener('change', async function
       municipioFilter.innerHTML = '<option value="">Todos os Municípios</option>';
     }
   } else if (state === '__AMAZONIA_LEGAL__') {
-    // Amazônia Legal 
+    // Amazônia Legal
     if (municipioFilter) {
       municipioFilter.innerHTML = '<option value="">Todos os Municípios</option>';
     }
   } else {
-    
+
     await loadMunicipioFilter(state);
   }
 
-  await applyYearFilter(); 
+  await applyYearFilter();
 });
 
 
@@ -773,30 +773,30 @@ function makeChipFloreser(label, url) {
 async function buildFloreserYearBlock(year) {
   const details = document.createElement('details');
   details.open = false;
-  
+
   const summary = document.createElement('summary');
   summary.innerHTML = `<span class="year">${year}</span>`;
   details.appendChild(summary);
 
   const formats = document.createElement('div');
   formats.className = 'format-wrap';
-  
+
   const fAnnual = document.createElement('div');
   fAnnual.className = 'format-card';
-  
-  const titleKind = FLORESER_SELECTED_TYPE === 'geojson' ? 'GeoJSON anual' :
-                   FLORESER_SELECTED_TYPE === 'csv' ? 'CSV anual' : 
+
+  const titleKind = FLORESER_SELECTED_TYPE === 'geojson' ? '' :
+                   FLORESER_SELECTED_TYPE === 'csv' ? 'CSV anual' :
                    'Shapefile anual (ZIP)';
-  
+
   fAnnual.innerHTML = `<div class="format-title">${titleKind}</div>`;
-  
+
   const list = document.createElement('ul');
   list.className = 'chiplist';
-  
+
   const label = `Baixar ${year}`;
   const url = floreserAnnualUrl(year);
   list.appendChild(makeChipFloreser(label, url));
-  
+
   fAnnual.appendChild(list);
   formats.appendChild(fAnnual);
   details.appendChild(formats);
@@ -806,7 +806,7 @@ async function buildFloreserYearBlock(year) {
 async function renderDownloadsFloreSer() {
   const ul = document.getElementById('floreser-downloads-list');
   ul.innerHTML = '';
-  
+
   const currentYear = new Date().getFullYear();
   // FloreSer geralmente tem dados de 1986 em diante
   for (let year = currentYear; year >= 1986; year--) {
@@ -868,9 +868,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   await loadStateFilter();
   await loadMap();
   await applyYearFilter();
-  
+
   // Inicializar downloads FloreSer
   initializeFloreSerDownloads();
-  
+
   hideLoader();
 });
