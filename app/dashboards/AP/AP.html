@@ -897,7 +897,7 @@
       subdomains: 'abcd', maxZoom: 20, crossOrigin: true
     }).addTo(map);
 
-    const BASE_GEOJSON_URL = 'dataset/AMZ_legal_amz_legal.geojson';
+    const BASE_GEOJSON_URL = '/dataset/AMZ_legal_amz_legal.geojson';
     const amazoniaBounds = L.latLngBounds([[-18,-75],[6,-44]]);
     let baseLayer = null;
 
@@ -1128,7 +1128,7 @@
       setTitles();
 
       if (selectedEstado === 'TO') {
-        const basePath = 'ap/dataset/ap/geojson/';
+        const basePath = '/dataset/ap/geojson/';
         const scope = currentFilter;
         const years = (selectedYear == null)
           ? [2020,2021,2022,2023,2024,2025]
@@ -1150,7 +1150,7 @@
           return;
         }
       } else {
-        const basePath = 'dataset/ap/geojson/';
+        const basePath = '/dataset/ap/geojson/';
         const scope = currentFilter;
         const years = (selectedYear == null)
           ? [2020,2021,2022,2023,2024,2025]
