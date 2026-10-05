@@ -97,7 +97,21 @@
     .period-input-group {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    /* cada data (MM / AAAA) fica junta; a quebra, se houver, ocorre entre as duas */
+    .period-input-group .pdate {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    /* menos espaço interno para o valor caber (o form-select reserva ~36px p/ seta) */
+    .period-input-group .form-select {
+      padding: .375rem 1.5rem .375rem .55rem;
+      background-position: right .5rem center;
+      text-align: center;
     }
     .period-separator {
       color: #6b7280;
@@ -198,7 +212,8 @@
       <div class="filter-item span-4">
         <label class="filter-label fw-bold">Período</label>
         <div class="period-input-group">
-          <select id="monthStart" class="form-select" style="flex: 1;">
+          <span class="pdate">
+          <select id="monthStart" class="form-select" style="flex:0 0 58px;">
             <option value="01">01</option>
             <option value="02">02</option>
             <option value="03">03</option>
@@ -213,9 +228,11 @@
             <option value="12">12</option>
           </select>
           <span class="period-separator">/</span>
-          <select id="yearStart" class="form-select" style="flex: 1;"></select>
+          <select id="yearStart" class="form-select" style="flex:0 0 84px;"></select>
+          </span>
           <span class="period-separator">a</span>
-          <select id="monthEnd" class="form-select" style="flex: 1;">
+          <span class="pdate">
+          <select id="monthEnd" class="form-select" style="flex:0 0 58px;">
             <option value="01">01</option>
             <option value="02">02</option>
             <option value="03">03</option>
@@ -230,7 +247,8 @@
             <option value="12">12</option>
           </select>
           <span class="period-separator">/</span>
-          <select id="yearEnd" class="form-select" style="flex: 1;"></select>
+          <select id="yearEnd" class="form-select" style="flex:0 0 84px;"></select>
+          </span>
         </div>
       </div>
 

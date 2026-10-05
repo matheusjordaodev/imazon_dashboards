@@ -15,8 +15,8 @@
       --sb-w: 288px;
       --sb-w-collapsed: 76px;
       --tb-h: 58px;
-      --primary-color: #007C4F;
-      --secondary-color: #005A3F;
+      --primary-color: #127C4B;   /* mesmo verde do logo (img/imazon.png) */
+      --secondary-color: #0C5E39; /* tom mais escuro para o gradiente */
       --accent: #3fe60d;
       --light-text: #ffffff;
       --gap: 16px;
@@ -116,6 +116,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      /* mesmo tom do logo (img/imazon.png) para não aparecer "retângulo" */
+      background: var(--primary-color);
       border-bottom: 1px solid rgba(255, 255, 255, .18);
       transition: min-height var(--ease), padding var(--ease);
     }
@@ -376,16 +378,15 @@
         });
       });
 
-      // Ajuste automático da altura do iframe ao conteúdo
+      // Ajuste automático da altura do iframe ao conteúdo.
+      // Mede só pelo <body>: documentElement.scrollHeight/clientHeight ficam
+      // "presos" na altura atual do iframe e não encolhem quando o conteúdo
+      // diminui (ex.: recolher o card de Downloads), deixando espaço vazio.
       const fitIframeHeight = () => {
         try {
           const doc = iframe.contentDocument || iframe.contentWindow.document;
-          if (!doc) return;
-          const body = doc.body, html = doc.documentElement;
-          iframe.style.height = Math.max(
-            body.scrollHeight, body.offsetHeight,
-            html.clientHeight, html.scrollHeight, html.offsetHeight
-          ) + 'px';
+          if (!doc || !doc.body) return;
+          iframe.style.height = Math.max(doc.body.scrollHeight, doc.body.offsetHeight) + 'px';
         } catch (e) {}
       };
 
