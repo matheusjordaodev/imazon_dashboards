@@ -10,7 +10,8 @@ const csv     = require('csv-parser');
 const axios   = require('axios').default;
 const ee      = require('@google/earthengine');
 require('dotenv').config({ path: path.join(__dirname, '.env'), quiet: true });
-const { csvAlertasSad, geojsonAlertasSad, periodoSad, geojsonAp, csvAp, bancoConfigurado, SAD_VIEW } = require('./banco');
+const { csvAlertasSad, geojsonAlertasSad, periodoSad, geojsonAp, csvAp,
+        geojsonSimex, csvSimex, anoSimexDisponivel, bancoConfigurado, SAD_VIEW } = require('./banco');
 
 // CONFIGURAÇÕES ----------------------------------------------
 const PORT          = process.env.PORT || 8053;
@@ -264,6 +265,51 @@ app.get('/ameaca_e_pressao/:formato/:arquivo', async (req, res, next) => {
       res.type('text/csv; charset=utf-8'); anexar(); return res.send('﻿' + csvTxt); // BOM p/ Excel
     }
     return res.redirect(302, s3url); // shapefile ou formato não gerado do banco
+  } catch (e) {
+    return res.redirect(302, s3url);
+  }
+});
+
+// ------------------------------------------------------------
+//    DOWNLOADS SIMEX – gerados do banco (PostGIS)
+// ------------------------------------------------------------
+// O dashboard do SIMEX aponta os downloads para /simex-download/... (o prefixo
+// /simex/ do nginx vai para outro app). GeoJSON e CSV de cada ano saem do banco;
+// shapefile e anos ausentes redirecionam ao S3.
+const S3_SIMEX = 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/simex';
+app.all('/simex-download/:formato/:arquivo', async (req, res, next) => {
+  const { formato, arquivo } = req.params;
+  if (!['geojson', 'csv', 'shapefile'].includes(formato)) return next();
+  const m = /^simex_unificado_(\d{4})\.(geojson|csv|zip)$/.exec(arquivo);
+  if (!m) return next();
+  const ano = parseInt(m[1], 10), ext = m[2];
+  const s3url = `${S3_SIMEX}/${formato}/${arquivo}`;
+
+  // HEAD: o dashboard só confere disponibilidade (sem gerar o arquivo)
+  if (req.method === 'HEAD') {
+    if ((formato === 'geojson' || formato === 'csv') && await anoSimexDisponivel(ano)) {
+      res.type(formato === 'csv' ? 'text/csv; charset=utf-8' : 'application/geo+json; charset=utf-8');
+      return res.status(200).end();
+    }
+    return res.redirect(302, s3url);
+  }
+
+  const anexar = () => {
+    res.setHeader('Content-Disposition', `attachment; filename="${arquivo}"`);
+    res.setHeader('Cache-Control', 'public, max-age=600, stale-while-revalidate=120');
+  };
+  try {
+    if (formato === 'geojson' && ext === 'geojson') {
+      const gj = await geojsonSimex(ano);
+      if (gj === null) return res.redirect(302, s3url);
+      res.type('application/geo+json; charset=utf-8'); anexar(); return res.send(gj);
+    }
+    if (formato === 'csv' && ext === 'csv') {
+      const csvTxt = await csvSimex(ano);
+      if (csvTxt === null) return res.redirect(302, s3url);
+      res.type('text/csv; charset=utf-8'); anexar(); return res.send('﻿' + csvTxt);
+    }
+    return res.redirect(302, s3url); // shapefile
   } catch (e) {
     return res.redirect(302, s3url);
   }

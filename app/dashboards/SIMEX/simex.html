@@ -1106,7 +1106,9 @@
        DOWNLOADS DO S3 (SIMEX anual)
     ============================ */
     const S3_DOWNLOAD = {
-      base: 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/simex',
+      // Downloads vêm do banco (servidor, em /simex-download/...); o próprio
+      // servidor redireciona ao S3 quando o ano/formato não está no banco.
+      base: window.location.origin + '/simex-download',
       folderByType: { geojson: 'geojson', csv: 'csv', shp: 'shapefile' },
       extByType:    { geojson: 'geojson', csv: 'csv', shp: 'zip' },
       filename(year, type) {

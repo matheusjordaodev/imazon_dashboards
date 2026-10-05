@@ -38,6 +38,14 @@ if (!/^[A-Za-z_]\w*(\.[A-Za-z_]\w*)?$/.test(AP_VIEW)) {
 const AP_COLUNAS = ['ano', 'trimestre', 'legenda', 'recorte', 'classe', 'posicao',
                     'celulas', 'nome', 'modalidade', 'categoria', 'uso', 'jurisdicao', 'estado'];
 
+// SIMEX (downloads anuais, lidos de vw_simex)
+const SIMEX_VIEW = (process.env.SIMEX_DB_VIEW || 'imazongeo.vw_simex').trim();
+if (!/^[A-Za-z_]\w*(\.[A-Za-z_]\w*)?$/.test(SIMEX_VIEW)) {
+  throw new Error(`SIMEX_DB_VIEW inválida: ${SIMEX_VIEW}`);
+}
+const SIMEX_COLUNAS = ['ano', 'camada', 'categoria', 'uf', 'municipio', 'cod_mun',
+                       'territorio', 'subclasse', 'area_ha'];
+
 // Colunas do CSV do dashboard: [coluna da visão, nome usado pelo index.html]
 const COLUNAS_BASE = [['tipo', 'ALERTA'], ['mes', 'MES'], ['ano', 'ANO'], ['sensor', 'SENSOR'], ['uf', 'ESTADO']];
 const COLUNAS_CAMADA = {
@@ -310,8 +318,83 @@ function csvAp(ano, trimestre) {
   return consultarApCsv(ano, trimestre);
 }
 
+// ===== SIMEX: GeoJSON/CSV de um ano, gerados do banco (downloads anuais) =====
+
+function sqlSimexGeojson() {
+  const props = SIMEX_COLUNAS.map(c => `'${c}', ${c}`).join(', ');
+  return `SELECT json_build_object(
+            'type', 'FeatureCollection',
+            'features', coalesce(json_agg(json_build_object(
+              'type', 'Feature',
+              'properties', json_build_object(${props}),
+              'geometry', ST_AsGeoJSON(geom, 6)::json)), '[]'::json))::text AS geojson
+          FROM ${SIMEX_VIEW} WHERE ano = $1`;
+}
+
+async function consultarSimexGeojson(ano) {
+  const chave = `simex ${ano}.geojson`;
+  try {
+    const r = await obterPool().query(sqlSimexGeojson(), [ano]);
+    const gj = r.rows[0].geojson;
+    if (/"features"\s*:\s*\[\s*\]/.test(gj)) {
+      registrar(chave, `sem dados em ${SIMEX_VIEW}; baixando do S3`);
+      return null;
+    }
+    registrar(chave, `lendo do banco (${SIMEX_VIEW})`);
+    return gj;
+  } catch (err) {
+    return aoFalhar(chave, err);
+  }
+}
+
+async function consultarSimexCsv(ano) {
+  const chave = `simex ${ano}.csv`;
+  try {
+    const { rows, fields } = await obterPool().query({
+      text: `SELECT ${SIMEX_COLUNAS.join(', ')} FROM ${SIMEX_VIEW}
+             WHERE ano = $1 ORDER BY camada, uf, municipio`,
+      values: [ano],
+      rowMode: 'array'
+    });
+    if (!rows.length) {
+      registrar(chave, `sem dados em ${SIMEX_VIEW}; baixando do S3`);
+      return null;
+    }
+    registrar(chave, `lendo do banco (${SIMEX_VIEW})`);
+    return paraCsv(fields.map(f => f.name), rows);
+  } catch (err) {
+    return aoFalhar(chave, err);
+  }
+}
+
+function anoValidoSimex(ano) {
+  return Number.isInteger(ano) && ano >= 2000 && ano <= 2100;
+}
+
+// true se o ano existe no banco (checagem barata, para o HEAD do download)
+async function anoSimexDisponivel(ano) {
+  if (!DATABASE_URL || !anoValidoSimex(ano) || Date.now() < indisponivelAte) return false;
+  try {
+    const r = await obterPool().query(`SELECT EXISTS(SELECT 1 FROM ${SIMEX_VIEW} WHERE ano = $1) AS e`, [ano]);
+    return !!r.rows[0].e;
+  } catch (err) {
+    aoFalhar(`simex ${ano} disp`, err);
+    return false;
+  }
+}
+
+function geojsonSimex(ano) {
+  if (!DATABASE_URL || !anoValidoSimex(ano) || Date.now() < indisponivelAte) return Promise.resolve(null);
+  return consultarSimexGeojson(ano);
+}
+function csvSimex(ano) {
+  if (!DATABASE_URL || !anoValidoSimex(ano) || Date.now() < indisponivelAte) return Promise.resolve(null);
+  return consultarSimexCsv(ano);
+}
+
 module.exports = {
   csvAlertasSad, geojsonAlertasSad, periodoSad,
   geojsonAp, csvAp,
-  bancoConfigurado: !!DATABASE_URL, SAD_VIEW, AP_VIEW
+  geojsonSimex, csvSimex, anoSimexDisponivel,
+  bancoConfigurado: !!DATABASE_URL, SAD_VIEW, AP_VIEW, SIMEX_VIEW
 };
