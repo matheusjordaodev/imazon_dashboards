@@ -467,6 +467,9 @@
   // ========================
   const AP_DOWNLOAD_BASE = "https://imazongeo3-web.s3.sa-east-1.amazonaws.com";
   const AP_PREFIX = "/ameaca_e_pressao";
+  // Downloads do AP vêm do banco (servidor, em /ameaca_e_pressao/...); o próprio
+  // servidor redireciona ao S3 quando o período/formato não está no banco.
+  window.__AP_DOWNLOAD_BASE = window.location.origin;
   function getApBase() {
     const base = (window.__AP_DOWNLOAD_BASE || AP_DOWNLOAD_BASE || "").replace(/\/+$/,"");
     const pref = (window.__AP_PREFIX || AP_PREFIX || "").replace(/\/+$/,"");

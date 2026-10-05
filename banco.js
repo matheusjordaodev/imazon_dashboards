@@ -29,6 +29,15 @@ if (!/^[A-Za-z_]\w*(\.[A-Za-z_]\w*)?$/.test(SAD_VIEW)) {
   throw new Error(`SAD_DB_VIEW inválida: ${SAD_VIEW}`);
 }
 
+// Ameaça e Pressão (downloads por trimestre, lidos de vw_ameaca_pressao)
+const AP_VIEW = (process.env.AP_DB_VIEW || 'imazongeo.vw_ameaca_pressao').trim();
+if (!/^[A-Za-z_]\w*(\.[A-Za-z_]\w*)?$/.test(AP_VIEW)) {
+  throw new Error(`AP_DB_VIEW inválida: ${AP_VIEW}`);
+}
+// Campos do arquivo publicado do AP, na ordem do padrão
+const AP_COLUNAS = ['ano', 'trimestre', 'legenda', 'recorte', 'classe', 'posicao',
+                    'celulas', 'nome', 'modalidade', 'categoria', 'uso', 'jurisdicao', 'estado'];
+
 // Colunas do CSV do dashboard: [coluna da visão, nome usado pelo index.html]
 const COLUNAS_BASE = [['tipo', 'ALERTA'], ['mes', 'MES'], ['ano', 'ANO'], ['sensor', 'SENSOR'], ['uf', 'ESTADO']];
 const COLUNAS_CAMADA = {
@@ -233,4 +242,76 @@ function periodoSad() {
   return comCache('periodo', consultarPeriodo);
 }
 
-module.exports = { csvAlertasSad, geojsonAlertasSad, periodoSad, bancoConfigurado: !!DATABASE_URL, SAD_VIEW };
+// ===== Ameaça e Pressão: GeoJSON/CSV de um trimestre, gerados do banco =====
+// Não passam pelo cache em memória (são downloads ocasionais e o GeoJSON tem
+// dezenas de MB). Respeitam o fail-fast: com o banco fora do ar, devolvem null
+// e o servidor redireciona o download para o S3.
+
+function sqlApGeojson() {
+  const props = AP_COLUNAS.map(c => `'${c}', ${c}`).join(', ');
+  return `SELECT json_build_object(
+            'type', 'FeatureCollection',
+            'features', coalesce(json_agg(json_build_object(
+              'type', 'Feature',
+              'properties', json_build_object(${props}),
+              'geometry', ST_AsGeoJSON(geom, 6)::json)), '[]'::json))::text AS geojson
+          FROM ${AP_VIEW} WHERE ano = $1 AND trimestre = $2`;
+}
+
+async function consultarApGeojson(ano, trimestre) {
+  const chave = `ap ${ano}-T${trimestre}.geojson`;
+  try {
+    const r = await obterPool().query(sqlApGeojson(), [ano, trimestre]);
+    const gj = r.rows[0].geojson;
+    // o ::text do PostgreSQL pode sair com espaços: "features" : []
+    if (/"features"\s*:\s*\[\s*\]/.test(gj)) {
+      registrar(chave, `sem dados em ${AP_VIEW}; baixando do S3`);
+      return null;
+    }
+    registrar(chave, `lendo do banco (${AP_VIEW})`);
+    return gj;
+  } catch (err) {
+    return aoFalhar(chave, err);
+  }
+}
+
+async function consultarApCsv(ano, trimestre) {
+  const chave = `ap ${ano}-T${trimestre}.csv`;
+  try {
+    const { rows, fields } = await obterPool().query({
+      text: `SELECT ${AP_COLUNAS.join(', ')} FROM ${AP_VIEW}
+             WHERE ano = $1 AND trimestre = $2 ORDER BY recorte, classe, posicao`,
+      values: [ano, trimestre],
+      rowMode: 'array'
+    });
+    if (!rows.length) {
+      registrar(chave, `sem dados em ${AP_VIEW}; baixando do S3`);
+      return null;
+    }
+    registrar(chave, `lendo do banco (${AP_VIEW})`);
+    return paraCsv(fields.map(f => f.name), rows);
+  } catch (err) {
+    return aoFalhar(chave, err);
+  }
+}
+
+function periodoApValido(ano, trimestre) {
+  return Number.isInteger(ano) && ano >= 2019 && ano <= 2100
+      && Number.isInteger(trimestre) && trimestre >= 1 && trimestre <= 4;
+}
+
+// GeoJSON/CSV do trimestre do AP, ou null (servidor redireciona ao S3)
+function geojsonAp(ano, trimestre) {
+  if (!DATABASE_URL || !periodoApValido(ano, trimestre) || Date.now() < indisponivelAte) return Promise.resolve(null);
+  return consultarApGeojson(ano, trimestre);
+}
+function csvAp(ano, trimestre) {
+  if (!DATABASE_URL || !periodoApValido(ano, trimestre) || Date.now() < indisponivelAte) return Promise.resolve(null);
+  return consultarApCsv(ano, trimestre);
+}
+
+module.exports = {
+  csvAlertasSad, geojsonAlertasSad, periodoSad,
+  geojsonAp, csvAp,
+  bancoConfigurado: !!DATABASE_URL, SAD_VIEW, AP_VIEW
+};

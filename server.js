@@ -10,7 +10,7 @@ const csv     = require('csv-parser');
 const axios   = require('axios').default;
 const ee      = require('@google/earthengine');
 require('dotenv').config({ path: path.join(__dirname, '.env'), quiet: true });
-const { csvAlertasSad, geojsonAlertasSad, periodoSad, bancoConfigurado, SAD_VIEW } = require('./banco');
+const { csvAlertasSad, geojsonAlertasSad, periodoSad, geojsonAp, csvAp, bancoConfigurado, SAD_VIEW } = require('./banco');
 
 // CONFIGURAÇÕES ----------------------------------------------
 const PORT          = process.env.PORT || 8053;
@@ -233,6 +233,41 @@ app.get('/api/sad/:tipo/:camada.geojson', async (req, res) => {
 });
 
 console.log('Banco do SAD:', bancoConfigurado ? SAD_VIEW : 'DATABASE_URL não definida (só estáticos)');
+
+// ------------------------------------------------------------
+//    DOWNLOADS AMEAÇA & PRESSÃO – gerados do banco (PostGIS)
+// ------------------------------------------------------------
+// O dashboard de AP aponta os downloads para esta origem (window.__AP_DOWNLOAD_BASE).
+// GeoJSON e CSV de cada trimestre saem do banco; shapefile (zip) e qualquer
+// período/formato indisponível no banco redirecionam para o S3.
+const S3_AP = 'https://imazongeo3-web.s3.sa-east-1.amazonaws.com/ameaca_e_pressao';
+app.get('/ameaca_e_pressao/:formato/:arquivo', async (req, res, next) => {
+  const { formato, arquivo } = req.params;
+  if (!['geojson', 'csv', 'shapefile'].includes(formato)) return next();
+  const m = /^ameaca_e_pressao_([1-4])_trimestre_(\d{4})\.(geojson|csv|zip)$/.exec(arquivo);
+  if (!m) return next();
+  const trimestre = parseInt(m[1], 10), ano = parseInt(m[2], 10), ext = m[3];
+  const s3url = `${S3_AP}/${formato}/${arquivo}`;
+  const anexar = () => {
+    res.setHeader('Content-Disposition', `attachment; filename="${arquivo}"`);
+    res.setHeader('Cache-Control', 'public, max-age=600, stale-while-revalidate=120');
+  };
+  try {
+    if (formato === 'geojson' && ext === 'geojson') {
+      const gj = await geojsonAp(ano, trimestre);
+      if (gj === null) return res.redirect(302, s3url);
+      res.type('application/geo+json; charset=utf-8'); anexar(); return res.send(gj);
+    }
+    if (formato === 'csv' && ext === 'csv') {
+      const csvTxt = await csvAp(ano, trimestre);
+      if (csvTxt === null) return res.redirect(302, s3url);
+      res.type('text/csv; charset=utf-8'); anexar(); return res.send('﻿' + csvTxt); // BOM p/ Excel
+    }
+    return res.redirect(302, s3url); // shapefile ou formato não gerado do banco
+  } catch (e) {
+    return res.redirect(302, s3url);
+  }
+});
 
 // ------------------------------------------------------------
 //            MIDDLEWARE – SERVE DASHBOARDS HTML/CSS
