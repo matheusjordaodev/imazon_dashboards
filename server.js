@@ -9,6 +9,8 @@ const path    = require('path');
 const csv     = require('csv-parser');
 const axios   = require('axios').default;
 const ee      = require('@google/earthengine');
+require('dotenv').config({ path: path.join(__dirname, '.env'), quiet: true });
+const { csvAlertasSad, geojsonAlertasSad, periodoSad, bancoConfigurado, SAD_VIEW } = require('./banco');
 
 // CONFIGURAÇÕES ----------------------------------------------
 const PORT          = process.env.PORT || 8053;
@@ -189,6 +191,48 @@ app.get('/municipios-area-data', (req, res) => {
     })
     .on('error', err => { console.error(err); res.status(500).send('Erro ao processar CSV'); });
 });
+
+// ------------------------------------------------------------
+//            API SAD – alertas lidos do banco (PostGIS)
+// ------------------------------------------------------------
+// 503 quando o banco não está configurado/ativo ou ainda não tem a tabela do
+// SAD: o navegador então cai nos CSVs/GeoJSON estáticos (dataSources).
+function _sadSemBanco(res){
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(503).type('text/plain').send('Alertas do SAD indisponíveis no banco');
+}
+function _sadCache(res, mime){
+  res.type(mime);
+  res.setHeader('Cache-Control', 'public, max-age=600, stale-while-revalidate=120');
+}
+
+app.get('/api/sad/periodo', async (_req, res) => {
+  const p = await periodoSad();
+  if (p === null) return _sadSemBanco(res);
+  _sadCache(res, 'application/json; charset=utf-8');
+  res.send(p);
+});
+
+app.get('/api/sad/:tipo/:camada.csv', async (req, res) => {
+  const csvTxt = await csvAlertasSad(req.params.tipo, req.params.camada);
+  if (csvTxt === null) return _sadSemBanco(res);
+  _sadCache(res, 'text/csv; charset=utf-8');
+  res.send(csvTxt);
+});
+
+app.get('/api/sad/:tipo/:camada.geojson', async (req, res) => {
+  const territorios = String(req.query.territorios || '')
+    .split('|').map(t => t.trim()).filter(Boolean).slice(0, 50);
+  const gj = await geojsonAlertasSad(
+    req.params.tipo, req.params.camada,
+    parseInt(req.query.de, 10), parseInt(req.query.ate, 10), territorios
+  );
+  if (gj === null) return _sadSemBanco(res);
+  _sadCache(res, 'application/geo+json; charset=utf-8');
+  res.send(gj);
+});
+
+console.log('Banco do SAD:', bancoConfigurado ? SAD_VIEW : 'DATABASE_URL não definida (só estáticos)');
 
 // ------------------------------------------------------------
 //            MIDDLEWARE – SERVE DASHBOARDS HTML/CSS

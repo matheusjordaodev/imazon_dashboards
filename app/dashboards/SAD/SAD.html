@@ -490,7 +490,7 @@ map.getPane('base-legal').style.pointerEvents = 'none';
 map.createPane('overlay-ranked');
 map.getPane('overlay-ranked').style.zIndex = 450;
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_4awi_1_7d7bd486fd79a1eb352a8439', {
   attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
   subdomains: 'abcd', maxZoom: 20, crossOrigin: true
 }).addTo(map);
@@ -555,6 +555,62 @@ const dataSources={
     unidadesConservacao:{csv:"/dataset/sad/csv/alertas_sad_degradacao_09_2008_05_2025_ucs.csv",geojson:"/dataset/sad/geojson/AMZ_unidade_conservacao.geojson"}
   }
 };
+
+// ===== FONTE DOS DADOS =====
+// Alertas: banco (server.js, /api/sad) quando a tabela do SAD existir; se o banco
+// não estiver configurado ou ativo, os CSVs/GeoJSON estáticos de dataSources acima.
+const API_SAD = '/api/sad';
+// Camada do banco de cada recorte (estados soma os alertas dos municípios)
+const camadaBanco = {
+  assentamentos:'assentamentos', estados:'municipios', municipios:'municipios',
+  terrasIndigenas:'terras_indigenas', unidadesConservacao:'unidades_conservacao'
+};
+
+// Período coberto pelos dados, para montar os filtros de mês/ano. Vem do banco;
+// sem banco, fica o alcance dos arquivos estáticos.
+let limiteSAD = { anoMin:2008, ano:new Date().getFullYear(), mes:12 };
+async function carregarLimiteSAD(){
+  try{
+    const r = await fetch(`${API_SAD}/periodo`);
+    if(!r.ok) return;
+    const p = await r.json();
+    if(p.ano_max && p.mes_max) limiteSAD = { anoMin: p.ano_min || 2008, ano: p.ano_max, mes: p.mes_max };
+  }catch{ /* sem banco: mantém o padrão */ }
+}
+
+/* Período do filtro como dois inteiros AAAAMM */
+function periodoSelecionado(){
+  const ys = document.getElementById('yearStart').value  || String(limiteSAD.anoMin);
+  const ms = document.getElementById('monthStart').value || '01';
+  const ye = document.getElementById('yearEnd').value    || String(limiteSAD.ano);
+  const me = document.getElementById('monthEnd').value   || '12';
+  return [parseInt(`${ys}${ms}`,10), parseInt(`${ye}${me}`,10)];
+}
+
+/* Polígonos do mapa: alertas do período vindos do banco e, se indisponível, o
+   GeoJSON estático. 'Estados' usa o limite estadual estático (o banco guarda
+   alertas, não contornos de território). */
+const __mapGeoCache = {};
+function loadGeoCached(url){
+  if (__mapGeoCache[url]) return __mapGeoCache[url];
+  const p = fetch(url)
+    .then(r => { if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .catch(err => { delete __mapGeoCache[url]; throw err; });
+  __mapGeoCache[url] = p;
+  return p;
+}
+async function loadGeo(tipo, territoryType, territorios=[]){
+  const camada = camadaBanco[territoryType];
+  if (territoryType !== 'estados' && camada){
+    const [de, ate] = periodoSelecionado();
+    const lista = territorios.length ? `&territorios=${encodeURIComponent(territorios.join('|'))}` : '';
+    try{
+      return await loadGeoCached(`${API_SAD}/${tipo}/${camada}.geojson?de=${de}&ate=${ate}${lista}`);
+    }catch{ /* sem banco, sem alertas no período ou período grande demais */ }
+  }
+  const est = dataSources.desmatamento?.[territoryType]?.geojson;
+  return est ? loadGeoCached(est).catch(()=>null) : null;
+}
 
 /* ======= FUNDO AMAZÔNIA LEGAL - ATUALIZADO (IGUAL AO SIMEX) ======= */
 const __bgCache = {};
@@ -636,32 +692,31 @@ function lineOptionsResponsive(suggestedMax){
 function categoriaAtual(){ return document.getElementById('categoriaFilter').value || 'estados'; }
 function dataTypeAtual(){ return (document.getElementById('sadFilter').value || 'desmatamento'); }
 
-/* Carrega CSV (ou combina os dois quando 'todos') e o geojson */
+/* Carrega os alertas (banco; se indisponível, CSV estático) */
 async function loadData(){
   const sad = dataTypeAtual();
   const territoryType = categoriaAtual();
 
-  const geoUrl = dataSources.desmatamento?.[territoryType]?.geojson;
-
   async function loadCsv(url){ const rows = await d3.csv(url); rows.forEach(d=>{ d.AREAKM2=+d.AREAKM2||0; d.ANO=+d.ANO; d.MES=+d.MES; }); return rows; }
+  // Banco e, se indisponível (503), CSV estático local
+  async function loadAlertas(tipo){
+    try{ return await loadCsv(`${API_SAD}/${tipo}/${camadaBanco[territoryType]}.csv`); }
+    catch{ return loadCsv(dataSources[tipo]?.[territoryType]?.csv); }
+  }
 
   try{
     let data = [];
     if (sad === 'todos'){
-      const urlDes = dataSources.desmatamento?.[territoryType]?.csv;
-      const urlDeg = dataSources.degradacao?.[territoryType]?.csv;
-      const [a,b] = await Promise.all([ loadCsv(urlDes), loadCsv(urlDeg) ]);
+      const [a,b] = await Promise.all([ loadAlertas('desmatamento'), loadAlertas('degradacao') ]);
       data = a.concat(b);
     } else {
-      const url = dataSources[sad]?.[territoryType]?.csv;
-      data = await loadCsv(url);
+      data = await loadAlertas(sad);
     }
-    const geojsonData = geoUrl ? await fetch(geoUrl).then(r=>r.json()) : null;
     csvData = data;
-    return { csvData:data, geojsonData };
+    return { csvData:data };
   }catch(e){
     console.error('Erro ao carregar dados:', e);
-    return { csvData:[], geojsonData:null };
+    return { csvData:[] };
   }
 }
 
@@ -731,7 +786,14 @@ async function setRankPage(p){
   window.currentTopTerritories = slice.map(([k]) => k);
 
   updateBarChart(labels, values);
-  if(window._lastGeo && window._lastAggreg) { updateMap(window._lastGeo, window._lastAggreg, ttype); }
+  await desenharMapa(ttype);
+}
+
+/* Busca os polígonos dos territórios da página do ranking e desenha o mapa */
+async function desenharMapa(ttype){
+  if(!window._lastAggreg) return;
+  window._lastGeo = await loadGeo(dataTypeAtual(), ttype, window.currentTopTerritories || []);
+  updateMap(window._lastGeo || {type:'FeatureCollection', features:[]}, window._lastAggreg, ttype);
   zoomToTopItems(5);
 }
 
@@ -942,8 +1004,8 @@ function updateTitles(){
 async function updateDashboard(){
   showLoader('Carregando Dados...');
   try{
-    const {csvData:loadedData,geojsonData} = await loadData();
-    if(!loadedData.length || !geojsonData){ hideLoader(); return; }
+    const {csvData:loadedData} = await loadData();
+    if(!loadedData.length){ hideLoader(); return; }
 
     const ttype=categoriaAtual();
     const key=territoryNameMapping[ttype];
@@ -968,11 +1030,10 @@ async function updateDashboard(){
 
     rankingAll = Object.entries(aggregated).sort(([,a],[,b])=>b-a);
     window._lastAggreg = aggregated;
-    window._lastGeo = geojsonData;
 
     updateStatistics(aggregated, filtered);
     updateTitles();
-    setRankPage(0);
+    await setRankPage(0); // busca os polígonos do mapa e desenha
 
     updateLineChart(loadedData, ttype);
     updateYearlyChart(loadedData);
@@ -1074,27 +1135,26 @@ function toggleDatasetButtonsInFilters() {
 
 // Atualizar a função populateYearSelects para o novo formato
 function populateYearSelects(){
-  const cur = new Date().getFullYear();
-  const curMonth = new Date().getMonth() + 1; // mês atual (1–12)
-  const endMonth = ((curMonth - 2) <= 0) ? (12 + (curMonth - 2)) : (curMonth - 2);
-  const endYear = ((curMonth - 2) <= 0) ? (cur - 1) : cur;
+  // Limites vêm de limiteSAD (banco), ou seja, do último mês disponível nos dados
+  const cur = limiteSAD.ano;
+  const endMonth = limiteSAD.mes;
 
   const ys = document.getElementById('yearStart');
   const ye = document.getElementById('yearEnd');
-  
+
   // Limpar selects
   ys.innerHTML = '';
   ye.innerHTML = '';
-  
-  for(let y=2008; y<=cur; y++){ 
-    ys.add(new Option(y,y)); 
-    ye.add(new Option(y,y)); 
+
+  for(let y=limiteSAD.anoMin; y<=cur; y++){
+    ys.add(new Option(y,y));
+    ye.add(new Option(y,y));
   }
 
-  // Definir valores padrão
+  // Padrão: janeiro do último ano até o último mês disponível
   ys.value = cur;
-  ye.value = endYear;
-  
+  ye.value = cur;
+
   document.getElementById('monthStart').value = '01';
   document.getElementById('monthEnd').value = String(endMonth).padStart(2,'0');
 }
@@ -1219,7 +1279,8 @@ async function renderDownloadsSAD(){
 }
 
 /* ========= DOM Ready ========= */
-document.addEventListener('DOMContentLoaded', ()=>{
+document.addEventListener('DOMContentLoaded', async ()=>{
+  await carregarLimiteSAD(); // define o alcance do período antes de montar os filtros
   populateYearSelects();
   toggleUCFields();
   updateTitles();
